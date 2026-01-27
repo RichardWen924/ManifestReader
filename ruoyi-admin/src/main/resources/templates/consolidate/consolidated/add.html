@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org" >
+<head>
+    <th:block th:include="include :: header('新增订舱与集装箱合并信息')" />
+    <th:block th:include="include :: datetimepicker-css" />
+    <th:block th:include="include :: bootstrap-fileinput-css"/>
+</head>
+<body class="white-bg">
+    <div class="wrapper wrapper-content animated fadeInRight ibox-content">
+        <form class="form-horizontal m" id="form-consolidated-add">
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">发货人信息：</label>
+                    <div class="col-sm-8">
+                        <textarea name="shipper" class="form-control"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">收货人信息：</label>
+                    <div class="col-sm-8">
+                        <textarea name="consignee" class="form-control"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">通知方信息：</label>
+                    <div class="col-sm-8">
+                        <textarea name="notifyParty" class="form-control"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">船名航次：</label>
+                    <div class="col-sm-8">
+                        <input name="vesselVoyage" class="form-control" type="text">
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">装货港：</label>
+                    <div class="col-sm-8">
+                        <input name="portOfLoading" class="form-control" type="text">
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">卸货港：</label>
+                    <div class="col-sm-8">
+                        <input name="portOfDischarge" class="form-control" type="text">
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">交货地：</label>
+                    <div class="col-sm-8">
+                        <input name="placeOfDelivery" class="form-control" type="text">
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">货物描述：</label>
+                    <div class="col-sm-8">
+                        <textarea name="cargoDescription" class="form-control"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">货物数量：</label>
+                    <div class="col-sm-8">
+                        <input name="cargoQuantity" class="form-control" type="text">
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">货物毛重(KGS)：</label>
+                    <div class="col-sm-8">
+                        <input name="cargoGrossWeight" class="form-control" type="text">
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">货物体积(CBM)：</label>
+                    <div class="col-sm-8">
+                        <input name="cargoMeasurement" class="form-control" type="text">
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">集装箱号：</label>
+                    <div class="col-sm-8">
+                        <input name="containerNo" class="form-control" type="text">
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">封条号：</label>
+                    <div class="col-sm-8">
+                        <input name="sealNo" class="form-control" type="text">
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">核验总重：</label>
+                    <div class="col-sm-8">
+                        <input name="vgm" class="form-control" type="text">
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">重量单位：</label>
+                    <div class="col-sm-8">
+                        <input name="vgmUnit" class="form-control" type="text">
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label is-required">文件存储路径：</label>
+                    <div class="col-sm-8">
+                        <input type="hidden" name="filePath">
+                        <div class="file-loading">
+                            <input class="form-control file-upload" id="filePath" name="file" type="file">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">创建时间：</label>
+                    <div class="col-sm-8">
+                        <div class="input-group date">
+                            <input name="createdAt" class="form-control" placeholder="yyyy-MM-dd" type="text">
+                            <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">更新时间：</label>
+                    <div class="col-sm-8">
+                        <div class="input-group date">
+                            <input name="updatedAt" class="form-control" placeholder="yyyy-MM-dd" type="text">
+                            <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+    <th:block th:include="include :: footer" />
+    <th:block th:include="include :: datetimepicker-js" />
+    <th:block th:include="include :: bootstrap-fileinput-js"/>
+    <script th:inline="javascript">
+        var prefix = ctx + "consolidate/consolidated"
+        $("#form-consolidated-add").validate({
+            focusCleanup: true
+        });
+
+        function submitHandler() {
+            if ($.validate.form()) {
+                $.operate.save(prefix + "/add", $('#form-consolidated-add').serialize());
+            }
+        }
+
+        $("input[name='createdAt']").datetimepicker({
+            format: "yyyy-mm-dd",
+            minView: "month",
+            autoclose: true
+        });
+
+        $("input[name='updatedAt']").datetimepicker({
+            format: "yyyy-mm-dd",
+            minView: "month",
+            autoclose: true
+        });
+
+        $(".file-upload").fileinput({
+            uploadUrl: ctx + 'common/upload',
+            maxFileCount: 1,
+            autoReplace: true
+        }).on('fileuploaded', function (event, data, previewId, index) {
+            $("input[name='" + event.currentTarget.id + "']").val(data.response.url)
+        }).on('fileremoved', function (event, id, index) {
+            $("input[name='" + event.currentTarget.id + "']").val('')
+        })
+    </script>
+</body>
+</html>

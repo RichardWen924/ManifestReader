@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.ContainersMapper">
+    
+    <resultMap type="Containers" id="ContainersResult">
+        <result property="id"    column="id"    />
+        <result property="bookingNo"    column="booking_no"    />
+        <result property="containerNo"    column="container_no"    />
+        <result property="sealNo"    column="seal_no"    />
+        <result property="vgm"    column="vgm"    />
+        <result property="vgmUnit"    column="vgm_unit"    />
+    </resultMap>
+
+    <sql id="selectContainersVo">
+        select id, booking_no, container_no, seal_no, vgm, vgm_unit from containers
+    </sql>
+
+    <select id="selectContainersList" parameterType="Containers" resultMap="ContainersResult">
+        <include refid="selectContainersVo"/>
+        <where>  
+            <if test="bookingNo != null  and bookingNo != ''"> and booking_no = #{bookingNo}</if>
+            <if test="containerNo != null  and containerNo != ''"> and container_no = #{containerNo}</if>
+            <if test="sealNo != null  and sealNo != ''"> and seal_no = #{sealNo}</if>
+            <if test="vgm != null "> and vgm = #{vgm}</if>
+            <if test="vgmUnit != null  and vgmUnit != ''"> and vgm_unit = #{vgmUnit}</if>
+        </where>
+    </select>
+    
+    <select id="selectContainersById" parameterType="Long" resultMap="ContainersResult">
+        <include refid="selectContainersVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertContainers" parameterType="Containers" useGeneratedKeys="true" keyProperty="id">
+        insert into containers
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="bookingNo != null">booking_no,</if>
+            <if test="containerNo != null">container_no,</if>
+            <if test="sealNo != null">seal_no,</if>
+            <if test="vgm != null">vgm,</if>
+            <if test="vgmUnit != null">vgm_unit,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="bookingNo != null">#{bookingNo},</if>
+            <if test="containerNo != null">#{containerNo},</if>
+            <if test="sealNo != null">#{sealNo},</if>
+            <if test="vgm != null">#{vgm},</if>
+            <if test="vgmUnit != null">#{vgmUnit},</if>
+         </trim>
+    </insert>
+
+    <update id="updateContainers" parameterType="Containers">
+        update containers
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="bookingNo != null">booking_no = #{bookingNo},</if>
+            <if test="containerNo != null">container_no = #{containerNo},</if>
+            <if test="sealNo != null">seal_no = #{sealNo},</if>
+            <if test="vgm != null">vgm = #{vgm},</if>
+            <if test="vgmUnit != null">vgm_unit = #{vgmUnit},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteContainersById" parameterType="Long">
+        delete from containers where id = #{id}
+    </delete>
+
+    <delete id="deleteContainersByIds" parameterType="String">
+        delete from containers where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+</mapper>

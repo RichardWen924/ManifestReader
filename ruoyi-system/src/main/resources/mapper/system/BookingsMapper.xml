@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.BookingsMapper">
+    
+    <resultMap type="Bookings" id="BookingsResult">
+        <result property="bookingNo"    column="booking_no"    />
+        <result property="shipper"    column="shipper"    />
+        <result property="consignee"    column="consignee"    />
+        <result property="notifyParty"    column="notify_party"    />
+        <result property="vesselVoyage"    column="vessel_voyage"    />
+        <result property="portOfLoading"    column="port_of_loading"    />
+        <result property="portOfDischarge"    column="port_of_discharge"    />
+        <result property="placeOfDelivery"    column="place_of_delivery"    />
+        <result property="cargoDescription"    column="cargo_description"    />
+        <result property="cargoQuantity"    column="cargo_quantity"    />
+        <result property="cargoGrossWeight"    column="cargo_gross_weight"    />
+        <result property="cargoMeasurement"    column="cargo_measurement"    />
+        <result property="createdAt"    column="created_at"    />
+        <result property="updatedAt"    column="updated_at"    />
+    </resultMap>
+
+    <sql id="selectBookingsVo">
+        select booking_no, shipper, consignee, notify_party, vessel_voyage, port_of_loading, port_of_discharge, place_of_delivery, cargo_description, cargo_quantity, cargo_gross_weight, cargo_measurement, created_at, updated_at from bookings
+    </sql>
+
+    <select id="selectBookingsList" parameterType="Bookings" resultMap="BookingsResult">
+        <include refid="selectBookingsVo"/>
+        <where>  
+            <if test="shipper != null  and shipper != ''"> and shipper = #{shipper}</if>
+            <if test="consignee != null  and consignee != ''"> and consignee = #{consignee}</if>
+            <if test="notifyParty != null  and notifyParty != ''"> and notify_party = #{notifyParty}</if>
+            <if test="vesselVoyage != null  and vesselVoyage != ''"> and vessel_voyage = #{vesselVoyage}</if>
+            <if test="portOfLoading != null  and portOfLoading != ''"> and port_of_loading = #{portOfLoading}</if>
+            <if test="portOfDischarge != null  and portOfDischarge != ''"> and port_of_discharge = #{portOfDischarge}</if>
+            <if test="placeOfDelivery != null  and placeOfDelivery != ''"> and place_of_delivery = #{placeOfDelivery}</if>
+            <if test="cargoDescription != null  and cargoDescription != ''"> and cargo_description = #{cargoDescription}</if>
+            <if test="cargoQuantity != null  and cargoQuantity != ''"> and cargo_quantity = #{cargoQuantity}</if>
+            <if test="cargoGrossWeight != null "> and cargo_gross_weight = #{cargoGrossWeight}</if>
+            <if test="cargoMeasurement != null "> and cargo_measurement = #{cargoMeasurement}</if>
+            <if test="createdAt != null "> and created_at = #{createdAt}</if>
+            <if test="updatedAt != null "> and updated_at = #{updatedAt}</if>
+        </where>
+    </select>
+    
+    <select id="selectBookingsByBookingNo" parameterType="String" resultMap="BookingsResult">
+        <include refid="selectBookingsVo"/>
+        where booking_no = #{bookingNo}
+    </select>
+
+    <insert id="insertBookings" parameterType="Bookings">
+        insert into bookings
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="bookingNo != null">booking_no,</if>
+            <if test="shipper != null">shipper,</if>
+            <if test="consignee != null">consignee,</if>
+            <if test="notifyParty != null">notify_party,</if>
+            <if test="vesselVoyage != null">vessel_voyage,</if>
+            <if test="portOfLoading != null">port_of_loading,</if>
+            <if test="portOfDischarge != null">port_of_discharge,</if>
+            <if test="placeOfDelivery != null">place_of_delivery,</if>
+            <if test="cargoDescription != null">cargo_description,</if>
+            <if test="cargoQuantity != null">cargo_quantity,</if>
+            <if test="cargoGrossWeight != null">cargo_gross_weight,</if>
+            <if test="cargoMeasurement != null">cargo_measurement,</if>
+            <if test="createdAt != null">created_at,</if>
+            <if test="updatedAt != null">updated_at,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="bookingNo != null">#{bookingNo},</if>
+            <if test="shipper != null">#{shipper},</if>
+            <if test="consignee != null">#{consignee},</if>
+            <if test="notifyParty != null">#{notifyParty},</if>
+            <if test="vesselVoyage != null">#{vesselVoyage},</if>
+            <if test="portOfLoading != null">#{portOfLoading},</if>
+            <if test="portOfDischarge != null">#{portOfDischarge},</if>
+            <if test="placeOfDelivery != null">#{placeOfDelivery},</if>
+            <if test="cargoDescription != null">#{cargoDescription},</if>
+            <if test="cargoQuantity != null">#{cargoQuantity},</if>
+            <if test="cargoGrossWeight != null">#{cargoGrossWeight},</if>
+            <if test="cargoMeasurement != null">#{cargoMeasurement},</if>
+            <if test="createdAt != null">#{createdAt},</if>
+            <if test="updatedAt != null">#{updatedAt},</if>
+         </trim>
+    </insert>
+
+    <update id="updateBookings" parameterType="Bookings">
+        update bookings
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="shipper != null">shipper = #{shipper},</if>
+            <if test="consignee != null">consignee = #{consignee},</if>
+            <if test="notifyParty != null">notify_party = #{notifyParty},</if>
+            <if test="vesselVoyage != null">vessel_voyage = #{vesselVoyage},</if>
+            <if test="portOfLoading != null">port_of_loading = #{portOfLoading},</if>
+            <if test="portOfDischarge != null">port_of_discharge = #{portOfDischarge},</if>
+            <if test="placeOfDelivery != null">place_of_delivery = #{placeOfDelivery},</if>
+            <if test="cargoDescription != null">cargo_description = #{cargoDescription},</if>
+            <if test="cargoQuantity != null">cargo_quantity = #{cargoQuantity},</if>
+            <if test="cargoGrossWeight != null">cargo_gross_weight = #{cargoGrossWeight},</if>
+            <if test="cargoMeasurement != null">cargo_measurement = #{cargoMeasurement},</if>
+            <if test="createdAt != null">created_at = #{createdAt},</if>
+            <if test="updatedAt != null">updated_at = #{updatedAt},</if>
+        </trim>
+        where booking_no = #{bookingNo}
+    </update>
+
+    <delete id="deleteBookingsByBookingNo" parameterType="String">
+        delete from bookings where booking_no = #{bookingNo}
+    </delete>
+
+    <delete id="deleteBookingsByBookingNos" parameterType="String">
+        delete from bookings where booking_no in 
+        <foreach item="bookingNo" collection="array" open="(" separator="," close=")">
+            #{bookingNo}
+        </foreach>
+    </delete>
+
+</mapper>

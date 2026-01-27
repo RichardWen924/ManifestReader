@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org" >
+<head>
+    <th:block th:include="include :: header('新增集装箱信息')" />
+</head>
+<body class="white-bg">
+    <div class="wrapper wrapper-content animated fadeInRight ibox-content">
+        <form class="form-horizontal m" id="form-containers-add">
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">订舱编号：</label>
+                    <div class="col-sm-8">
+                        <input name="bookingNo" class="form-control" type="text">
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">集装箱号：</label>
+                    <div class="col-sm-8">
+                        <input name="containerNo" class="form-control" type="text">
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">封条号：</label>
+                    <div class="col-sm-8">
+                        <input name="sealNo" class="form-control" type="text">
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">核验总重：</label>
+                    <div class="col-sm-8">
+                        <input name="vgm" class="form-control" type="text">
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">重量单位：</label>
+                    <div class="col-sm-8">
+                        <input name="vgmUnit" class="form-control" type="text">
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+    <th:block th:include="include :: footer" />
+    <script th:inline="javascript">
+        var prefix = ctx + "container/containers"
+        $("#form-containers-add").validate({
+            focusCleanup: true
+        });
+
+        function submitHandler() {
+            if ($.validate.form()) {
+                $.operate.save(prefix + "/add", $('#form-containers-add').serialize());
+            }
+        }
+    </script>
+</body>
+</html>

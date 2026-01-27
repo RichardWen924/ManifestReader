@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org" >
+<head>
+    <th:block th:include="include :: header('修改集装箱信息')" />
+</head>
+<body class="white-bg">
+    <div class="wrapper wrapper-content animated fadeInRight ibox-content">
+        <form class="form-horizontal m" id="form-containers-edit" th:object="${containers}">
+            <input name="id" th:field="*{id}" type="hidden">
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">订舱编号：</label>
+                    <div class="col-sm-8">
+                        <input name="bookingNo" th:field="*{bookingNo}" class="form-control" type="text">
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">集装箱号：</label>
+                    <div class="col-sm-8">
+                        <input name="containerNo" th:field="*{containerNo}" class="form-control" type="text">
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">封条号：</label>
+                    <div class="col-sm-8">
+                        <input name="sealNo" th:field="*{sealNo}" class="form-control" type="text">
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">核验总重：</label>
+                    <div class="col-sm-8">
+                        <input name="vgm" th:field="*{vgm}" class="form-control" type="text">
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">重量单位：</label>
+                    <div class="col-sm-8">
+                        <input name="vgmUnit" th:field="*{vgmUnit}" class="form-control" type="text">
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+    <th:block th:include="include :: footer" />
+    <script th:inline="javascript">
+        var prefix = ctx + "container/containers";
+        $("#form-containers-edit").validate({
+            focusCleanup: true
+        });
+
+        function submitHandler() {
+            if ($.validate.form()) {
+                $.operate.save(prefix + "/edit", $('#form-containers-edit').serialize());
+            }
+        }
+    </script>
+</body>
+</html>

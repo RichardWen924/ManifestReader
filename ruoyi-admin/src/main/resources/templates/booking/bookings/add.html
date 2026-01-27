@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org" >
+<head>
+    <th:block th:include="include :: header('新增订舱信息')" />
+    <th:block th:include="include :: datetimepicker-css" />
+</head>
+<body class="white-bg">
+    <div class="wrapper wrapper-content animated fadeInRight ibox-content">
+        <form class="form-horizontal m" id="form-bookings-add">
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">发货人信息：</label>
+                    <div class="col-sm-8">
+                        <textarea name="shipper" class="form-control"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">收货人信息：</label>
+                    <div class="col-sm-8">
+                        <textarea name="consignee" class="form-control"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">通知方信息：</label>
+                    <div class="col-sm-8">
+                        <textarea name="notifyParty" class="form-control"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">船名航次：</label>
+                    <div class="col-sm-8">
+                        <input name="vesselVoyage" class="form-control" type="text">
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">装货港：</label>
+                    <div class="col-sm-8">
+                        <input name="portOfLoading" class="form-control" type="text">
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">卸货港：</label>
+                    <div class="col-sm-8">
+                        <input name="portOfDischarge" class="form-control" type="text">
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">交货地：</label>
+                    <div class="col-sm-8">
+                        <input name="placeOfDelivery" class="form-control" type="text">
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">货物描述：</label>
+                    <div class="col-sm-8">
+                        <textarea name="cargoDescription" class="form-control"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">货物数量：</label>
+                    <div class="col-sm-8">
+                        <input name="cargoQuantity" class="form-control" type="text">
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">货物毛重(KGS)：</label>
+                    <div class="col-sm-8">
+                        <input name="cargoGrossWeight" class="form-control" type="text">
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">货物体积(CBM)：</label>
+                    <div class="col-sm-8">
+                        <input name="cargoMeasurement" class="form-control" type="text">
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">创建时间：</label>
+                    <div class="col-sm-8">
+                        <div class="input-group date">
+                            <input name="createdAt" class="form-control" placeholder="yyyy-MM-dd" type="text">
+                            <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">更新时间：</label>
+                    <div class="col-sm-8">
+                        <div class="input-group date">
+                            <input name="updatedAt" class="form-control" placeholder="yyyy-MM-dd" type="text">
+                            <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+    <th:block th:include="include :: footer" />
+    <th:block th:include="include :: datetimepicker-js" />
+    <script th:inline="javascript">
+        var prefix = ctx + "booking/bookings"
+        $("#form-bookings-add").validate({
+            focusCleanup: true
+        });
+
+        function submitHandler() {
+            if ($.validate.form()) {
+                $.operate.save(prefix + "/add", $('#form-bookings-add').serialize());
+            }
+        }
+
+        $("input[name='createdAt']").datetimepicker({
+            format: "yyyy-mm-dd",
+            minView: "month",
+            autoclose: true
+        });
+
+        $("input[name='updatedAt']").datetimepicker({
+            format: "yyyy-mm-dd",
+            minView: "month",
+            autoclose: true
+        });
+    </script>
+</body>
+</html>
