@@ -61,9 +61,23 @@ public interface IBookingConsolidatedService
 
 
     /**
-     * 实现与工作流进行联动
+     * 实现与工作流进行联动 (直接保存模式)
      * @param filePath 文件路径
      * @return 进过工作流处理好的数据，将数据返回并加入数据库
      */
-    BookingConsolidated getMessageFromFlow(String filePath);
+    BookingConsolidated directProcessAndSave(String filePath);
+
+    /**
+     * AI智能提取 - 分析文件 (返回 DTO 供前端确认)
+     * @param filePath 文件路径
+     * @return 包含数据和坐标的 DTO
+     */
+    com.ruoyi.system.domain.BookingConsolidatedDto analyzeFile(String filePath);
+
+    /**
+     * AI智能提取 - 生成最终PDF并保存
+     * @param dto 用户确认后的数据
+     * @return 保存后的实体
+     */
+    BookingConsolidated generateAndSavePdf(com.ruoyi.system.domain.BookingConsolidatedDto dto);
 }

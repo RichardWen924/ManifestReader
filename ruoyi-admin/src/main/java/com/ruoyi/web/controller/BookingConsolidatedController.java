@@ -23,6 +23,9 @@ import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.ruoyi.system.domain.BookingConsolidatedDto;
+import org.springframework.web.bind.annotation.RequestBody;
+
 /**
  * 订舱与集装箱合并信息Controller
  * //TODO   提单号、单位
@@ -80,43 +83,62 @@ public class BookingConsolidatedController extends BaseController
     @GetMapping("/add")
     public String add()
     {
-
-
-
         return prefix + "/add";
     }
 
     /**
-     * 新增保存订舱与集装箱合并信息
+     * 新增保存订舱与集装箱合并信息 (直接保存 / 普通保存)
      */
     @RequiresPermissions("system:consolidated:add")
     @Log(title = "订舱与集装箱合并信息", businessType = BusinessType.INSERT)
     @PostMapping("/add")
     @ResponseBody
     public AjaxResult addSave(BookingConsolidated bookingConsolidated) throws IOException {
-
-        // 1. 获取文件路径
         String filePath = bookingConsolidated.getFilePath();
 
-        // 2. 如果filePath为空，且不是文件上传模式，直接保存表单数据
-        if (filePath == null || filePath.isEmpty()) {
-            return toAjax(bookingConsolidatedService.insertBookingConsolidated(bookingConsolidated));
+        // 如果有文件路径，尝试直接解析并保存
+        if (filePath != null && !filePath.isEmpty()) {
+            try {
+                // 调用直接保存服务 (AI 识别后直接入库)
+                bookingConsolidatedService.directProcessAndSave(filePath);
+                return success();
+            } catch (Exception e) {
+                return error("AI 识别失败: " + e.getMessage());
+            }
         }
 
-        // 3. 处理文件逻辑（如果需要从文件解析数据覆盖表单数据）
-        // 注意：getMessageFromFlow可能需要绝对路径，前端传来的可能是URL（如 /profile/upload/...）
-        // 需要将URL转换为本地绝对路径
-        // 假设 filePath 已经是相对路径或者可以被 getMessageFromFlow 处理
-        // 如果 getMessageFromFlow 返回一个新的 BookingConsolidated 对象，我们可能需要合并数据
-        BookingConsolidated parsedData = bookingConsolidatedService.getMessageFromFlow(filePath);
-        
-        if (parsedData != null) {
-            // getMessageFromFlow 已经完成了入库操作，直接返回成功
-            return success();
-        }
-
-        // 4. 如果没有解析出数据，保存原表单对象
+        // 普通表单保存
         return toAjax(bookingConsolidatedService.insertBookingConsolidated(bookingConsolidated));
+    }
+
+    /**
+     * AI智能提取 - 分析文件
+     */
+    @RequiresPermissions("system:consolidated:add")
+    @PostMapping("/analyze")
+    @ResponseBody
+    public AjaxResult analyze(String filePath) {
+        try {
+            return AjaxResult.success(bookingConsolidatedService.analyzeFile(filePath));
+        } catch (Exception e) {
+            return error(e.getMessage());
+        }
+    }
+
+    /**
+     * AI智能提取 - 生成最终PDF并保存
+     */
+    @RequiresPermissions("system:consolidated:add")
+    @Log(title = "订舱与集装箱合并信息", businessType = BusinessType.INSERT)
+    @PostMapping("/generate-pdf")
+    @ResponseBody
+    public AjaxResult generatePdf(@RequestBody BookingConsolidatedDto dto) {
+        try {
+            bookingConsolidatedService.generateAndSavePdf(dto);
+            return success();
+        } catch (Exception e) {
+            return error(e.getMessage());
+        }
     }
 
     /**
