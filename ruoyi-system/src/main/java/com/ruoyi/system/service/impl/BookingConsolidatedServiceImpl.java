@@ -14,7 +14,6 @@ import com.ruoyi.common.config.RuoYiConfig;
 import com.ruoyi.common.constant.Constants;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.core.text.Convert;
-import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.system.mapper.BookingConsolidatedMapper;
 import com.ruoyi.system.domain.BookingConsolidated;
 import com.ruoyi.system.domain.BookingConsolidatedDto;
@@ -55,6 +54,9 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
 
     @Autowired
     private BookingConsolidatedMapper bookingConsolidatedMapper;
+
+    @Autowired
+    private com.ruoyi.system.mapper.BillOfLadingMapper billOfLadingMapper;
 
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
@@ -186,16 +188,21 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
         if (userData != null) {
             mergedData.putAll(userData);
         }
-        log.info("合并后的数据: {}", mergedData);
+        log.info("合并后的数据（原始）: {}", mergedData);
+
+        // 转换字段名：驼峰 -> 下划线（用于数据库保存）
+        Map<String, Object> dbData = convertCamelToUnderscore(mergedData);
+        log.info("转换后的数据（数据库格式）: {}", dbData);
 
         // 确保 booking_no 存在，如果不存在则生成一个
-        if (StringUtils.isEmpty((String) mergedData.get("booking_no"))) {
+        if (StringUtils.isEmpty((String) dbData.get("booking_no"))) {
             String generatedBookingNo = "BK" + System.currentTimeMillis();
-            mergedData.put("booking_no", generatedBookingNo);
+            dbData.put("booking_no", generatedBookingNo);
+            mergedData.put("bookingNo", generatedBookingNo); // 同步到mergedData
             log.warn("booking_no 不存在，生成默认值: {}", generatedBookingNo);
         }
 
-        // 更新缓存中的业务数据为合并后的完整数据
+        // 更新缓存中的业务数据为合并后的完整数据（保留驼峰命名用于PDF编辑）
         cachedDto.setBusinessData(mergedData);
 
         // 修改 PDF (使用模版文件，抹除旧数据，写入新数据)
@@ -209,21 +216,32 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
             throw new RuntimeException("PDF生成失败: " + e.getMessage());
         }
 
-        // 保存到数据库
-        BookingConsolidated bc = mapMapToEntity(mergedData);
-        bc.setFilePath(newPdfPath);
-        log.info("准备插入数据库，booking_no: {}", bc.getBookingNo());
-        insertBookingConsolidated(bc);
+        // 保存到数据库（使用转换后的下划线命名数据，保存到新的bill_of_lading表）
+        com.ruoyi.system.domain.BillOfLading bl = mapMapToBillOfLading(dbData);
+        bl.setFilePath(newPdfPath);
 
+        // 确保bl_no存在
+        if (StringUtils.isEmpty(bl.getBlNo())) {
+            bl.setBlNo("BL" + System.currentTimeMillis());
+        }
+
+        log.info("准备插入bill_of_lading表，bl_no: {}, booking_no: {}, 文件路径: {}",
+                bl.getBlNo(), bl.getBookingNo(), newPdfPath);
+        billOfLadingMapper.insertBillOfLading(bl);
+
+        // 为了兼容性，也返回BookingConsolidated对象（后续可以统一为BillOfLading）
+        BookingConsolidated bc = new BookingConsolidated();
+        bc.setBookingNo(bl.getBookingNo());
+        bc.setFilePath(newPdfPath);
         return bc;
     }
 
     /**
-     * 4. 仅生成PDF（不保存到数据库）
+     * 4. 仅生成PDF（不保存到数据库）- 返回字节数组用于浏览器下载
      */
     @Override
     public String generatePdfOnly(BookingConsolidatedDto userDto) {
-        log.info("仅生成PDF，UUID: {}", userDto.getUuid());
+        log.info("仅生成PDF（返回字节数组），UUID: {}", userDto.getUuid());
 
         // 从 Redis 获取缓存
         BookingConsolidatedDto cachedDto = (BookingConsolidatedDto) redisTemplate.opsForValue()
@@ -252,6 +270,7 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
         cachedDto.setBusinessData(mergedData);
 
         // 修改 PDF (使用模版文件，抹除旧数据，写入新数据)
+        // 注意：现在返回文件路径，前端下载后删除临时文件
         String newPdfPath;
         try {
             newPdfPath = PdfEditUtils.modifyPdf(templateFilePath, cachedDto);
@@ -509,5 +528,116 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
         } catch (Exception e) {
             return null;
         }
+    }
+
+    /**
+     * 将驼峰命名的Map转换为下划线命名的Map（用于数据库字段映射）
+     */
+    private Map<String, Object> convertCamelToUnderscore(Map<String, Object> camelMap) {
+        Map<String, Object> underscoreMap = new HashMap<>();
+
+        // 字段映射：驼峰 -> 下划线
+        Map<String, String> fieldMapping = new HashMap<>();
+        fieldMapping.put("bookingNo", "booking_no");
+        fieldMapping.put("shipper", "shipper");
+        fieldMapping.put("consignee", "consignee");
+        fieldMapping.put("notifyParty", "notify_party");
+        fieldMapping.put("vesselName", "vessel_name");
+        fieldMapping.put("voyageNo", "voyage_no");
+        fieldMapping.put("portOfLoading", "port_of_loading");
+        fieldMapping.put("portOfDischarge", "port_of_discharge");
+        fieldMapping.put("placeOfDelivery", "place_of_delivery");
+        fieldMapping.put("freightTerm", "freight_term");
+        fieldMapping.put("marks", "marks");
+        fieldMapping.put("description", "cargo_description");
+        fieldMapping.put("packageQuantity", "cargo_quantity");
+        fieldMapping.put("grossWeight", "cargo_gross_weight");
+        fieldMapping.put("measurement", "cargo_measurement");
+        fieldMapping.put("containerNo", "container_no");
+        fieldMapping.put("sealNo", "seal_no");
+
+        // 合并vessel_name和voyage_no为vessel_voyage
+        if (camelMap.containsKey("vesselName") && camelMap.containsKey("voyageNo")) {
+            String vesselVoyage = camelMap.get("vesselName") + " " + camelMap.get("voyageNo");
+            underscoreMap.put("vessel_voyage", vesselVoyage);
+        }
+
+        // 转换所有字段
+        for (Map.Entry<String, String> entry : fieldMapping.entrySet()) {
+            String camelKey = entry.getKey();
+            String underscoreKey = entry.getValue();
+            if (camelMap.containsKey(camelKey)) {
+                underscoreMap.put(underscoreKey, camelMap.get(camelKey));
+            }
+        }
+
+        // 保留内部字段
+        if (camelMap.containsKey("originalFilePath")) {
+            underscoreMap.put("originalFilePath", camelMap.get("originalFilePath"));
+        }
+        if (camelMap.containsKey("templateFilePath")) {
+            underscoreMap.put("templateFilePath", camelMap.get("templateFilePath"));
+        }
+
+        return underscoreMap;
+    }
+
+    /**
+     * 将 Map 转换为 BillOfLading Entity
+     */
+    private com.ruoyi.system.domain.BillOfLading mapMapToBillOfLading(Map<String, Object> map) {
+        com.ruoyi.system.domain.BillOfLading bl = new com.ruoyi.system.domain.BillOfLading();
+
+        bl.setBlNo((String) map.get("bl_no"));
+        bl.setBookingNo((String) map.get("booking_no"));
+        bl.setDocNo((String) map.get("doc_no"));
+        bl.setShipper((String) map.get("shipper"));
+        bl.setConsignee((String) map.get("consignee"));
+        bl.setNotifyParty((String) map.get("notify_party"));
+        bl.setCarrierAgent((String) map.get("carrier_agent"));
+        bl.setDeliveryAgent((String) map.get("delivery_agent"));
+        bl.setVesselVoyage((String) map.get("vessel_voyage"));
+        bl.setPlaceOfReceipt((String) map.get("place_of_receipt"));
+        bl.setPortOfLoading((String) map.get("port_of_loading"));
+        bl.setPortOfDischarge((String) map.get("port_of_discharge"));
+        bl.setPlaceOfDelivery((String) map.get("place_of_delivery"));
+        bl.setContainerSealInfo((String) map.get("container_seal_info"));
+
+        // 包装数量
+        Object pkgQty = map.get("package_quantity");
+        if (pkgQty instanceof Integer) {
+            bl.setPackageQuantity((Integer) pkgQty);
+        } else if (pkgQty instanceof String) {
+            try {
+                bl.setPackageQuantity(Integer.parseInt((String) pkgQty));
+            } catch (Exception e) {
+                log.warn("无法解析package_quantity: {}", pkgQty);
+            }
+        }
+
+        bl.setPackageUnit((String) map.get("package_unit"));
+        bl.setGoodsDescription((String) map.get("goods_description"));
+
+        // 毛重
+        Object gw = map.get("gross_weight_kgs");
+        if (gw instanceof BigDecimal) {
+            bl.setGrossWeightKgs((BigDecimal) gw);
+        } else if (gw instanceof String) {
+            bl.setGrossWeightKgs(extractBigDecimal((String) gw));
+        }
+
+        // 体积
+        Object meas = map.get("measurement_cbm");
+        if (meas instanceof BigDecimal) {
+            bl.setMeasurementCbm((BigDecimal) meas);
+        } else if (meas instanceof String) {
+            bl.setMeasurementCbm(extractBigDecimal((String) meas));
+        }
+
+        bl.setFreightTerm((String) map.get("freight_term"));
+        bl.setOriginalBlCount((String) map.get("original_bl_count"));
+        bl.setIssuePlace((String) map.get("issue_place"));
+
+        return bl;
     }
 }

@@ -53,28 +53,28 @@ public class PdfEditUtils {
 
             Map<String, FieldLocation> locations = dto.getFieldLocations();
             Map<String, Object> data = (Map<String, Object>) dto.getBusinessData();
-            
-            log.info("准备处理字段，坐标配置数量: {}, 业务数据数量: {}", 
-                locations != null ? locations.size() : 0, 
-                data != null ? data.size() : 0);
-            
+
+            log.info("准备处理字段，坐标配置数量: {}, 业务数据数量: {}",
+                    locations != null ? locations.size() : 0,
+                    data != null ? data.size() : 0);
+
             if (locations == null || locations.isEmpty()) {
                 log.warn("字段坐标配置为空，PDF将不会被修改");
                 return destPath;
             }
-            
+
             if (data == null || data.isEmpty()) {
                 log.warn("业务数据为空，PDF将不会被修改");
                 return destPath;
             }
-            
+
             int processedCount = 0;
 
             for (Map.Entry<String, FieldLocation> entry : locations.entrySet()) {
                 String fieldName = entry.getKey();
                 FieldLocation loc = entry.getValue();
                 Object value = data.get(fieldName);
-                
+
                 // 跳过null值
                 if (value == null) {
                     log.debug("字段 {} 的值为null，跳过", fieldName);
@@ -110,12 +110,12 @@ public class PdfEditUtils {
                             .setPadding(0)
                             .setTextAlignment(TextAlignment.LEFT));
                 }
-                
+
                 processedCount++;
-                log.debug("已处理字段: {} = {}, 位置: page={}, x={}, y={}, w={}, h={}", 
-                    fieldName, textValue, pageNum, loc.getX(), loc.getY(), loc.getW(), loc.getH());
+                log.debug("已处理字段: {} = {}, 位置: page={}, x={}, y={}, w={}, h={}",
+                        fieldName, textValue, pageNum, loc.getX(), loc.getY(), loc.getW(), loc.getH());
             }
-            
+
             log.info("PDF修改完成，共处理 {} 个字段", processedCount);
         } catch (Exception e) {
             log.error("PDF 修改失败: {}", e.getMessage(), e);
@@ -158,15 +158,30 @@ public class PdfEditUtils {
      * @param srcPath 源文件路径
      */
     private static String generateOutputPath(String srcPath) {
-        // 如果是 classpath 资源，输出到临时目录
-        if (srcPath.startsWith("classpath:")) {
-            String fileName = srcPath.substring(srcPath.lastIndexOf("/") + 1);
-            String baseName = fileName.substring(0, fileName.lastIndexOf("."));
-            String timestamp = String.valueOf(System.currentTimeMillis());
-            return System.getProperty("java.io.tmpdir") + File.separator + baseName + "_" + timestamp + "_modified.pdf";
-        } else {
-            // 文件系统路径，输出到同目录
-            return srcPath.substring(0, srcPath.lastIndexOf(".")) + "_modified.pdf";
+        // 统一输出到用户主目录下的pdf_output文件夹
+        String userHome = System.getProperty("user.home");
+        String outputDir = userHome + File.separator + "pdf_output";
+
+        // 创建输出目录
+        File dir = new File(outputDir);
+        if (!dir.exists()) {
+            dir.mkdirs();
+            log.info("创建PDF输出目录: {}", outputDir);
         }
+
+        // 生成文件名：原文件名_时间戳_modified.pdf
+        String fileName;
+        if (srcPath.startsWith("classpath:")) {
+            fileName = srcPath.substring(srcPath.lastIndexOf("/") + 1);
+        } else {
+            fileName = new File(srcPath).getName();
+        }
+
+        String baseName = fileName.substring(0, fileName.lastIndexOf("."));
+        String timestamp = String.valueOf(System.currentTimeMillis());
+        String outputPath = outputDir + File.separator + baseName + "_" + timestamp + "_modified.pdf";
+
+        log.info("PDF将保存到: {}", outputPath);
+        return outputPath;
     }
 }

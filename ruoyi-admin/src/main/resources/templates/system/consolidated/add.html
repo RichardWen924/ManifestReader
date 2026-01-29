@@ -282,7 +282,7 @@
                     if (result.code == 0) {
                         $.modal.msgSuccess("保存成功");
 
-                        // 提示下载
+                        // 提示下载，但不自动关闭窗口
                         var filePath = result.data ? result.data.filePath : null;
                         if (filePath) {
                             $.modal.confirm("PDF已生成，是否立即下载？", function () {
@@ -290,14 +290,19 @@
                             });
                         }
 
-                        setTimeout(function () {
-                            // 关闭当前页面或刷新父页面
-                            $.modal.close();
-                            parent.$.table.refresh();
-                        }, 1000);
+                        // 不自动关闭，由用户手动关闭
+                        // setTimeout(function () {
+                        //     $.modal.close();
+                        //     parent.$.table.refresh();
+                        // }, 1000);
                     } else {
                         $.modal.alertError(result.msg);
                     }
+                },
+                error: function (xhr, status, error) {
+                    $.modal.closeLoading();
+                    $.modal.alertError("请求失败：" + error);
+                    console.error("AJAX错误:", xhr, status, error);
                 }
             });
         }
@@ -356,10 +361,16 @@
         }
 
         function cancelAIReview() {
-            $("#ai-review-area").hide();
-            $("#form-consolidated-add").show();
-            currentUuid = null;
-            originalBusinessData = null;
+            // 只隐藏AI审查区域，保留编辑界面
+            // $("#ai-review-area").hide();
+            // $("#form-consolidated-add").show();
+
+            // 不清除数据，用户可以继续编辑
+            // currentUuid = null;
+            // originalBusinessData = null;
+
+            // 简单提示用户
+            $.modal.msg("已取消，您可以继续编辑或关闭窗口");
         }
     </script>
 </body>

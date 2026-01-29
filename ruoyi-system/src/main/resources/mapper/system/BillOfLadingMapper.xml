@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.BillOfLadingMapper">
+    
+    <resultMap type="BillOfLading" id="BillOfLadingResult">
+        <result property="id"    column="id"    />
+        <result property="blNo"    column="bl_no"    />
+        <result property="bookingNo"    column="booking_no"    />
+        <result property="docNo"    column="doc_no"    />
+        <result property="shipper"    column="shipper"    />
+        <result property="consignee"    column="consignee"    />
+        <result property="notifyParty"    column="notify_party"    />
+        <result property="carrierAgent"    column="carrier_agent"    />
+        <result property="deliveryAgent"    column="delivery_agent"    />
+        <result property="vesselVoyage"    column="vessel_voyage"    />
+        <result property="placeOfReceipt"    column="place_of_receipt"    />
+        <result property="portOfLoading"    column="port_of_loading"    />
+        <result property="portOfDischarge"    column="port_of_discharge"    />
+        <result property="placeOfDelivery"    column="place_of_delivery"    />
+        <result property="containerSealInfo"    column="container_seal_info"    />
+        <result property="packageQuantity"    column="package_quantity"    />
+        <result property="packageUnit"    column="package_unit"    />
+        <result property="goodsDescription"    column="goods_description"    />
+        <result property="grossWeightKgs"    column="gross_weight_kgs"    />
+        <result property="measurementCbm"    column="measurement_cbm"    />
+        <result property="freightTerm"    column="freight_term"    />
+        <result property="originalBlCount"    column="original_bl_count"    />
+        <result property="issuePlace"    column="issue_place"    />
+        <result property="filePath"    column="file_path"    />
+        <result property="createTime"    column="created_at"    />
+    </resultMap>
+
+    <sql id="selectBillOfLadingVo">
+        select id, bl_no, booking_no, doc_no, shipper, consignee, notify_party, carrier_agent, 
+               delivery_agent, vessel_voyage, place_of_receipt, port_of_loading, port_of_discharge, 
+               place_of_delivery, container_seal_info, package_quantity, package_unit, goods_description, 
+               gross_weight_kgs, measurement_cbm, freight_term, original_bl_count, issue_place, 
+               file_path, created_at 
+        from bill_of_lading
+    </sql>
+
+    <select id="selectBillOfLadingById" parameterType="Long" resultMap="BillOfLadingResult">
+        <include refid="selectBillOfLadingVo"/>
+        where id = #{id}
+    </select>
+
+    <select id="selectBillOfLadingByBlNo" parameterType="String" resultMap="BillOfLadingResult">
+        <include refid="selectBillOfLadingVo"/>
+        where bl_no = #{blNo}
+    </select>
+
+    <select id="selectBillOfLadingList" parameterType="BillOfLading" resultMap="BillOfLadingResult">
+        <include refid="selectBillOfLadingVo"/>
+        <where>  
+            <if test="blNo != null  and blNo != ''"> and bl_no = #{blNo}</if>
+            <if test="bookingNo != null  and bookingNo != ''"> and booking_no = #{bookingNo}</if>
+            <if test="shipper != null  and shipper != ''"> and shipper like concat('%', #{shipper}, '%')</if>
+            <if test="consignee != null  and consignee != ''"> and consignee like concat('%', #{consignee}, '%')</if>
+            <if test="vesselVoyage != null  and vesselVoyage != ''"> and vessel_voyage like concat('%', #{vesselVoyage}, '%')</if>
+            <if test="portOfLoading != null  and portOfLoading != ''"> and port_of_loading = #{portOfLoading}</if>
+            <if test="portOfDischarge != null  and portOfDischarge != ''"> and port_of_discharge = #{portOfDischarge}</if>
+        </where>
+        order by created_at desc
+    </select>
+    
+    <insert id="insertBillOfLading" parameterType="BillOfLading" useGeneratedKeys="true" keyProperty="id">
+        insert into bill_of_lading
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="blNo != null and blNo != ''">bl_no,</if>
+            <if test="bookingNo != null">booking_no,</if>
+            <if test="docNo != null">doc_no,</if>
+            <if test="serialNo != null">serial_no,</if>
+            <if test="shipper != null">shipper,</if>
+            <if test="consignee != null">consignee,</if>
+            <if test="notifyParty != null">notify_party,</if>
+            <if test="carrierAgent != null">carrier_agent,</if>
+            <if test="deliveryAgent != null">delivery_agent,</if>
+            <if test="vesselVoyage != null">vessel_voyage,</if>
+            <if test="placeOfReceipt != null">place_of_receipt,</if>
+            <if test="portOfLoading != null">port_of_loading,</if>
+            <if test="portOfDischarge != null">port_of_discharge,</if>
+            <if test="placeOfDelivery != null">place_of_delivery,</if>
+            <if test="containerSealInfo != null">container_seal_info,</if>
+            <if test="packageQuantity != null">package_quantity,</if>
+            <if test="packageUnit != null">package_unit,</if>
+            <if test="goodsDescription != null">goods_description,</if>
+            <if test="grossWeightKgs != null">gross_weight_kgs,</if>
+            <if test="measurementCbm != null">measurement_cbm,</if>
+            <if test="freightTerm != null">freight_term,</if>
+            <if test="originalBlCount != null">original_bl_count,</if>
+            <if test="issuePlace != null">issue_place,</if>
+            <if test="serviceType != null">service_type,</if>
+            <if test="revenueTons != null">revenue_tons,</if>
+            <if test="freightRate != null">freight_rate,</if>
+            <if test="prepaidAmount != null">prepaid_amount,</if>
+            <if test="collectAmount != null">collect_amount,</if>
+            <if test="payableAt != null">payable_at,</if>
+            <if test="ladenOnBoard != null">laden_on_board,</if>
+            <if test="filePath != null">file_path,</if>
+         </trim>
+         <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="blNo != null and blNo != ''">#{blNo},</if>
+            <if test="bookingNo != null">#{bookingNo},</if>
+            <if test="docNo != null">#{docNo},</if>
+            <if test="serialNo != null">#{serialNo},</if>
+            <if test="shipper != null">#{shipper},</if>
+            <if test="consignee != null">#{consignee},</if>
+            <if test="notifyParty != null">#{notifyParty},</if>
+            <if test="carrierAgent != null">#{carrierAgent},</if>
+            <if test="deliveryAgent != null">#{deliveryAgent},</if>
+            <if test="vesselVoyage != null">#{vesselVoyage},</if>
+            <if test="placeOfReceipt != null">#{placeOfReceipt},</if>
+            <if test="portOfLoading != null">#{portOfLoading},</if>
+            <if test="portOfDischarge != null">#{portOfDischarge},</if>
+            <if test="placeOfDelivery != null">#{placeOfDelivery},</if>
+            <if test="containerSealInfo != null">#{containerSealInfo},</if>
+            <if test="packageQuantity != null">#{packageQuantity},</if>
+            <if test="packageUnit != null">#{packageUnit},</if>
+            <if test="goodsDescription != null">#{goodsDescription},</if>
+            <if test="grossWeightKgs != null">#{grossWeightKgs},</if>
+            <if test="measurementCbm != null">#{measurementCbm},</if>
+            <if test="freightTerm != null">#{freightTerm},</if>
+            <if test="originalBlCount != null">#{originalBlCount},</if>
+            <if test="issuePlace != null">#{issuePlace},</if>
+            <if test="serviceType != null">#{serviceType},</if>
+            <if test="revenueTons != null">#{revenueTons},</if>
+            <if test="freightRate != null">#{freightRate},</if>
+            <if test="prepaidAmount != null">#{prepaidAmount},</if>
+            <if test="collectAmount != null">#{collectAmount},</if>
+            <if test="payableAt != null">#{payableAt},</if>
+            <if test="ladenOnBoard != null">#{ladenOnBoard},</if>
+            <if test="filePath != null">#{filePath},</if>
+         </trim>
+    </insert>
+
+    <update id="updateBillOfLading" parameterType="BillOfLading">
+        update bill_of_lading
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="blNo != null and blNo != ''">bl_no = #{blNo},</if>
+            <if test="bookingNo != null">booking_no = #{bookingNo},</if>
+            <if test="docNo != null">doc_no = #{docNo},</if>
+            <if test="serialNo != null">serial_no = #{serialNo},</if>
+            <if test="shipper != null">shipper = #{shipper},</if>
+            <if test="consignee != null">consignee = #{consignee},</if>
+            <if test="notifyParty != null">notify_party = #{notifyParty},</if>
+            <if test="carrierAgent != null">carrier_agent = #{carrierAgent},</if>
+            <if test="deliveryAgent != null">delivery_agent = #{deliveryAgent},</if>
+            <if test="vesselVoyage != null">vessel_voyage = #{vesselVoyage},</if>
+            <if test="placeOfReceipt != null">place_of_receipt = #{placeOfReceipt},</if>
+            <if test="portOfLoading != null">port_of_loading = #{portOfLoading},</if>
+            <if test="portOfDischarge != null">port_of_discharge = #{portOfDischarge},</if>
+            <if test="placeOfDelivery != null">place_of_delivery = #{placeOfDelivery},</if>
+            <if test="containerSealInfo != null">container_seal_info = #{containerSealInfo},</if>
+            <if test="packageQuantity != null">package_quantity = #{packageQuantity},</if>
+            <if test="packageUnit != null">package_unit = #{packageUnit},</if>
+            <if test="goodsDescription != null">goods_description = #{goodsDescription},</if>
+            <if test="grossWeightKgs != null">gross_weight_kgs = #{grossWeightKgs},</if>
+            <if test="measurementCbm != null">measurement_cbm = #{measurementCbm},</if>
+            <if test="freightTerm != null">freight_term = #{freightTerm},</if>
+            <if test="originalBlCount != null">original_bl_count = #{originalBlCount},</if>
+            <if test="issuePlace != null">issue_place = #{issuePlace},</if>
+            <if test="serviceType != null">service_type = #{serviceType},</if>
+            <if test="revenueTons != null">revenue_tons = #{revenueTons},</if>
+            <if test="freightRate != null">freight_rate = #{freightRate},</if>
+            <if test="prepaidAmount != null">prepaid_amount = #{prepaidAmount},</if>
+            <if test="collectAmount != null">collect_amount = #{collectAmount},</if>
+            <if test="payableAt != null">payable_at = #{payableAt},</if>
+            <if test="ladenOnBoard != null">laden_on_board = #{ladenOnBoard},</if>
+            <if test="filePath != null">file_path = #{filePath},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteBillOfLadingById" parameterType="Long">
+        delete from bill_of_lading where id = #{id}
+    </delete>
+
+    <delete id="deleteBillOfLadingByIds" parameterType="String">
+        delete from bill_of_lading where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>
