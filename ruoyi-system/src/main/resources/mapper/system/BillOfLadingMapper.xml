@@ -38,7 +38,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                place_of_delivery, container_seal_info, package_quantity, package_unit, goods_description, 
                gross_weight_kgs, measurement_cbm, freight_term, original_bl_count, issue_place, 
                file_path, created_at 
-        from bill_of_lading
+        from bill_of_lading_v3
     </sql>
 
     <select id="selectBillOfLadingById" parameterType="Long" resultMap="BillOfLadingResult">
@@ -66,7 +66,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
     
     <insert id="insertBillOfLading" parameterType="BillOfLading" useGeneratedKeys="true" keyProperty="id">
-        insert into bill_of_lading
+        insert into bill_of_lading_v3
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="blNo != null and blNo != ''">bl_no,</if>
             <if test="bookingNo != null">booking_no,</if>
@@ -136,7 +136,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </insert>
 
     <update id="updateBillOfLading" parameterType="BillOfLading">
-        update bill_of_lading
+        update bill_of_lading_v3
         <trim prefix="SET" suffixOverrides=",">
             <if test="blNo != null and blNo != ''">bl_no = #{blNo},</if>
             <if test="bookingNo != null">booking_no = #{bookingNo},</if>
@@ -174,11 +174,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </update>
 
     <delete id="deleteBillOfLadingById" parameterType="Long">
-        delete from bill_of_lading where id = #{id}
+        delete from bill_of_lading_v3 where id = #{id}
     </delete>
 
     <delete id="deleteBillOfLadingByIds" parameterType="String">
-        delete from bill_of_lading where id in 
+        delete from bill_of_lading_v3 where id in 
         <foreach item="id" collection="array" open="(" separator="," close=")">
             #{id}
         </foreach>
