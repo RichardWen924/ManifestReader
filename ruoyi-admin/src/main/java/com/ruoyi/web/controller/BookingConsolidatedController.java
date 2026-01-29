@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.List;
 import com.ruoyi.common.config.RuoYiConfig;
 import com.ruoyi.common.utils.file.FileUploadUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -28,15 +29,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 /**
  * 订舱与集装箱合并信息Controller
- * //TODO   提单号、单位
+ * //TODO 提单号、单位
  *
  * @author ruoyi
  * @date 2026-01-27
  */
 @Controller
 @RequestMapping("/system/consolidated")
-public class BookingConsolidatedController extends BaseController
-{
+public class BookingConsolidatedController extends BaseController {
     private String prefix = "system/consolidated";
 
     @Autowired
@@ -44,8 +44,7 @@ public class BookingConsolidatedController extends BaseController
 
     @RequiresPermissions("system:consolidated:view")
     @GetMapping()
-    public String consolidated()
-    {
+    public String consolidated() {
         return prefix + "/consolidated";
     }
 
@@ -55,8 +54,7 @@ public class BookingConsolidatedController extends BaseController
     @RequiresPermissions("system:consolidated:list")
     @PostMapping("/list")
     @ResponseBody
-    public TableDataInfo list(BookingConsolidated bookingConsolidated)
-    {
+    public TableDataInfo list(BookingConsolidated bookingConsolidated) {
         startPage();
         List<BookingConsolidated> list = bookingConsolidatedService.selectBookingConsolidatedList(bookingConsolidated);
         return getDataTable(list);
@@ -69,8 +67,7 @@ public class BookingConsolidatedController extends BaseController
     @Log(title = "订舱与集装箱合并信息", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     @ResponseBody
-    public AjaxResult export(BookingConsolidated bookingConsolidated)
-    {
+    public AjaxResult export(BookingConsolidated bookingConsolidated) {
         List<BookingConsolidated> list = bookingConsolidatedService.selectBookingConsolidatedList(bookingConsolidated);
         ExcelUtil<BookingConsolidated> util = new ExcelUtil<BookingConsolidated>(BookingConsolidated.class);
         return util.exportExcel(list, "订舱与集装箱合并信息数据");
@@ -81,8 +78,7 @@ public class BookingConsolidatedController extends BaseController
      */
     @RequiresPermissions("system:consolidated:add")
     @GetMapping("/add")
-    public String add()
-    {
+    public String add() {
         return prefix + "/add";
     }
 
@@ -134,10 +130,44 @@ public class BookingConsolidatedController extends BaseController
     @ResponseBody
     public AjaxResult generatePdf(@RequestBody BookingConsolidatedDto dto) {
         try {
-            bookingConsolidatedService.generateAndSavePdf(dto);
-            return success();
+            BookingConsolidated result = bookingConsolidatedService.generateAndSavePdf(dto);
+            return AjaxResult.success(result);
         } catch (Exception e) {
             return error(e.getMessage());
+        }
+    }
+
+    /**
+     * 下载生成的PDF文件
+     */
+    @RequiresPermissions("system:consolidated:add")
+    @GetMapping("/download")
+    public void downloadPdf(String filePath, javax.servlet.http.HttpServletResponse response) {
+        try {
+            if (StringUtils.isEmpty(filePath)) {
+                return;
+            }
+
+            java.io.File file = new java.io.File(filePath);
+            if (!file.exists()) {
+                return;
+            }
+
+            response.setContentType("application/pdf");
+            response.setHeader("Content-Disposition", "attachment; filename=" +
+                    java.net.URLEncoder.encode(file.getName(), "UTF-8"));
+
+            try (java.io.FileInputStream fis = new java.io.FileInputStream(file);
+                    javax.servlet.ServletOutputStream out = response.getOutputStream()) {
+                byte[] buffer = new byte[4096];
+                int bytesRead;
+                while ((bytesRead = fis.read(buffer)) != -1) {
+                    out.write(buffer, 0, bytesRead);
+                }
+                out.flush();
+            }
+        } catch (Exception e) {
+            // 记录错误日志
         }
     }
 
@@ -146,9 +176,9 @@ public class BookingConsolidatedController extends BaseController
      */
     @RequiresPermissions("system:consolidated:edit")
     @GetMapping("/edit/{bookingNo}")
-    public String edit(@PathVariable("bookingNo") String bookingNo, ModelMap mmap)
-    {
-        BookingConsolidated bookingConsolidated = bookingConsolidatedService.selectBookingConsolidatedByBookingNo(bookingNo);
+    public String edit(@PathVariable("bookingNo") String bookingNo, ModelMap mmap) {
+        BookingConsolidated bookingConsolidated = bookingConsolidatedService
+                .selectBookingConsolidatedByBookingNo(bookingNo);
         mmap.put("bookingConsolidated", bookingConsolidated);
         return prefix + "/edit";
     }
@@ -160,8 +190,7 @@ public class BookingConsolidatedController extends BaseController
     @Log(title = "订舱与集装箱合并信息", businessType = BusinessType.UPDATE)
     @PostMapping("/edit")
     @ResponseBody
-    public AjaxResult editSave(BookingConsolidated bookingConsolidated)
-    {
+    public AjaxResult editSave(BookingConsolidated bookingConsolidated) {
         return toAjax(bookingConsolidatedService.updateBookingConsolidated(bookingConsolidated));
     }
 
@@ -170,10 +199,9 @@ public class BookingConsolidatedController extends BaseController
      */
     @RequiresPermissions("system:consolidated:remove")
     @Log(title = "订舱与集装箱合并信息", businessType = BusinessType.DELETE)
-    @PostMapping( "/remove")
+    @PostMapping("/remove")
     @ResponseBody
-    public AjaxResult remove(String ids)
-    {
+    public AjaxResult remove(String ids) {
         return toAjax(bookingConsolidatedService.deleteBookingConsolidatedByBookingNos(ids));
     }
 }

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.SysPdfTemplateMapper">
+    
+    <resultMap type="SysPdfTemplate" id="SysPdfTemplateResult">
+        <result property="templateId"       column="template_id"        />
+        <result property="templateCode"     column="template_code"      />
+        <result property="templateName"     column="template_name"      />
+        <result property="templateFilePath" column="template_file_path" />
+        <result property="fieldConfig"      column="field_config"       />
+        <result property="createTime"       column="create_time"        />
+        <result property="updateTime"       column="update_time"        />
+        <result property="remark"           column="remark"             />
+    </resultMap>
+
+    <sql id="selectSysPdfTemplateVo">
+        select template_id, template_code, template_name, template_file_path, field_config, create_time, update_time, remark
+        from sys_pdf_template
+    </sql>
+
+    <select id="selectSysPdfTemplateByCode" parameterType="String" resultMap="SysPdfTemplateResult">
+        <include refid="selectSysPdfTemplateVo"/>
+        where template_code = #{templateCode}
+    </select>
+
+    <select id="selectSysPdfTemplateById" parameterType="Long" resultMap="SysPdfTemplateResult">
+        <include refid="selectSysPdfTemplateVo"/>
+        where template_id = #{templateId}
+    </select>
+
+</mapper>

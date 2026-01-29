@@ -1,20 +1,24 @@
 <!DOCTYPE html>
-<html lang="zh" xmlns:th="http://www.thymeleaf.org" >
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+
 <head>
     <th:block th:include="include :: header('新增订舱与集装箱合并信息')" />
-    <th:block th:include="include :: bootstrap-fileinput-css"/>
+    <th:block th:include="include :: bootstrap-fileinput-css" />
     <style>
         #pdf-container {
             position: relative;
             width: 100%;
             overflow: auto;
             border: 1px solid #ccc;
-            display: none; /* 默认隐藏 */
+            display: none;
+            /* 默认隐藏 */
         }
+
         .pdf-canvas {
             display: block;
             margin: 0 auto;
         }
+
         .input-overlay {
             position: absolute;
             background: rgba(255, 255, 255, 0.8);
@@ -23,6 +27,7 @@
             font-size: 12px;
             z-index: 10;
         }
+
         .ai-btn-group {
             margin-top: 10px;
         }
@@ -33,6 +38,7 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
     </script>
 </head>
+
 <body class="white-bg">
     <div class="wrapper wrapper-content animated fadeInRight ibox-content">
         <!-- 标准表单区域 -->
@@ -49,7 +55,8 @@
                             <button type="button" class="btn btn-primary" onclick="startAIAnalysis()">
                                 <i class="fa fa-magic"></i> AI 智能提取与校对
                             </button>
-                            <span class="help-block m-b-none"><i class="fa fa-info-circle"></i> 普通保存请直接点击右下角"确定"按钮；需要人工校对请点击上方 AI 按钮。</span>
+                            <span class="help-block m-b-none"><i class="fa fa-info-circle"></i>
+                                普通保存请直接点击右下角"确定"按钮；需要人工校对请点击上方 AI 按钮。</span>
                         </div>
                     </div>
                 </div>
@@ -77,11 +84,12 @@
         </div>
     </div>
     <th:block th:include="include :: footer" />
-    <th:block th:include="include :: bootstrap-fileinput-js"/>
+    <th:block th:include="include :: bootstrap-fileinput-js" />
     <script th:inline="javascript">
         var prefix = ctx + "system/consolidated"
         var currentUuid = null;
         var currentScale = 1.5; // PDF 渲染缩放比例
+        var originalBusinessData = null; // 存储原始业务数据
 
         $("#form-consolidated-add").validate({
             focusCleanup: true
@@ -121,7 +129,7 @@
                 beforeSend: function () {
                     $.modal.loading("正在进行 AI 智能提取，请稍候...");
                 },
-                success: function(result) {
+                success: function (result) {
                     $.modal.closeLoading();
                     if (result.code == 0) {
                         showAIReview(result.data, filePath);
@@ -135,156 +143,120 @@
 
         // 4. 显示 AI 校对界面
         function showAIReview(dto, filePath) {
+            console.log("收到 DTO 数据:", dto);
+            console.log("字段坐标数量:", dto.fieldLocations ? Object.keys(dto.fieldLocations).length : 0);
+            console.log("业务数据:", dto.businessData);
+
             currentUuid = dto.uuid;
+            originalBusinessData = dto.businessData; // 保存原始完整数据
             $("#ai-review-area").show();
             $("#form-consolidated-add").hide(); // 隐藏原表单
-            
+
             // 渲染 PDF 和 输入框
             renderPdfWithOverlays(filePath, dto);
         }
 
-        // 5. 渲染 PDF 和 覆盖层
+        // 5. 渲染 PDF 和 数据编辑表单
         async function renderPdfWithOverlays(url, dto) {
             var container = document.getElementById('pdf-container');
             container.innerHTML = ''; // 清空
             container.style.display = 'block';
 
-            // 处理 URL (如果是相对路径，加上 ctx)
-            // 注意：ctx 通常以 / 结尾，url 如果以 / 开头需要处理
-            var pdfUrl = url;
-            if (url.indexOf("http") !== 0) {
-                 // 简单处理，假设 common/upload 返回的是 /profile/...
-                 // 需要替换为 server 地址，或者直接用相对路径
-                 // 若 ctx 是 /ruoyi/，url 是 /profile/upload... -> /ruoyi/profile/upload...
-                 // 这里直接用 url 尝试，通常浏览器能解析
-            }
-
-            var loadingTask = pdfjsLib.getDocument(pdfUrl);
-            var pdf = await loadingTask.promise;
-
-            // 遍历所有页面 (目前只演示第一页，或者根据 DTO 里的 page 渲染)
-            // 为了简单，我们只渲染第一页，假设所有数据都在第一页
-            // 如果需要多页，需要循环
-            var page = await pdf.getPage(1);
-            
-            var viewport = page.getViewport({ scale: currentScale });
-            
-            var canvasWrapper = document.createElement('div');
-            canvasWrapper.style.position = 'relative';
-            canvasWrapper.style.width = viewport.width + 'px';
-            canvasWrapper.style.height = viewport.height + 'px';
-            canvasWrapper.style.margin = '0 auto';
-            
-            var canvas = document.createElement('canvas');
-            canvas.className = 'pdf-canvas';
-            canvas.height = viewport.height;
-            canvas.width = viewport.width;
-            
-            var renderContext = {
-                canvasContext: canvas.getContext('2d'),
-                viewport: viewport
-            };
-            await page.render(renderContext).promise;
-            
-            canvasWrapper.appendChild(canvas);
-            container.appendChild(canvasWrapper);
-
-            // 渲染输入框
             var locations = dto.fieldLocations || {};
             var data = dto.businessData || {};
 
-            // 遍历 locations 渲染输入框
-            // 如果没有 location，则不显示 overlay (或者显示在侧边栏，这里暂不实现侧边栏)
-            for (var key in locations) {
-                var loc = locations[key];
-                if (loc && loc.page == 1) { // 只处理第一页
-                    var input = document.createElement('input');
-                    input.type = 'text';
-                    input.className = 'input-overlay';
-                    input.dataset.key = key; // 绑定字段名
-                    input.value = data[key] || '';
-                    
-                    // 坐标转换: PDF 坐标 (x, y, w, h) -> Canvas 坐标
-                    // PDF 坐标原点在左下角，Canvas 在左上角
-                    // y_canvas = (page_height - y_pdf - h_pdf) * scale
-                    var x_canvas = loc.x * currentScale;
-                    var y_canvas = (viewport.height / currentScale - loc.y - loc.h) * currentScale; 
-                    // 注意：iText 坐标 y 是底部起，viewport.height 是总高度
-                    // page.getViewport 返回的 viewport 已经处理了翻转吗？
-                    // PDF.js 的 viewport.height 是基于 scale 的。
-                    // 原始 PDF 高度 = viewport.height / scale
-                    // iText y 是从底部开始。
-                    // PDF.js 渲染通常是从顶部开始。
-                    // 公式：Top = (PageHeight - y - h) * scale
-                    // Wait, iText rect: x, y, w, h. y is bottom-left of rect.
-                    // So Top of rect in PDF space = y + h.
-                    // Distance from Top of Page = PageHeight - (y + h).
-                    // So Top in CSS = (PageHeight - y - h) * scale.
-                    // Let's verify PageHeight.
-                    // viewport.viewBox gives [0, 0, w, h] usually.
-                    
-                    // 修正：使用 viewport.rawOffsetY 等参数可能更复杂，这里用简单公式
-                    // 假设 PDF 页面大小标准
-                    var pageHeight = viewport.viewBox[3]; // 原始高度
-                    var top = (pageHeight - loc.y - loc.h) * currentScale;
-                    
-                    input.style.left = (loc.x * currentScale) + 'px';
-                    input.style.top = top + 'px';
-                    input.style.width = (loc.w * currentScale) + 'px';
-                    input.style.height = (loc.h * currentScale) + 'px';
-                    
-                    canvasWrapper.appendChild(input);
+            console.log("开始渲染，字段坐标数量:", Object.keys(locations).length);
+            console.log("业务数据:", data);
+
+            // 尝试渲染PDF（可选，失败也不影响表单显示）
+            try {
+                if (url && typeof pdfjsLib !== 'undefined') {
+                    var pdfUrl = url;
+                    var loadingTask = pdfjsLib.getDocument(pdfUrl);
+                    var pdf = await loadingTask.promise;
+                    var page = await pdf.getPage(1);
+                    var viewport = page.getViewport({ scale: currentScale });
+
+                    var canvasWrapper = document.createElement('div');
+                    canvasWrapper.style.position = 'relative';
+                    canvasWrapper.style.width = viewport.width + 'px';
+                    canvasWrapper.style.height = viewport.height + 'px';
+                    canvasWrapper.style.margin = '0 auto';
+
+                    var canvas = document.createElement('canvas');
+                    canvas.className = 'pdf-canvas';
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+
+                    await page.render({
+                        canvasContext: canvas.getContext('2d'),
+                        viewport: viewport
+                    }).promise;
+
+                    canvasWrapper.appendChild(canvas);
+                    container.appendChild(canvasWrapper);
+                    console.log("PDF渲染成功");
                 }
+            } catch (e) {
+                console.warn("PDF渲染失败，但不影响字段编辑:", e);
             }
-            
-            // 如果没有坐标 (即 Dify 没返回)，我们可以在这里添加一个默认的表单列表供编辑
-            // (用户需求是 overlay，如果没坐标就无法 overlay，这里仅做容错)
-            if (Object.keys(locations).length === 0) {
-                var formHtml = '<div style="padding:10px; background:#f9f9f9;"><h4>未识别到坐标，请直接编辑数据：</h4>';
-                for(var k in data) {
-                     formHtml += '<div class="form-group"><label>' + k + '</label><input type="text" class="form-control manual-input" data-key="' + k + '" value="' + (data[k]||'') + '"></div>';
+
+            // 始终显示表单编辑区域
+            var formHtml = '<div class="panel panel-default" style="margin: 20px;">';
+            formHtml += '<div class="panel-heading"><h4>数据编辑</h4></div>';
+            formHtml += '<div class="panel-body"><form class="form-horizontal">';
+
+            var fieldLabels = {
+                'booking_no': '提单号', 'shipper': '发货人', 'consignee': '收货人',
+                'notify_party': '通知方', 'vessel_voyage': '船名航次',
+                'port_of_loading': '装货港', 'port_of_discharge': '卸货港',
+                'place_of_delivery': '交货地', 'cargo_description': '货物描述',
+                'cargo_quantity': '货物数量', 'cargo_gross_weight': '毛重',
+                'cargo_measurement': '体积', 'container_no': '集装箱号', 'seal_no': '封条号'
+            };
+
+            for (var k in data) {
+                if (k === 'originalFilePath' || k === 'templateFilePath') continue;
+                var label = fieldLabels[k] || k;
+                var value = data[k] || '';
+                formHtml += '<div class="form-group">';
+                formHtml += '<label class="col-sm-3 control-label">' + label + ':</label>';
+                formHtml += '<div class="col-sm-8">';
+                if (k === 'cargo_description' || k === 'shipper' || k === 'consignee' || k === 'notify_party') {
+                    formHtml += '<textarea class="form-control field-input" data-key="' + k + '" rows="3">' + value + '</textarea>';
+                } else {
+                    formHtml += '<input type="text" class="form-control field-input" data-key="' + k + '" value="' + value + '">';
                 }
-                formHtml += '</div>';
-                $("#pdf-container").prepend(formHtml);
+                formHtml += '</div></div>';
             }
+            formHtml += '</form></div></div>';
+            $(container).append(formHtml);
+            console.log("字段渲染完成，共", Object.keys(data).length - 2, "个字段");
         }
 
         // 6. 确认并生成
         function confirmAIResult() {
-            if (!currentUuid) return;
+            if (!currentUuid) {
+                $.modal.alertWarning("会话已失效");
+                return;
+            }
+            if (!originalBusinessData) {
+                $.modal.alertWarning("原始数据丢失，请重新分析");
+                return;
+            }
 
-            var updatedData = {};
-            
-            // 收集 Overlay 的数据
-            $(".input-overlay").each(function() {
+            // 从原始数据开始，避免丢失任何字段
+            var updatedData = $.extend(true, {}, originalBusinessData);
+
+            // 收集所有字段输入框的数据
+            $(".field-input").each(function () {
                 var key = $(this).data("key");
                 var val = $(this).val();
                 updatedData[key] = val;
             });
 
-            // 收集 Manual Input 的数据 (如果有)
-            $(".manual-input").each(function() {
-                var key = $(this).data("key");
-                var val = $(this).val();
-                updatedData[key] = val;
-            });
+            console.log("提交的完整数据:", updatedData);
 
-            // 如果没有任何输入框被渲染（可能是因为没有坐标），则使用原始 data
-            // 这里我们应该把原始 data 也 merge 进来吗？
-            // 最好是只更新修改过的。但在 generatePdf 里我们是用 updatedData 覆盖 cachedData
-            // 所以这里最好包含所有字段。
-            // 由于 input-overlay 只渲染了有坐标的字段，可能会丢失无坐标的字段。
-            // 这是一个潜在 bug。
-            // 解决方案：我们应该维护一份完整的 data 对象，在编辑时更新它。
-            // 但为了简化，假设所有重要字段都有坐标或都在 Manual Input 中。
-            // 或者，我们假设后端 merge 逻辑是 putAll。
-            // 检查后端：cachedDto.setBusinessData(userDto.getBusinessData()); -> 这是直接替换！
-            // 所以前端必须传回完整数据。
-            // 修正：confirmAIResult 时，应该基于原始 dto.businessData 进行更新。
-            // 但这里我拿不到原始 dto 了 (除非存全局变量)。
-            // 让我们把原始 data 存在 DOM 或变量里。
-            // 重新修改 showAIReview 保存 globalData
-            
             // 发送请求
             var postData = {
                 uuid: currentUuid,
@@ -299,11 +271,20 @@
                 beforeSend: function () {
                     $.modal.loading("正在生成最终 PDF 并保存...");
                 },
-                success: function(result) {
+                success: function (result) {
                     $.modal.closeLoading();
                     if (result.code == 0) {
                         $.modal.msgSuccess("保存成功");
-                        setTimeout(function() {
+
+                        // 提示下载
+                        var filePath = result.data ? result.data.filePath : null;
+                        if (filePath) {
+                            $.modal.confirm("PDF已生成，是否立即下载？", function () {
+                                window.location.href = ctx + "system/consolidated/download?filePath=" + encodeURIComponent(filePath);
+                            });
+                        }
+
+                        setTimeout(function () {
                             // 关闭当前页面或刷新父页面
                             $.modal.close();
                             parent.$.table.refresh();
@@ -319,7 +300,9 @@
             $("#ai-review-area").hide();
             $("#form-consolidated-add").show();
             currentUuid = null;
+            originalBusinessData = null;
         }
     </script>
 </body>
+
 </html>

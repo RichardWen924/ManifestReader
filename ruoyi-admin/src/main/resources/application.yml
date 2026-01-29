@@ -71,7 +71,8 @@ spring:
   devtools:
     restart:
       # 热部署开关
-      enabled: true
+      enabled: false
+
   redis:
     host: localhost
     port: 6379
@@ -151,3 +152,4 @@ csrf:
 swagger:
   # 是否开启swagger
   enabled: true
+

@@ -45,20 +45,23 @@ import org.springframework.web.client.RestTemplate;
  * @date 2026-01-27
  */
 @Service
-public class BookingConsolidatedServiceImpl implements IBookingConsolidatedService
-{
+public class BookingConsolidatedServiceImpl implements IBookingConsolidatedService {
     private static final Logger log = LoggerFactory.getLogger(BookingConsolidatedServiceImpl.class);
 
     private static final String DIFY_API_KEY_DIRECT = "app-TWO0gviA2zkp06u86rmEc2Ns";
     private static final String DIFY_API_KEY_ANALYZE = "app-qFk49MpWcQKiqY41Q7IdDwIj";
     private static final String DIFY_BASE_URL = "http://localhost/v1";
     private static final String REDIS_PREFIX = "pdf_edit:";
+    private static final String DEFAULT_TEMPLATE_CODE = "booking_standard";
 
     @Autowired
     private BookingConsolidatedMapper bookingConsolidatedMapper;
 
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
+
+    @Autowired
+    private com.ruoyi.system.mapper.SysPdfTemplateMapper sysPdfTemplateMapper;
 
     @Override
     public BookingConsolidated selectBookingConsolidatedByBookingNo(String bookingNo) {
@@ -114,32 +117,44 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
      */
     @Override
     public BookingConsolidatedDto analyzeFile(String filePath) {
+        log.info("开始分析文件: {}", filePath);
+
         // 调用 Dify 获取 JSON 数据 (使用分析模式的 API Key)
         JSONObject dataJson = callDifyWorkflow(filePath, DIFY_API_KEY_ANALYZE);
         if (dataJson == null) {
             throw new RuntimeException("Dify 识别失败");
         }
+        log.info("Dify 识别结果: {}", dataJson.toJSONString());
+
+        // 从数据库加载 PDF 模版配置
+        com.ruoyi.system.domain.SysPdfTemplate template = sysPdfTemplateMapper
+                .selectSysPdfTemplateByCode(DEFAULT_TEMPLATE_CODE);
+        if (template == null) {
+            throw new RuntimeException("PDF 模版配置不存在: " + DEFAULT_TEMPLATE_CODE);
+        }
 
         BookingConsolidatedDto dto = new BookingConsolidatedDto();
-        
+
         // 提取业务数据 (Map形式，方便前端回显)
-        dto.setBusinessData(mapJsonToMap(dataJson));
-        
-        // 提取坐标信息 (若 Dify 返回了坐标)
-        dto.setFieldLocations(extractLocations(dataJson));
+        Map<String, Object> businessData = mapJsonToMap(dataJson);
+        dto.setBusinessData(businessData);
+
+        // 从模版配置中提取坐标信息
+        Map<String, FieldLocation> fieldLocations = parseTemplateFieldConfig(template.getFieldConfig());
+        dto.setFieldLocations(fieldLocations);
+        log.info("解析到 {} 个字段坐标", fieldLocations.size());
 
         // 生成 UUID 并缓存到 Redis (30分钟有效期)
         String uuid = UUID.randomUUID().toString();
         dto.setUuid(uuid);
-        
-        // 缓存原始文件路径，方便后续生成 PDF 时使用 (放入 businessData 或单独缓存均可，这里暂存 Redis 方便)
-        // 注意：DTO 序列化需要 RedisTemplate 配置正确
-        // 这里我们将 filePath 也放入 businessData 或者 DTO 的某个字段，为了简单，我们假定前端会传回 filePath 或者我们在 Redis 里存一下
-        // 修改 DTO 结构不太好，我们把 filePath 放入 businessData 的隐藏字段
-        ((Map<String, Object>) dto.getBusinessData()).put("originalFilePath", filePath);
+
+        // 缓存原始文件路径和模版路径，方便后续生成 PDF 时使用
+        businessData.put("originalFilePath", filePath);
+        businessData.put("templateFilePath", template.getTemplateFilePath());
 
         redisTemplate.opsForValue().set(REDIS_PREFIX + uuid, dto, 30, TimeUnit.MINUTES);
-        
+        log.info("分析完成，UUID: {}, 业务数据: {}", uuid, businessData);
+
         return dto;
     }
 
@@ -149,32 +164,56 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
     @Override
     @Transactional(rollbackFor = Exception.class)
     public BookingConsolidated generateAndSavePdf(BookingConsolidatedDto userDto) {
-        // 从 Redis 获取缓存 (主要为了获取原始文件路径和原始坐标)
-        BookingConsolidatedDto cachedDto = (BookingConsolidatedDto) redisTemplate.opsForValue().get(REDIS_PREFIX + userDto.getUuid());
+        log.info("开始生成PDF，UUID: {}", userDto.getUuid());
+
+        // 从 Redis 获取缓存 (主要为了获取模版路径和原始坐标)
+        BookingConsolidatedDto cachedDto = (BookingConsolidatedDto) redisTemplate.opsForValue()
+                .get(REDIS_PREFIX + userDto.getUuid());
         if (cachedDto == null) {
             throw new RuntimeException("会话已过期，请重新上传文件");
         }
 
-        // 获取原始文件路径
+        // 获取 PDF 模版文件路径
         Map<String, Object> cachedData = (Map<String, Object>) cachedDto.getBusinessData();
-        String originalFilePath = (String) cachedData.get("originalFilePath");
+        String templateFilePath = (String) cachedData.get("templateFilePath");
 
-        // 更新缓存中的业务数据为用户提交的数据
-        cachedDto.setBusinessData(userDto.getBusinessData());
-        
-        // 修改 PDF (抹除旧数据，写入新数据)
-        // 注意：cachedDto 中包含 fieldLocations (原始坐标)，userDto 中包含 businessData (新值)
-        String newPdfPath = originalFilePath;
+        if (StringUtils.isEmpty(templateFilePath)) {
+            throw new RuntimeException("PDF 模版路径不存在");
+        }
+
+        // 合并数据：从缓存获取完整数据，然后用用户编辑的数据覆盖
+        Map<String, Object> mergedData = new HashMap<>(cachedData);
+        Map<String, Object> userData = (Map<String, Object>) userDto.getBusinessData();
+        if (userData != null) {
+            mergedData.putAll(userData);
+        }
+        log.info("合并后的数据: {}", mergedData);
+
+        // 确保 booking_no 存在，如果不存在则生成一个
+        if (StringUtils.isEmpty((String) mergedData.get("booking_no"))) {
+            String generatedBookingNo = "BK" + System.currentTimeMillis();
+            mergedData.put("booking_no", generatedBookingNo);
+            log.warn("booking_no 不存在，生成默认值: {}", generatedBookingNo);
+        }
+
+        // 更新缓存中的业务数据为合并后的完整数据
+        cachedDto.setBusinessData(mergedData);
+
+        // 修改 PDF (使用模版文件，抹除旧数据，写入新数据)
+        // 注意：cachedDto 中包含 fieldLocations (模版坐标)，mergedData 中包含完整的业务数据
+        String newPdfPath;
         try {
-            newPdfPath = PdfEditUtils.modifyPdf(originalFilePath, cachedDto);
+            newPdfPath = PdfEditUtils.modifyPdf(templateFilePath, cachedDto);
+            log.info("PDF生成成功: {}", newPdfPath);
         } catch (IOException e) {
             log.error("PDF生成失败", e);
             throw new RuntimeException("PDF生成失败: " + e.getMessage());
         }
 
         // 保存到数据库
-        BookingConsolidated bc = mapMapToEntity((Map<String, Object>) userDto.getBusinessData());
+        BookingConsolidated bc = mapMapToEntity(mergedData);
         bc.setFilePath(newPdfPath);
+        log.info("准备插入数据库，booking_no: {}", bc.getBookingNo());
         insertBookingConsolidated(bc);
 
         return bc;
@@ -186,7 +225,8 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
      * 调用 Dify 工作流并解析结果
      */
     private JSONObject callDifyWorkflow(String filePath, String apiKey) {
-        if (StringUtils.isEmpty(filePath)) return null;
+        if (StringUtils.isEmpty(filePath))
+            return null;
 
         // 处理本地路径
         String localPath = filePath;
@@ -231,7 +271,8 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
             workflowHeaders.set("Authorization", "Bearer " + apiKey);
 
             JSONObject fileInput = new JSONObject();
-            fileInput.put("type", localPath.toLowerCase().matches(".*\\.(jpg|jpeg|png|gif|bmp|webp)$") ? "image" : "document");
+            fileInput.put("type",
+                    localPath.toLowerCase().matches(".*\\.(jpg|jpeg|png|gif|bmp|webp)$") ? "image" : "document");
             fileInput.put("transfer_method", "local_file");
             fileInput.put("upload_file_id", uploadFileId);
 
@@ -244,7 +285,8 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
             workflowBody.put("user", "user-system");
 
             HttpEntity<String> workflowRequest = new HttpEntity<>(workflowBody.toJSONString(), workflowHeaders);
-            ResponseEntity<String> workflowResponse = restTemplate.postForEntity(workflowUrl, workflowRequest, String.class);
+            ResponseEntity<String> workflowResponse = restTemplate.postForEntity(workflowUrl, workflowRequest,
+                    String.class);
 
             if (!workflowResponse.getStatusCode().is2xxSuccessful()) {
                 log.error("Dify工作流调用失败: {}", workflowResponse.getBody());
@@ -254,7 +296,7 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
             // 3. 解析结果
             JSONObject workflowResult = JSON.parseObject(workflowResponse.getBody());
             JSONObject outputs = workflowResult.getJSONObject("data").getJSONObject("outputs");
-            
+
             if (outputs.containsKey("text")) {
                 String jsonText = outputs.getString("text");
                 if (jsonText.contains("```json")) {
@@ -292,14 +334,18 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
         bc.setPlaceOfDelivery((String) map.get("place_of_delivery"));
         bc.setCargoDescription((String) map.get("cargo_description"));
         bc.setCargoQuantity((String) map.get("cargo_quantity"));
-        
+
         Object gw = map.get("cargo_gross_weight");
-        if (gw instanceof BigDecimal) bc.setCargoGrossWeight((BigDecimal) gw);
-        else if (gw instanceof String) bc.setCargoGrossWeight(extractBigDecimal((String) gw));
-        
+        if (gw instanceof BigDecimal)
+            bc.setCargoGrossWeight((BigDecimal) gw);
+        else if (gw instanceof String)
+            bc.setCargoGrossWeight(extractBigDecimal((String) gw));
+
         Object meas = map.get("cargo_measurement");
-        if (meas instanceof BigDecimal) bc.setCargoMeasurement((BigDecimal) meas);
-        else if (meas instanceof String) bc.setCargoMeasurement(extractBigDecimal((String) meas));
+        if (meas instanceof BigDecimal)
+            bc.setCargoMeasurement((BigDecimal) meas);
+        else if (meas instanceof String)
+            bc.setCargoMeasurement(extractBigDecimal((String) meas));
 
         bc.setContainerNo((String) map.get("container_no"));
         bc.setSealNo((String) map.get("seal_no"));
@@ -311,7 +357,7 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
      */
     private Map<String, Object> mapJsonToMap(JSONObject dataJson) {
         Map<String, Object> map = new HashMap<>();
-        
+
         map.put("booking_no", dataJson.getString("booking_no"));
         map.put("shipper", dataJson.getString("shipper"));
         map.put("consignee", dataJson.getString("consignee"));
@@ -341,25 +387,41 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
     }
 
     /**
-     * 提取坐标信息 (模拟或从 JSON 提取)
+     * 解析模版字段配置 JSON
+     * 格式: {"field_name": {"page": 1, "x": 100, "y": 200, "w": 150, "h": 20}}
      */
-    private Map<String, FieldLocation> extractLocations(JSONObject dataJson) {
+    private Map<String, FieldLocation> parseTemplateFieldConfig(String fieldConfigJson) {
         Map<String, FieldLocation> locations = new HashMap<>();
-        // 这里的逻辑取决于 Dify 是否返回坐标。
-        // 假设 Dify 返回的每个字段如果是个对象 {value: "...", rect: [x,y,w,h]} 则可以提取
-        // 目前如果 Dify 只返回纯文本 JSON，我们无法准确获取坐标。
-        // 为了演示，我们检查是否有 suffix "_rect" 或 "_bbox" 的字段，或者字段本身是对象
-        
-        // 遍历 mapJsonToMap 的 key，尝试寻找对应的坐标
-        // 暂时假设没有坐标返回，避免空指针。如果未来 Dify 升级支持坐标，这里需要解析。
-        // 用户目前的 Prompt 可能不支持坐标。
-        // 但为了 PdfEditUtils 不报错，我们不需要放入无效坐标。PdfEditUtils 会跳过 null location。
-        
+
+        if (StringUtils.isEmpty(fieldConfigJson)) {
+            return locations;
+        }
+
+        try {
+            JSONObject config = JSON.parseObject(fieldConfigJson);
+            for (Map.Entry<String, Object> entry : config.entrySet()) {
+                String fieldName = entry.getKey();
+                JSONObject locObj = (JSONObject) entry.getValue();
+
+                FieldLocation loc = new FieldLocation();
+                loc.setPage(locObj.getIntValue("page"));
+                loc.setX(locObj.getFloatValue("x"));
+                loc.setY(locObj.getFloatValue("y"));
+                loc.setW(locObj.getFloatValue("w"));
+                loc.setH(locObj.getFloatValue("h"));
+
+                locations.put(fieldName, loc);
+            }
+        } catch (Exception e) {
+            log.error("解析模版字段配置失败", e);
+        }
+
         return locations;
     }
 
     private BigDecimal extractBigDecimal(String val) {
-        if (StringUtils.isEmpty(val)) return null;
+        if (StringUtils.isEmpty(val))
+            return null;
         try {
             // 提取数字部分 (移除 "KGS", "CBM" 等)
             String num = val.replaceAll("[^0-9.]", "");
