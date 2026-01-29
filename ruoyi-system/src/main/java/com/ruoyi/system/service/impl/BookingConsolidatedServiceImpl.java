@@ -138,7 +138,10 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
 
         // 提取业务数据 (Map形式，方便前端回显)
         Map<String, Object> businessData = mapJsonToMap(dataJson);
-        dto.setBusinessData(businessData);
+
+        // 转换为驼峰命名供前端使用
+        Map<String, Object> camelCaseData = convertToCamelCase(businessData);
+        dto.setBusinessData(camelCaseData);
 
         // 从模版配置中提取坐标信息
         Map<String, FieldLocation> fieldLocations = parseTemplateFieldConfig(template.getFieldConfig());
@@ -150,11 +153,11 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
         dto.setUuid(uuid);
 
         // 缓存原始文件路径和模版路径，方便后续生成 PDF 时使用
-        businessData.put("originalFilePath", filePath);
-        businessData.put("templateFilePath", template.getTemplateFilePath());
+        camelCaseData.put("originalFilePath", filePath);
+        camelCaseData.put("templateFilePath", template.getTemplateFilePath());
 
         redisTemplate.opsForValue().set(REDIS_PREFIX + uuid, dto, 30, TimeUnit.MINUTES);
-        log.info("分析完成，UUID: {}, 业务数据: {}", uuid, businessData);
+        log.info("分析完成，UUID: {}, 业务数据（驼峰命名）: {}", uuid, camelCaseData);
 
         return dto;
     }
@@ -489,11 +492,23 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
             }
         }
 
-        // vessel_voyage字段需要合并vesselName和voyageNo
+        // 特殊处理：合并vesselName和voyageNo（智能检测避免重复）
         if (map.containsKey("vessel_name") && map.containsKey("voyage_no")) {
-            String vesselVoyage = map.get("vessel_name") + " " + map.get("voyage_no");
-            map.put("vessel_voyage", vesselVoyage);
-            log.debug("合并字段: vessel_voyage = {}", vesselVoyage);
+            String vessel = String.valueOf(map.get("vessel_name"));
+            String voyage = String.valueOf(map.get("voyage_no"));
+
+            // 检查vesselName是否已包含voyageNo（避免重复拼接）
+            if (!vessel.contains(voyage)) {
+                map.put("vessel_voyage", (vessel + " " + voyage).trim());
+                log.debug("合并字段: vessel_voyage = {} + {}", vessel, voyage);
+            } else {
+                map.put("vessel_voyage", vessel.trim());
+                log.debug("vesselName已包含航次，直接使用: vessel_voyage = {}", vessel);
+            }
+        } else if (map.containsKey("vessel_name")) {
+            map.put("vessel_voyage", map.get("vessel_name"));
+        } else if (map.containsKey("voyage_no")) {
+            map.put("vessel_voyage", map.get("voyage_no"));
         }
 
         log.info("映射完成，共提取 {} 个字段", map.size());
@@ -732,5 +747,61 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
         bl.setIssuePlace((String) map.get("issue_place"));
 
         return bl;
+    }
+
+    /**
+     * 将下划线命名转换为驼峰命名（用于前端显示）
+     */
+    private Map<String, Object> convertToCamelCase(Map<String, Object> snakeMap) {
+        Map<String, Object> camelMap = new HashMap<>();
+
+        Map<String, String> fieldMapping = new HashMap<>();
+        fieldMapping.put("bl_no", "blNo");
+        fieldMapping.put("booking_no", "bookingNo");
+        fieldMapping.put("doc_no", "docNo");
+        fieldMapping.put("serial_no", "serialNo");
+        fieldMapping.put("shipper", "shipper");
+        fieldMapping.put("consignee", "consignee");
+        fieldMapping.put("notify_party", "notifyParty");
+        fieldMapping.put("carrier_agent", "carrierAgent");
+        fieldMapping.put("delivery_agent", "deliveryAgent");
+        fieldMapping.put("vessel_voyage", "vesselVoyage");
+        fieldMapping.put("vessel_name", "vesselName");
+        fieldMapping.put("voyage_no", "voyageNo");
+        fieldMapping.put("place_of_receipt", "placeOfReceipt");
+        fieldMapping.put("port_of_loading", "portOfLoading");
+        fieldMapping.put("port_of_discharge", "portOfDischarge");
+        fieldMapping.put("place_of_delivery", "placeOfDelivery");
+        fieldMapping.put("container_seal_info", "containerSealInfo");
+        fieldMapping.put("container_no", "containerNo");
+        fieldMapping.put("seal_no", "sealNo");
+        fieldMapping.put("package_quantity", "packageQuantity");
+        fieldMapping.put("package_unit", "packageUnit");
+        fieldMapping.put("goods_description", "goodsDescription");
+        fieldMapping.put("gross_weight_kgs", "grossWeightKgs");
+        fieldMapping.put("gross_weight", "grossWeight");
+        fieldMapping.put("measurement_cbm", "measurementCbm");
+        fieldMapping.put("measurement", "measurement");
+        fieldMapping.put("service_type", "serviceType");
+        fieldMapping.put("revenue_tons", "revenueTons");
+        fieldMapping.put("freight_term", "freightTerm");
+        fieldMapping.put("freight_rate", "freightRate");
+        fieldMapping.put("prepaid_amount", "prepaidAmount");
+        fieldMapping.put("collect_amount", "collectAmount");
+        fieldMapping.put("payable_at", "payableAt");
+        fieldMapping.put("original_bl_count", "originalBlCount");
+        fieldMapping.put("issue_place", "issuePlace");
+        fieldMapping.put("laden_on_board", "ladenOnBoard");
+        fieldMapping.put("originalFilePath", "originalFilePath");
+        fieldMapping.put("templateFilePath", "templateFilePath");
+
+        for (Map.Entry<String, Object> entry : snakeMap.entrySet()) {
+            String snakeKey = entry.getKey();
+            String camelKey = fieldMapping.getOrDefault(snakeKey, snakeKey);
+            camelMap.put(camelKey, entry.getValue());
+        }
+
+        log.debug("字段名转换：{} 个字段从snake_case转为camelCase", camelMap.size());
+        return camelMap;
     }
 }
