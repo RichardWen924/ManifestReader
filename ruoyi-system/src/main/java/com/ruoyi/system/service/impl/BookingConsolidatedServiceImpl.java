@@ -431,23 +431,38 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
 
         // 字段映射：Dify驼峰命名 -> 数据库下划线命名
         Map<String, String> fieldMapping = new HashMap<>();
+        fieldMapping.put("blNo", "bl_no");
         fieldMapping.put("bookingNo", "booking_no");
+        fieldMapping.put("docNo", "doc_no");
+        fieldMapping.put("serialNo", "serial_no");
         fieldMapping.put("shipper", "shipper");
         fieldMapping.put("consignee", "consignee");
         fieldMapping.put("notifyParty", "notify_party");
+        fieldMapping.put("carrierAgent", "carrier_agent");
+        fieldMapping.put("deliveryAgent", "delivery_agent");
         fieldMapping.put("vesselName", "vessel_name");
         fieldMapping.put("voyageNo", "voyage_no");
+        fieldMapping.put("placeOfReceipt", "place_of_receipt");
         fieldMapping.put("portOfLoading", "port_of_loading");
         fieldMapping.put("portOfDischarge", "port_of_discharge");
         fieldMapping.put("placeOfDelivery", "place_of_delivery");
-        fieldMapping.put("freightTerm", "freight_term");
-        fieldMapping.put("marks", "marks");
-        fieldMapping.put("description", "cargo_description");
-        fieldMapping.put("packageQuantity", "cargo_quantity");
-        fieldMapping.put("grossWeight", "cargo_gross_weight");
-        fieldMapping.put("measurement", "cargo_measurement");
         fieldMapping.put("containerNo", "container_no");
         fieldMapping.put("sealNo", "seal_no");
+        fieldMapping.put("packageQuantity", "package_quantity");
+        fieldMapping.put("description", "goods_description");
+        fieldMapping.put("marks", "goods_description");
+        fieldMapping.put("grossWeight", "gross_weight");
+        fieldMapping.put("measurement", "measurement");
+        fieldMapping.put("serviceType", "service_type");
+        fieldMapping.put("revenueTons", "revenue_tons");
+        fieldMapping.put("freightTerm", "freight_term");
+        fieldMapping.put("freightRate", "freight_rate");
+        fieldMapping.put("prepaidAmount", "prepaid_amount");
+        fieldMapping.put("collectAmount", "collect_amount");
+        fieldMapping.put("payableAt", "payable_at");
+        fieldMapping.put("originalBlCount", "original_bl_count");
+        fieldMapping.put("issuePlace", "issue_place");
+        fieldMapping.put("ladenOnBoard", "laden_on_board");
 
         // 遍历映射表，从JSON提取数据
         for (Map.Entry<String, String> entry : fieldMapping.entrySet()) {
@@ -538,36 +553,107 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
 
         // 字段映射：驼峰 -> 下划线
         Map<String, String> fieldMapping = new HashMap<>();
+        fieldMapping.put("blNo", "bl_no");
         fieldMapping.put("bookingNo", "booking_no");
+        fieldMapping.put("docNo", "doc_no");
+        fieldMapping.put("serialNo", "serial_no");
         fieldMapping.put("shipper", "shipper");
         fieldMapping.put("consignee", "consignee");
         fieldMapping.put("notifyParty", "notify_party");
-        fieldMapping.put("vesselName", "vessel_name");
-        fieldMapping.put("voyageNo", "voyage_no");
+        fieldMapping.put("carrierAgent", "carrier_agent");
+        fieldMapping.put("deliveryAgent", "delivery_agent");
+        fieldMapping.put("vesselVoyage", "vessel_voyage");
+        fieldMapping.put("placeOfReceipt", "place_of_receipt");
         fieldMapping.put("portOfLoading", "port_of_loading");
         fieldMapping.put("portOfDischarge", "port_of_discharge");
         fieldMapping.put("placeOfDelivery", "place_of_delivery");
+        fieldMapping.put("containerSealInfo", "container_seal_info");
+        fieldMapping.put("packageUnit", "package_unit");
+        fieldMapping.put("goodsDescription", "goods_description");
+        fieldMapping.put("description", "goods_description");
+        fieldMapping.put("marks", "goods_description");
+        fieldMapping.put("grossWeightKgs", "gross_weight_kgs");
+        fieldMapping.put("measurementCbm", "measurement_cbm");
+        fieldMapping.put("serviceType", "service_type");
+        fieldMapping.put("revenueTons", "revenue_tons");
         fieldMapping.put("freightTerm", "freight_term");
-        fieldMapping.put("marks", "marks");
-        fieldMapping.put("description", "cargo_description");
-        fieldMapping.put("packageQuantity", "cargo_quantity");
-        fieldMapping.put("grossWeight", "cargo_gross_weight");
-        fieldMapping.put("measurement", "cargo_measurement");
-        fieldMapping.put("containerNo", "container_no");
-        fieldMapping.put("sealNo", "seal_no");
+        fieldMapping.put("freightRate", "freight_rate");
+        fieldMapping.put("prepaidAmount", "prepaid_amount");
+        fieldMapping.put("collectAmount", "collect_amount");
+        fieldMapping.put("payableAt", "payable_at");
+        fieldMapping.put("originalBlCount", "original_bl_count");
+        fieldMapping.put("issuePlace", "issue_place");
+        fieldMapping.put("ladenOnBoard", "laden_on_board");
 
-        // 合并vessel_name和voyage_no为vessel_voyage
-        if (camelMap.containsKey("vesselName") && camelMap.containsKey("voyageNo")) {
-            String vesselVoyage = camelMap.get("vesselName") + " " + camelMap.get("voyageNo");
-            underscoreMap.put("vessel_voyage", vesselVoyage);
+        // 特殊处理：vesselName + voyageNo -> vessel_voyage
+        if (camelMap.containsKey("vesselName") || camelMap.containsKey("voyageNo")) {
+            String vessel = getStringHelper(camelMap, "vesselName");
+            String voyage = getStringHelper(camelMap, "voyageNo");
+            underscoreMap.put("vessel_voyage", (vessel + " " + voyage).trim());
         }
 
-        // 转换所有字段
+        // 特殊处理：containerNo + sealNo -> container_seal_info
+        if (camelMap.containsKey("containerNo") || camelMap.containsKey("sealNo")) {
+            String container = getStringHelper(camelMap, "containerNo");
+            String seal = getStringHelper(camelMap, "sealNo");
+            underscoreMap.put("container_seal_info", (container + " / " + seal).trim());
+        }
+
+        // 特殊处理：packageQuantity 拆分 "748 CARTONS"
+        if (camelMap.containsKey("packageQuantity")) {
+            String pkgQty = getStringHelper(camelMap, "packageQuantity");
+            if (!StringUtils.isEmpty(pkgQty)) {
+                String[] parts = pkgQty.trim().split("\\s+", 2);
+                try {
+                    underscoreMap.put("package_quantity", Integer.parseInt(parts[0]));
+                    if (parts.length > 1)
+                        underscoreMap.put("package_unit", parts[1]);
+                } catch (NumberFormatException e) {
+                    log.warn("无法解析packageQuantity: {}", pkgQty);
+                }
+            }
+        }
+
+        // 特殊处理：grossWeight 提取数字 "20030 KGS"
+        if (camelMap.containsKey("grossWeight")) {
+            String weight = getStringHelper(camelMap, "grossWeight");
+            if (!StringUtils.isEmpty(weight)) {
+                try {
+                    String numStr = weight.replaceAll("[^0-9.]", "").trim();
+                    if (!StringUtils.isEmpty(numStr)) {
+                        underscoreMap.put("gross_weight_kgs", new BigDecimal(numStr));
+                    }
+                } catch (Exception e) {
+                    log.warn("无法解析grossWeight: {}", weight);
+                }
+            }
+        }
+
+        // 特殊处理：measurement 提取数字 "68 CBM"
+        if (camelMap.containsKey("measurement")) {
+            String measure = getStringHelper(camelMap, "measurement");
+            if (!StringUtils.isEmpty(measure)) {
+                try {
+                    String numStr = measure.replaceAll("[^0-9.]", "").trim();
+                    if (!StringUtils.isEmpty(numStr)) {
+                        underscoreMap.put("measurement_cbm", new BigDecimal(numStr));
+                    }
+                } catch (Exception e) {
+                    log.warn("无法解析measurement: {}", measure);
+                }
+            }
+        }
+
         for (Map.Entry<String, String> entry : fieldMapping.entrySet()) {
             String camelKey = entry.getKey();
             String underscoreKey = entry.getValue();
             if (camelMap.containsKey(camelKey)) {
-                underscoreMap.put(underscoreKey, camelMap.get(camelKey));
+                Object value = camelMap.get(camelKey);
+                if (value != null && !StringUtils.isEmpty(value.toString())) {
+                    if (!underscoreMap.containsKey(underscoreKey)) {
+                        underscoreMap.put(underscoreKey, value);
+                    }
+                }
             }
         }
 
@@ -579,7 +665,14 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
             underscoreMap.put("templateFilePath", camelMap.get("templateFilePath"));
         }
 
+        log.info("字段转换：输入{}个 -> 输出{}个", camelMap.size(), underscoreMap.size());
         return underscoreMap;
+    }
+
+    // 辅助方法：安全获取字符串
+    private String getStringHelper(Map<String, Object> map, String key) {
+        Object value = map.get(key);
+        return value != null ? value.toString() : "";
     }
 
     /**
