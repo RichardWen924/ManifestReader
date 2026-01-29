@@ -138,6 +138,22 @@ public class BookingConsolidatedController extends BaseController {
     }
 
     /**
+     * 仅导出PDF（不保存到数据库）
+     */
+    @RequiresPermissions("system:consolidated:add")
+    @Log(title = "订舱与集装箱合并信息", businessType = BusinessType.EXPORT)
+    @PostMapping("/export-pdf-only")
+    @ResponseBody
+    public AjaxResult exportPdfOnly(@RequestBody BookingConsolidatedDto dto) {
+        try {
+            String filePath = bookingConsolidatedService.generatePdfOnly(dto);
+            return AjaxResult.success(filePath);
+        } catch (Exception e) {
+            return error(e.getMessage());
+        }
+    }
+
+    /**
      * 下载生成的PDF文件
      */
     @RequiresPermissions("system:consolidated:add")

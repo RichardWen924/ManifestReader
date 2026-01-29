@@ -9,7 +9,6 @@ import java.util.concurrent.TimeUnit;
 import java.io.IOException;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.ruoyi.common.config.RuoYiConfig;
 import com.ruoyi.common.constant.Constants;
@@ -219,6 +218,52 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
         return bc;
     }
 
+    /**
+     * 4. 仅生成PDF（不保存到数据库）
+     */
+    @Override
+    public String generatePdfOnly(BookingConsolidatedDto userDto) {
+        log.info("仅生成PDF，UUID: {}", userDto.getUuid());
+
+        // 从 Redis 获取缓存
+        BookingConsolidatedDto cachedDto = (BookingConsolidatedDto) redisTemplate.opsForValue()
+                .get(REDIS_PREFIX + userDto.getUuid());
+        if (cachedDto == null) {
+            throw new RuntimeException("会话已过期，请重新上传文件");
+        }
+
+        // 获取 PDF 模版文件路径
+        Map<String, Object> cachedData = (Map<String, Object>) cachedDto.getBusinessData();
+        String templateFilePath = (String) cachedData.get("templateFilePath");
+
+        if (StringUtils.isEmpty(templateFilePath)) {
+            throw new RuntimeException("PDF 模版路径不存在");
+        }
+
+        // 合并数据：从缓存获取完整数据，然后用用户编辑的数据覆盖
+        Map<String, Object> mergedData = new HashMap<>(cachedData);
+        Map<String, Object> userData = (Map<String, Object>) userDto.getBusinessData();
+        if (userData != null) {
+            mergedData.putAll(userData);
+        }
+        log.info("合并后的数据: {}", mergedData);
+
+        // 更新缓存中的业务数据为合并后的完整数据
+        cachedDto.setBusinessData(mergedData);
+
+        // 修改 PDF (使用模版文件，抹除旧数据，写入新数据)
+        String newPdfPath;
+        try {
+            newPdfPath = PdfEditUtils.modifyPdf(templateFilePath, cachedDto);
+            log.info("PDF生成成功（仅导出）: {}", newPdfPath);
+        } catch (IOException e) {
+            log.error("PDF生成失败", e);
+            throw new RuntimeException("PDF生成失败: " + e.getMessage());
+        }
+
+        return newPdfPath;
+    }
+
     // ================= 私有辅助方法 =================
 
     /**
@@ -349,40 +394,75 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
 
         bc.setContainerNo((String) map.get("container_no"));
         bc.setSealNo((String) map.get("seal_no"));
+
+        // 注意：marks, freight_term, vessel_name, voyage_no 等字段
+        // 可能在数据库中不存在，如果存在则需要添加对应的setter
+        // 这里假设只使用现有的数据库字段
+
         return bc;
     }
 
     /**
-     * 将 JSON 转换为 Map (扁平化处理)
+     * 将 JSON 转换为 Map (支持扁平结构和驼峰命名)
      */
     private Map<String, Object> mapJsonToMap(JSONObject dataJson) {
         Map<String, Object> map = new HashMap<>();
 
-        map.put("booking_no", dataJson.getString("booking_no"));
-        map.put("shipper", dataJson.getString("shipper"));
-        map.put("consignee", dataJson.getString("consignee"));
-        map.put("notify_party", dataJson.getString("notify_party"));
-        map.put("vessel_voyage", dataJson.getString("vessel_voyage"));
-        map.put("port_of_loading", dataJson.getString("port_of_loading"));
-        map.put("port_of_discharge", dataJson.getString("port_of_discharge"));
-        map.put("place_of_delivery", dataJson.getString("place_of_delivery"));
+        log.info("开始映射Dify JSON数据，字段数量: {}", dataJson.size());
 
-        if (dataJson.containsKey("cargo_summary")) {
-            JSONObject cargo = dataJson.getJSONObject("cargo_summary");
-            map.put("cargo_description", cargo.getString("cargo_description"));
-            map.put("cargo_quantity", cargo.getString("cargo_quantity"));
-            map.put("cargo_gross_weight", extractBigDecimal(cargo.getString("cargo_gross_weight")));
-            map.put("cargo_measurement", extractBigDecimal(cargo.getString("cargo_measurement")));
-        }
+        // 字段映射：Dify驼峰命名 -> 数据库下划线命名
+        Map<String, String> fieldMapping = new HashMap<>();
+        fieldMapping.put("bookingNo", "booking_no");
+        fieldMapping.put("shipper", "shipper");
+        fieldMapping.put("consignee", "consignee");
+        fieldMapping.put("notifyParty", "notify_party");
+        fieldMapping.put("vesselName", "vessel_name");
+        fieldMapping.put("voyageNo", "voyage_no");
+        fieldMapping.put("portOfLoading", "port_of_loading");
+        fieldMapping.put("portOfDischarge", "port_of_discharge");
+        fieldMapping.put("placeOfDelivery", "place_of_delivery");
+        fieldMapping.put("freightTerm", "freight_term");
+        fieldMapping.put("marks", "marks");
+        fieldMapping.put("description", "cargo_description");
+        fieldMapping.put("packageQuantity", "cargo_quantity");
+        fieldMapping.put("grossWeight", "cargo_gross_weight");
+        fieldMapping.put("measurement", "cargo_measurement");
+        fieldMapping.put("containerNo", "container_no");
+        fieldMapping.put("sealNo", "seal_no");
 
-        if (dataJson.containsKey("containers")) {
-            JSONArray containers = dataJson.getJSONArray("containers");
-            if (containers != null && !containers.isEmpty()) {
-                JSONObject firstContainer = containers.getJSONObject(0);
-                map.put("container_no", firstContainer.getString("container_no"));
-                map.put("seal_no", firstContainer.getString("seal_no"));
+        // 遍历映射表，从JSON提取数据
+        for (Map.Entry<String, String> entry : fieldMapping.entrySet()) {
+            String difyField = entry.getKey();
+            String dbField = entry.getValue();
+
+            if (dataJson.containsKey(difyField)) {
+                Object value = dataJson.get(difyField);
+
+                // 处理数值类型字段
+                if (dbField.equals("cargo_gross_weight") || dbField.equals("cargo_measurement")) {
+                    if (value instanceof String) {
+                        map.put(dbField, extractBigDecimal((String) value));
+                    } else if (value instanceof Number) {
+                        map.put(dbField, new BigDecimal(value.toString()));
+                    }
+                } else {
+                    map.put(dbField, value != null ? value.toString() : null);
+                }
+
+                log.debug("映射字段: {} -> {} = {}", difyField, dbField, value);
+            } else {
+                log.debug("Dify未返回字段: {}", difyField);
             }
         }
+
+        // vessel_voyage字段需要合并vesselName和voyageNo
+        if (map.containsKey("vessel_name") && map.containsKey("voyage_no")) {
+            String vesselVoyage = map.get("vessel_name") + " " + map.get("voyage_no");
+            map.put("vessel_voyage", vesselVoyage);
+            log.debug("合并字段: vessel_voyage = {}", vesselVoyage);
+        }
+
+        log.info("映射完成，共提取 {} 个字段", map.size());
         return map;
     }
 

@@ -69,6 +69,9 @@
             <div class="row">
                 <div class="col-sm-12">
                     <div class="btn-group pull-right">
+                        <button type="button" class="btn btn-primary" onclick="exportPdfOnly()">
+                            <i class="fa fa-file-pdf-o"></i> 仅导出PDF
+                        </button>
                         <button type="button" class="btn btn-success" onclick="confirmAIResult()">
                             <i class="fa fa-check"></i> 确认生成并保存
                         </button>
@@ -206,13 +209,16 @@
             formHtml += '<div class="panel-heading"><h4>数据编辑</h4></div>';
             formHtml += '<div class="panel-body"><form class="form-horizontal">';
 
+
+            // 字段名称映射（匹配Dify返回的驼峰命名）
             var fieldLabels = {
-                'booking_no': '提单号', 'shipper': '发货人', 'consignee': '收货人',
-                'notify_party': '通知方', 'vessel_voyage': '船名航次',
-                'port_of_loading': '装货港', 'port_of_discharge': '卸货港',
-                'place_of_delivery': '交货地', 'cargo_description': '货物描述',
-                'cargo_quantity': '货物数量', 'cargo_gross_weight': '毛重',
-                'cargo_measurement': '体积', 'container_no': '集装箱号', 'seal_no': '封条号'
+                'bookingNo': '提单号', 'shipper': '发货人', 'consignee': '收货人',
+                'notifyParty': '通知方', 'vesselName': '船名', 'voyageNo': '航次',
+                'portOfLoading': '装货港', 'portOfDischarge': '卸货港',
+                'placeOfDelivery': '交货地', 'freightTerm': '运费条款', 'marks': '唛头',
+                'description': '货物描述', 'packageQuantity': '包装数量',
+                'grossWeight': '毛重', 'measurement': '体积',
+                'containerNo': '集装箱号', 'sealNo': '封条号'
             };
 
             for (var k in data) {
@@ -222,7 +228,7 @@
                 formHtml += '<div class="form-group">';
                 formHtml += '<label class="col-sm-3 control-label">' + label + ':</label>';
                 formHtml += '<div class="col-sm-8">';
-                if (k === 'cargo_description' || k === 'shipper' || k === 'consignee' || k === 'notify_party') {
+                if (k === 'description' || k === 'shipper' || k === 'consignee' || k === 'notifyParty') {
                     formHtml += '<textarea class="form-control field-input" data-key="' + k + '" rows="3">' + value + '</textarea>';
                 } else {
                     formHtml += '<input type="text" class="form-control field-input" data-key="' + k + '" value="' + value + '">';
@@ -289,6 +295,59 @@
                             $.modal.close();
                             parent.$.table.refresh();
                         }, 1000);
+                    } else {
+                        $.modal.alertError(result.msg);
+                    }
+                }
+            });
+        }
+
+        // 7. 仅导出PDF（不保存到数据库）
+        function exportPdfOnly() {
+            if (!currentUuid) {
+                $.modal.alertWarning("会话已失效");
+                return;
+            }
+
+            if (!originalBusinessData) {
+                $.modal.alertWarning("无法获取原始数据");
+                return;
+            }
+
+            // 收集用户编辑后的数据
+            var updatedData = $.extend(true, {}, originalBusinessData);
+            $(".field-input").each(function () {
+                var key = $(this).data("key");
+                var value = $(this).val();
+                if (key) {
+                    updatedData[key] = value;
+                }
+            });
+
+            console.log("仅导出PDF，更新数据:", updatedData);
+
+            var dto = {
+                uuid: currentUuid,
+                businessData: updatedData
+            };
+
+            $.ajax({
+                url: prefix + "/export-pdf-only",
+                type: "POST",
+                contentType: "application/json",
+                data: JSON.stringify(dto),
+                beforeSend: function () {
+                    $.modal.loading("正在生成PDF，请稍候...");
+                },
+                success: function (result) {
+                    $.modal.closeLoading();
+                    if (result.code == 0) {
+                        $.modal.msgSuccess("PDF生成成功");
+                        // 直接触发下载
+                        var filePath = result.data;
+                        if (filePath) {
+                            window.location.href = ctx + "system/consolidated/download?filePath=" + encodeURIComponent(filePath);
+                        }
                     } else {
                         $.modal.alertError(result.msg);
                     }
