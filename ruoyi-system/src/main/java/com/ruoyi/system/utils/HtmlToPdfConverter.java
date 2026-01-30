@@ -102,18 +102,25 @@ public class HtmlToPdfConverter {
      * @return 符合XHTML标准的HTML
      */
     private static String cleanupHtmlToXhtml(String html) {
+        log.info("开始清理HTML，原始长度: {} 字符", html.length());
+        log.debug("原始HTML前200字符: {}", html.substring(0, Math.min(200, html.length())));
+
         String cleaned = html;
 
         // 修复自闭合标签（必须使用 /> 结尾）
-        cleaned = cleaned.replaceAll("<br\\s*>", "<br/>");
-        cleaned = cleaned.replaceAll("<hr\\s*>", "<hr/>");
-        cleaned = cleaned.replaceAll("<img([^>]*)>", "<img$1/>");
-        cleaned = cleaned.replaceAll("<input([^>]*)>", "<input$1/>");
-        cleaned = cleaned.replaceAll("<meta([^>]*)>", "<meta$1/>");
-        cleaned = cleaned.replaceAll("<link([^>]*)>", "<link$1/>");
+        // 注意：使用(?i)进行大小写不敏感匹配
+        cleaned = cleaned.replaceAll("(?i)<br\\s*>", "<br/>");
+        cleaned = cleaned.replaceAll("(?i)<hr\\s*>", "<hr/>");
+        cleaned = cleaned.replaceAll("(?i)<img([^>]*)>", "<img$1/>");
+        cleaned = cleaned.replaceAll("(?i)<input([^>]*)>", "<input$1/>");
+        cleaned = cleaned.replaceAll("(?i)<meta([^>]*)>", "<meta$1/>");
+        cleaned = cleaned.replaceAll("(?i)<link([^>]*)>", "<link$1/>");
 
         // 确保已有的自闭合标签格式正确（避免双斜杠）
-        cleaned = cleaned.replaceAll("//+>", "/>");
+        cleaned = cleaned.replaceAll("/+>", "/>");
+
+        log.info("HTML清理完成，清理后长度: {} 字符", cleaned.length());
+        log.debug("清理后HTML前200字符: {}", cleaned.substring(0, Math.min(200, cleaned.length())));
 
         return cleaned;
     }
