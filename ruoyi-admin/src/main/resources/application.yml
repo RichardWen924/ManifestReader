@@ -30,7 +30,7 @@ server:
       max: 800
       # Tomcat启动初始化的线程数，默认值10
       min-spare: 100
- 
+
 # 日志配置
 logging:
   level:
@@ -152,4 +152,3 @@ csrf:
 swagger:
   # 是否开启swagger
   enabled: true
-

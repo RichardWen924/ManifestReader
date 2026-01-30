@@ -47,6 +47,7 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
     private static final Logger log = LoggerFactory.getLogger(BookingConsolidatedServiceImpl.class);
 
     private static final String DIFY_API_KEY_ANALYZE = "app-qFk49MpWcQKiqY41Q7IdDwIj";
+    private static final String DIFY_API_KEY_GENERATE_HTML = "app-ZMAt882RoK60mAH2MvgjNEub";
     private static final String DIFY_BASE_URL = "http://localhost/v1";
     private static final String REDIS_PREFIX = "pdf_edit:";
     private static final String DEFAULT_TEMPLATE_CODE = "booking_standard";
@@ -279,11 +280,14 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
     }
 
     /**
-     * 4. 仅生成PDF（不保存到数据库）- 返回字节数组用于浏览器下载
+     * 4. 仅生成PDF（不保存到数据库）- 调用Dify生成HTML并转换为PDF字节数组
+     * 
+     * @param userDto 用户编辑后的数据
+     * @return PDF文件路径（临时文件，用于浏览器下载）
      */
     @Override
     public String generatePdfOnly(BookingConsolidatedDto userDto) {
-        log.info("仅生成PDF（返回字节数组），UUID: {}", userDto.getUuid());
+        log.info("仅生成PDF（通过Dify HTML转换），UUID: {}", userDto.getUuid());
 
         // 从 Redis 获取缓存
         BookingConsolidatedDto cachedDto = (BookingConsolidatedDto) redisTemplate.opsForValue()
@@ -292,15 +296,8 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
             throw new RuntimeException("会话已过期，请重新上传文件");
         }
 
-        // 获取 PDF 模版文件路径
-        Map<String, Object> cachedData = (Map<String, Object>) cachedDto.getBusinessData();
-        String templateFilePath = (String) cachedData.get("templateFilePath");
-
-        if (StringUtils.isEmpty(templateFilePath)) {
-            throw new RuntimeException("PDF 模版路径不存在");
-        }
-
         // 合并数据：从缓存获取完整数据，然后用用户编辑的数据覆盖
+        Map<String, Object> cachedData = (Map<String, Object>) cachedDto.getBusinessData();
         Map<String, Object> mergedData = new HashMap<>(cachedData);
         Map<String, Object> userData = (Map<String, Object>) userDto.getBusinessData();
         if (userData != null) {
@@ -308,21 +305,30 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
         }
         log.info("合并后的数据: {}", mergedData);
 
-        // 更新缓存中的业务数据为合并后的完整数据
-        cachedDto.setBusinessData(mergedData);
+        // 应用业务规则
+        com.ruoyi.system.utils.BillOfLadingValidator.applyBusinessRules(mergedData);
 
-        // 修改 PDF (使用模版文件，抹除旧数据，写入新数据)
-        // 注意：现在返回文件路径，前端下载后删除临时文件
-        String newPdfPath;
+        // 调用Dify生成HTML并转换为PDF
         try {
-            newPdfPath = PdfEditUtils.modifyPdf(templateFilePath, cachedDto);
-            log.info("PDF生成成功（仅导出）: {}", newPdfPath);
-        } catch (IOException e) {
-            log.error("PDF生成失败", e);
-            throw new RuntimeException("PDF生成失败: " + e.getMessage());
-        }
+            byte[] pdfBytes = generatePdfFromDifyHtml(mergedData, DIFY_API_KEY_GENERATE_HTML);
 
-        return newPdfPath;
+            // 保存为临时文件供下载
+            String tempFileName = "BL_" + System.currentTimeMillis() + ".pdf";
+            String tempFilePath = RuoYiConfig.getProfile() + "/temp/" + tempFileName;
+            java.io.File tempFile = new java.io.File(tempFilePath);
+            tempFile.getParentFile().mkdirs();
+
+            try (java.io.FileOutputStream fos = new java.io.FileOutputStream(tempFile)) {
+                fos.write(pdfBytes);
+            }
+
+            log.info("PDF生成成功（仅导出）: {}, 大小: {} 字节", tempFilePath, pdfBytes.length);
+            return tempFilePath;
+
+        } catch (Exception e) {
+            log.error("PDF生成失败", e);
+            throw new RuntimeException("PDF生成失败: " + e.getMessage(), e);
+        }
     }
 
     /**
@@ -472,6 +478,72 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
             log.error("Dify 调用异常", e);
         }
         return null;
+    }
+
+    /**
+     * 调用Dify工作流生成HTML并转换为PDF
+     * 
+     * @param data   业务数据（Map格式）
+     * @param apiKey Dify API密钥
+     * @return PDF字节数组
+     */
+    private byte[] generatePdfFromDifyHtml(Map<String, Object> data, String apiKey) {
+        log.info("调用Dify工作流生成HTML，数据: {}", data);
+
+        RestTemplate restTemplate = new RestTemplate();
+        try {
+            // 调用工作流
+            String workflowUrl = DIFY_BASE_URL + "/workflows/run";
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("Authorization", "Bearer " + apiKey);
+
+            // 构建请求体 - 将业务数据作为JSON对象传递给"data"字段
+            JSONObject inputs = new JSONObject();
+            inputs.put("data", data); // Dify工作流期望一个名为"data"的dict类型input字段
+
+            JSONObject workflowBody = new JSONObject();
+            workflowBody.put("inputs", inputs);
+            workflowBody.put("response_mode", "blocking");
+            workflowBody.put("user", "user-system");
+
+            HttpEntity<String> workflowRequest = new HttpEntity<>(workflowBody.toJSONString(), headers);
+            ResponseEntity<String> workflowResponse = restTemplate.postForEntity(workflowUrl, workflowRequest,
+                    String.class);
+
+            if (!workflowResponse.getStatusCode().is2xxSuccessful()) {
+                log.error("Dify工作流调用失败: {}", workflowResponse.getBody());
+                throw new RuntimeException("Dify工作流调用失败");
+            }
+
+            // 解析响应获取HTML
+            JSONObject workflowResult = JSON.parseObject(workflowResponse.getBody());
+            JSONObject outputs = workflowResult.getJSONObject("data").getJSONObject("outputs");
+
+            // 从output字段获取HTML
+            String htmlContent = null;
+            if (outputs.containsKey("output")) {
+                htmlContent = outputs.getString("output");
+            } else if (outputs.containsKey("text")) {
+                htmlContent = outputs.getString("text");
+            }
+
+            if (StringUtils.isEmpty(htmlContent)) {
+                throw new RuntimeException("Dify工作流未返回HTML内容");
+            }
+
+            log.info("Dify返回HTML长度: {} 字符", htmlContent.length());
+
+            // 使用HtmlToPdfConverter转换HTML为PDF
+            byte[] pdfBytes = com.ruoyi.system.utils.HtmlToPdfConverter.convertHtmlToPdfBytes(htmlContent);
+            log.info("HTML转PDF成功，PDF大小: {} 字节", pdfBytes.length);
+
+            return pdfBytes;
+
+        } catch (Exception e) {
+            log.error("生成PDF失败", e);
+            throw new RuntimeException("生成PDF失败: " + e.getMessage(), e);
+        }
     }
 
     /**

@@ -138,18 +138,59 @@ public class BookingConsolidatedController extends BaseController {
     }
 
     /**
-     * 仅导出PDF（不保存到数据库）
+     * 仅导出PDF（不保存到数据库）- 直接返回PDF到浏览器
      */
     @RequiresPermissions("system:consolidated:add")
     @Log(title = "订舱与集装箱合并信息", businessType = BusinessType.EXPORT)
     @PostMapping("/export-pdf-only")
-    @ResponseBody
-    public AjaxResult exportPdfOnly(@RequestBody BookingConsolidatedDto dto) {
+    public void exportPdfOnly(@RequestBody BookingConsolidatedDto dto,
+            javax.servlet.http.HttpServletResponse response) {
         try {
-            String filePath = bookingConsolidatedService.generatePdfOnly(dto);
-            return AjaxResult.success(filePath);
+            // 调用Service生成PDF（返回临时文件路径）
+            String tempFilePath = bookingConsolidatedService.generatePdfOnly(dto);
+
+            // 读取PDF文件
+            java.io.File pdfFile = new java.io.File(tempFilePath);
+            if (!pdfFile.exists()) {
+                throw new RuntimeException("PDF文件不存在");
+            }
+
+            // 设置响应头
+            response.setContentType("application/pdf");
+            response.setCharacterEncoding("UTF-8");
+
+            // 生成文件名（使用bookingNo或时间戳）
+            String fileName = "BL_" + System.currentTimeMillis() + ".pdf";
+            Map<String, Object> businessData = (Map<String, Object>) dto.getBusinessData();
+            if (businessData != null && businessData.containsKey("bookingNo")) {
+                fileName = "BL_" + businessData.get("bookingNo") + ".pdf";
+            }
+
+            // 设置下载文件名
+            response.setHeader("Content-Disposition",
+                    "attachment; filename=" + java.net.URLEncoder.encode(fileName, "UTF-8"));
+
+            // 写入PDF到响应流
+            try (java.io.FileInputStream fis = new java.io.FileInputStream(pdfFile);
+                    java.io.OutputStream os = response.getOutputStream()) {
+                byte[] buffer = new byte[1024];
+                int bytesRead;
+                while ((bytesRead = fis.read(buffer)) != -1) {
+                    os.write(buffer, 0, bytesRead);
+                }
+                os.flush();
+            }
+
+            // 删除临时文件
+            pdfFile.delete();
+
         } catch (Exception e) {
-            return error(e.getMessage());
+            try {
+                response.setContentType("application/json");
+                response.setCharacterEncoding("UTF-8");
+                response.getWriter().write("{\"msg\":\"" + e.getMessage() + "\",\"code\":500}");
+            } catch (java.io.IOException ignored) {
+            }
         }
     }
 
