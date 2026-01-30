@@ -2,6 +2,8 @@ package com.ruoyi.web.controller;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+
 import com.ruoyi.common.config.RuoYiConfig;
 import com.ruoyi.common.utils.file.FileUploadUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -82,29 +84,27 @@ public class BookingConsolidatedController extends BaseController {
         return prefix + "/add";
     }
 
-    /**
-     * 新增保存订舱与集装箱合并信息 (直接保存 / 普通保存)
-     */
     @RequiresPermissions("system:consolidated:add")
     @Log(title = "订舱与集装箱合并信息", businessType = BusinessType.INSERT)
     @PostMapping("/add")
     @ResponseBody
-    public AjaxResult addSave(BookingConsolidated bookingConsolidated) throws IOException {
-        String filePath = bookingConsolidated.getFilePath();
+    public AjaxResult addSave(@RequestBody Map<String, Object> requestData) throws IOException {
+        String filePath = (String) requestData.get("filePath");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> editedData = (Map<String, Object>) requestData.get("editedData");
 
-        // 如果有文件路径，尝试直接解析并保存
-        if (filePath != null && !filePath.isEmpty()) {
+        // 如果有文件路径和编辑数据，直接保存（不调用Dify）
+        if (filePath != null && !filePath.isEmpty() && editedData != null) {
             try {
-                // 调用直接保存服务 (AI 识别后直接入库)
-                bookingConsolidatedService.directProcessAndSave(filePath);
+                bookingConsolidatedService.directProcessAndSave(filePath, editedData);
                 return success();
             } catch (Exception e) {
-                return error("AI 识别失败: " + e.getMessage());
+                return error("保存失败: " + e.getMessage());
             }
         }
 
-        // 普通表单保存
-        return toAjax(bookingConsolidatedService.insertBookingConsolidated(bookingConsolidated));
+        // 如果没有提供编辑数据，返回错误
+        return error("缺少必要参数：filePath 或 editedData");
     }
 
     /**
@@ -148,6 +148,22 @@ public class BookingConsolidatedController extends BaseController {
         try {
             String filePath = bookingConsolidatedService.generatePdfOnly(dto);
             return AjaxResult.success(filePath);
+        } catch (Exception e) {
+            return error(e.getMessage());
+        }
+    }
+
+    /**
+     * AI智能提取 - 只保存到数据库（不生成PDF）
+     */
+    @RequiresPermissions("system:consolidated:add")
+    @Log(title = "订舱与集装箱合并信息", businessType = BusinessType.INSERT)
+    @PostMapping("/save-to-db")
+    @ResponseBody
+    public AjaxResult saveToDb(@RequestBody BookingConsolidatedDto dto) {
+        try {
+            BookingConsolidated result = bookingConsolidatedService.saveToDbOnly(dto);
+            return AjaxResult.success(result);
         } catch (Exception e) {
             return error(e.getMessage());
         }

@@ -95,21 +95,45 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
     }
 
     /**
-     * 1. 直接保存模式：上传 -> 识别 -> 保存 (无人工介入)
+     * 1. 直接保存模式（不调用Dify，接受PDF编辑后的数据直接保存）
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public BookingConsolidated directProcessAndSave(String filePath) {
-        // 调用 Dify 获取 JSON 数据 (使用直接保存的 API Key)
-        JSONObject dataJson = callDifyWorkflow(filePath, DIFY_API_KEY_DIRECT);
-        if (dataJson == null) {
-            throw new RuntimeException("Dify 识别失败，未能获取有效数据");
+    public BookingConsolidated directProcessAndSave(String filePath, Map<String, Object> editedData) {
+        log.info("直接保存PDF编辑后的数据，文件路径: {}", filePath);
+
+        // 转换字段名：驼峰 -> 下划线（用于数据库保存）
+        Map<String, Object> dbData = convertCamelToUnderscore(editedData);
+        log.info("转换后的数据（数据库格式）: {}", dbData);
+
+        // 确保 booking_no 存在
+        if (StringUtils.isEmpty((String) dbData.get("booking_no"))) {
+            String generatedBookingNo = "BK" + System.currentTimeMillis();
+            dbData.put("booking_no", generatedBookingNo);
+            log.warn("booking_no 不存在，生成默认值: {}", generatedBookingNo);
         }
 
-        // 转换为实体并保存
-        BookingConsolidated bc = mapJsonToEntity(dataJson);
+        // 保存到数据库（使用新的bill_of_lading表）
+        com.ruoyi.system.domain.BillOfLading bl = mapMapToBillOfLading(dbData);
+
+        // 确保bl_no存在
+        if (StringUtils.isEmpty(bl.getBlNo())) {
+            bl.setBlNo("BL" + System.currentTimeMillis());
+        }
+
+        // 设置PDF文件路径
+        if (!StringUtils.isEmpty(filePath)) {
+            bl.setFilePath(filePath);
+        }
+
+        log.info("准备插入bill_of_lading_v3表，bl_no: {}, booking_no: {}, 文件路径: {}",
+                bl.getBlNo(), bl.getBookingNo(), filePath);
+        billOfLadingMapper.insertBillOfLading(bl);
+
+        // 返回结果（为了兼容性）
+        BookingConsolidated bc = new BookingConsolidated();
+        bc.setBookingNo(bl.getBookingNo());
         bc.setFilePath(filePath);
-        insertBookingConsolidated(bc);
         return bc;
     }
 
@@ -284,6 +308,59 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
         }
 
         return newPdfPath;
+    }
+
+    /**
+     * 5. 只保存到数据库（不生成PDF）
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public BookingConsolidated saveToDbOnly(BookingConsolidatedDto userDto) {
+        log.info("只保存数据库，UUID: {}", userDto.getUuid());
+
+        // 从 Redis 获取缓存
+        BookingConsolidatedDto cachedDto = (BookingConsolidatedDto) redisTemplate.opsForValue()
+                .get(REDIS_PREFIX + userDto.getUuid());
+        if (cachedDto == null) {
+            throw new RuntimeException("会话已过期，请重新上传文件");
+        }
+
+        // 合并数据：从缓存获取完整数据，然后用用户编辑的数据覆盖
+        Map<String, Object> cachedData = (Map<String, Object>) cachedDto.getBusinessData();
+        Map<String, Object> mergedData = new HashMap<>(cachedData);
+        Map<String, Object> userData = (Map<String, Object>) userDto.getBusinessData();
+        if (userData != null) {
+            mergedData.putAll(userData);
+        }
+        log.info("合并后的数据（原始）: {}", mergedData);
+
+        // 转换字段名：驼峰 -> 下划线（用于数据库保存）
+        Map<String, Object> dbData = convertCamelToUnderscore(mergedData);
+        log.info("转换后的数据（数据库格式）: {}", dbData);
+
+        // 确保 booking_no 存在
+        if (StringUtils.isEmpty((String) dbData.get("booking_no"))) {
+            String generatedBookingNo = "BK" + System.currentTimeMillis();
+            dbData.put("booking_no", generatedBookingNo);
+            log.warn("booking_no 不存在，生成默认值: {}", generatedBookingNo);
+        }
+
+        // 保存到数据库
+        com.ruoyi.system.domain.BillOfLading bl = mapMapToBillOfLading(dbData);
+
+        // 确俛l_no存在
+        if (StringUtils.isEmpty(bl.getBlNo())) {
+            bl.setBlNo("BL" + System.currentTimeMillis());
+        }
+
+        log.info("准备插入bill_of_lading_v3表，bl_no: {}, booking_no: {}",
+                bl.getBlNo(), bl.getBookingNo());
+        billOfLadingMapper.insertBillOfLading(bl);
+
+        // 返回结果
+        BookingConsolidated bc = new BookingConsolidated();
+        bc.setBookingNo(bl.getBookingNo());
+        return bc;
     }
 
     // ================= 私有辅助方法 =================

@@ -1,6 +1,7 @@
 package com.ruoyi.system.service;
 
 import java.util.List;
+import java.util.Map;
 import com.ruoyi.system.domain.BookingConsolidated;
 
 /**
@@ -59,12 +60,13 @@ public interface IBookingConsolidatedService {
     public int deleteBookingConsolidatedByBookingNo(String bookingNo);
 
     /**
-     * 实现与工作流进行联动 (直接保存模式)
+     * 直接保存模式：接受编辑后的数据直接保存（不调用Dify）
      * 
-     * @param filePath 文件路径
-     * @return 进过工作流处理好的数据，将数据返回并加入数据库
+     * @param filePath   文件路径
+     * @param editedData 编辑后的数据
+     * @return 保存结果
      */
-    BookingConsolidated directProcessAndSave(String filePath);
+    BookingConsolidated directProcessAndSave(String filePath, Map<String, Object> editedData);
 
     /**
      * AI智能提取 - 分析文件 (返回 DTO 供前端确认)
@@ -89,4 +91,12 @@ public interface IBookingConsolidatedService {
      * @return PDF文件路径
      */
     String generatePdfOnly(com.ruoyi.system.domain.BookingConsolidatedDto dto);
+
+    /**
+     * 只保存到数据库（不生成PDF）
+     * 
+     * @param dto 用户确认后的数据
+     * @return 保存结果
+     */
+    BookingConsolidated saveToDbOnly(com.ruoyi.system.domain.BookingConsolidatedDto dto);
 }
