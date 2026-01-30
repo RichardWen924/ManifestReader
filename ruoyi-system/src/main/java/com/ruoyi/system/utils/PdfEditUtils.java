@@ -68,6 +68,11 @@ public class PdfEditUtils {
                 return destPath;
             }
 
+            // 应用业务规则（blNo/bookingNo同步、运费逻辑等）
+            log.info("应用业务规则...");
+            BillOfLadingValidator.applyBusinessRules(data);
+            log.info("业务规则应用完成");
+
             int processedCount = 0;
 
             for (Map.Entry<String, FieldLocation> entry : locations.entrySet()) {
@@ -117,12 +122,37 @@ public class PdfEditUtils {
             }
 
             log.info("PDF修改完成，共处理 {} 个字段", processedCount);
+
+            // 表单扁平化：将PDF表单字段转为不可编辑状态
+            flattenPdfForms(pdfDoc);
         } catch (Exception e) {
             log.error("PDF 修改失败: {}", e.getMessage(), e);
             throw new IOException("PDF 修改失败: " + e.getMessage());
         }
 
         return destPath;
+    }
+
+    /**
+     * 扁平化PDF表单
+     * 将可编辑的表单字段转换为静态内容
+     * 
+     * @param pdfDoc PDF文档
+     */
+    private static void flattenPdfForms(PdfDocument pdfDoc) {
+        try {
+            if (pdfDoc.getCatalog().getPdfObject().getAsDictionary(com.itextpdf.kernel.pdf.PdfName.AcroForm) != null) {
+                com.itextpdf.forms.PdfAcroForm form = com.itextpdf.forms.PdfAcroForm.getAcroForm(pdfDoc, false);
+                if (form != null) {
+                    form.flattenFields();
+                    log.info("PDF表单已扁平化，现在为不可编辑状态");
+                } else {
+                    log.debug("PDF不包含表单字段，跳过扁平化");
+                }
+            }
+        } catch (Exception e) {
+            log.warn("表单扁平化失败（不影响主流程）: {}", e.getMessage());
+        }
     }
 
     /**

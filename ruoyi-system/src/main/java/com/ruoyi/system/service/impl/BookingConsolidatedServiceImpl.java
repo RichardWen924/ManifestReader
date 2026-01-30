@@ -102,6 +102,11 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
     public BookingConsolidated directProcessAndSave(String filePath, Map<String, Object> editedData) {
         log.info("直接保存PDF编辑后的数据，文件路径: {}", filePath);
 
+        // 应用业务规则（blNo/bookingNo同步、运费逻辑等）
+        log.info("应用业务规则...");
+        com.ruoyi.system.utils.BillOfLadingValidator.applyBusinessRules(editedData);
+        log.info("业务规则应用完成");
+
         // 转换字段名：驼峰 -> 下划线（用于数据库保存）
         Map<String, Object> dbData = convertCamelToUnderscore(editedData);
         log.info("转换后的数据（数据库格式）: {}", dbData);
@@ -216,6 +221,11 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
             mergedData.putAll(userData);
         }
         log.info("合并后的数据（原始）: {}", mergedData);
+
+        // 应用业务规则（blNo/bookingNo同步、运费逻辑等）
+        log.info("应用业务规则...");
+        com.ruoyi.system.utils.BillOfLadingValidator.applyBusinessRules(mergedData);
+        log.info("业务规则应用完成");
 
         // 转换字段名：驼峰 -> 下划线（用于数据库保存）
         Map<String, Object> dbData = convertCamelToUnderscore(mergedData);
@@ -333,6 +343,11 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
             mergedData.putAll(userData);
         }
         log.info("合并后的数据（原始）: {}", mergedData);
+
+        // 应用业务规则（blNo/bookingNo同步、运费逻辑等）
+        log.info("应用业务规则...");
+        com.ruoyi.system.utils.BillOfLadingValidator.applyBusinessRules(mergedData);
+        log.info("业务规则应用完成");
 
         // 转换字段名：驼峰 -> 下划线（用于数据库保存）
         Map<String, Object> dbData = convertCamelToUnderscore(mergedData);
@@ -497,6 +512,82 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
         // 注意：marks, freight_term, vessel_name, voyage_no 等字段
         // 可能在数据库中不存在，如果存在则需要添加对应的setter
         // 这里假设只使用现有的数据库字段
+
+        return bc;
+    }
+
+    /**
+     * 将 Map (下划线命名) 转换为 BookingConsolidated Entity
+     * 用于同时保存到 booking_consolidated 表
+     */
+    private BookingConsolidated mapMapToBookingConsolidated(Map<String, Object> map) {
+        BookingConsolidated bc = new BookingConsolidated();
+
+        bc.setBookingNo((String) map.get("booking_no"));
+        bc.setShipper((String) map.get("shipper"));
+        bc.setConsignee((String) map.get("consignee"));
+        bc.setNotifyParty((String) map.get("notify_party"));
+        bc.setVesselVoyage((String) map.get("vessel_voyage"));
+        bc.setPortOfLoading((String) map.get("port_of_loading"));
+        bc.setPortOfDischarge((String) map.get("port_of_discharge"));
+        bc.setPlaceOfDelivery((String) map.get("place_of_delivery"));
+        bc.setCargoDescription((String) map.get("goods_description"));
+
+        // 处理 package_quantity → cargoQuantity
+        Object pkgQty = map.get("package_quantity");
+        Object pkgUnit = map.get("package_unit");
+        if (pkgQty != null && pkgUnit != null) {
+            bc.setCargoQuantity(pkgQty.toString() + " " + pkgUnit.toString());
+        } else if (pkgQty != null) {
+            bc.setCargoQuantity(pkgQty.toString());
+        }
+
+        // 处理 gross_weight_kgs
+        Object gw = map.get("gross_weight_kgs");
+        if (gw instanceof BigDecimal) {
+            bc.setCargoGrossWeight((BigDecimal) gw);
+        } else if (gw instanceof String) {
+            bc.setCargoGrossWeight(extractBigDecimal((String) gw));
+        } else if (gw instanceof Number) {
+            bc.setCargoGrossWeight(new BigDecimal(gw.toString()));
+        }
+
+        // 处理 measurement_cbm
+        Object meas = map.get("measurement_cbm");
+        if (meas instanceof BigDecimal) {
+            bc.setCargoMeasurement((BigDecimal) meas);
+        } else if (meas instanceof String) {
+            bc.setCargoMeasurement(extractBigDecimal((String) meas));
+        } else if (meas instanceof Number) {
+            bc.setCargoMeasurement(new BigDecimal(meas.toString()));
+        }
+
+        // 处理 container_no / seal_no
+        String containerSeal = (String) map.get("container_seal_info");
+        if (!StringUtils.isEmpty(containerSeal)) {
+            String[] parts = containerSeal.split("/");
+            if (parts.length >= 1) {
+                bc.setContainerNo(parts[0].trim());
+            }
+            if (parts.length >= 2) {
+                bc.setSealNo(parts[1].trim());
+            }
+        } else {
+            bc.setContainerNo((String) map.get("container_no"));
+            bc.setSealNo((String) map.get("seal_no"));
+        }
+
+        // VGM 字段
+        Object vgm = map.get("vgm");
+        if (vgm instanceof BigDecimal) {
+            bc.setVgm((BigDecimal) vgm);
+        } else if (vgm instanceof String) {
+            bc.setVgm(extractBigDecimal((String) vgm));
+        } else if (vgm instanceof Number) {
+            bc.setVgm(new BigDecimal(vgm.toString()));
+        }
+
+        bc.setVgmUnit((String) map.get("vgm_unit"));
 
         return bc;
     }
