@@ -207,10 +207,15 @@ public class BookingConsolidatedController extends BaseController {
      * 修改订舱与集装箱合并信息
      */
     @RequiresPermissions("system:consolidated:edit")
-    @GetMapping("/edit/{bookingNo}")
-    public String edit(@PathVariable("bookingNo") String bookingNo, ModelMap mmap) {
+    @GetMapping("/edit/{id}")
+    public String edit(@PathVariable("id") Long id, ModelMap mmap) {
+        // 通过id查询记录
         BookingConsolidated bookingConsolidated = bookingConsolidatedService
-                .selectBookingConsolidatedByBookingNo(bookingNo);
+                .selectBookingConsolidatedList(new BookingConsolidated() {
+                    {
+                        setId(id);
+                    }
+                }).stream().findFirst().orElse(null);
         mmap.put("bookingConsolidated", bookingConsolidated);
         return prefix + "/edit";
     }

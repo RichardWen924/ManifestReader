@@ -5,6 +5,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 <mapper namespace="com.ruoyi.system.mapper.BookingConsolidatedMapper">
     
     <resultMap type="BookingConsolidated" id="BookingConsolidatedResult">
+        <id property="id" column="id" />
         <result property="bookingNo"    column="booking_no"    />
         <result property="shipper"    column="shipper"    />
         <result property="consignee"    column="consignee"    />
@@ -30,6 +31,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <sql id="selectBookingConsolidatedVo">
         select 
+            id,
             booking_no, 
             shipper, 
             consignee, 
@@ -128,8 +130,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </insert>
 
     <update id="updateBookingConsolidated" parameterType="BookingConsolidated">
-        update booking_consolidated
+        update bill_of_lading_v3
         <trim prefix="SET" suffixOverrides=",">
+            <if test="bookingNo != null">booking_no = #{bookingNo},</if>
             <if test="shipper != null">shipper = #{shipper},</if>
             <if test="consignee != null">consignee = #{consignee},</if>
             <if test="notifyParty != null">notify_party = #{notifyParty},</if>
@@ -137,29 +140,23 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="portOfLoading != null">port_of_loading = #{portOfLoading},</if>
             <if test="portOfDischarge != null">port_of_discharge = #{portOfDischarge},</if>
             <if test="placeOfDelivery != null">place_of_delivery = #{placeOfDelivery},</if>
-            <if test="cargoDescription != null">cargo_description = #{cargoDescription},</if>
-            <if test="cargoQuantity != null">cargo_quantity = #{cargoQuantity},</if>
-            <if test="cargoGrossWeight != null">cargo_gross_weight = #{cargoGrossWeight},</if>
-            <if test="cargoMeasurement != null">cargo_measurement = #{cargoMeasurement},</if>
-            <if test="containerNo != null">container_no = #{containerNo},</if>
-            <if test="sealNo != null">seal_no = #{sealNo},</if>
-            <if test="vgm != null">vgm = #{vgm},</if>
-            <if test="vgmUnit != null">vgm_unit = #{vgmUnit},</if>
+            <if test="cargoDescription != null">goods_description = #{cargoDescription},</if>
+            <if test="cargoGrossWeight != null">gross_weight_kgs = #{cargoGrossWeight},</if>
+            <if test="cargoMeasurement != null">measurement_cbm = #{cargoMeasurement},</if>
+            <if test="containerNo != null and sealNo != null">container_seal_info = CONCAT(#{containerNo}, '/', #{sealNo}),</if>
             <if test="filePath != null and filePath != ''">file_path = #{filePath},</if>
-            <if test="createdAt != null">created_at = #{createdAt},</if>
-            <if test="updatedAt != null">updated_at = #{updatedAt},</if>
         </trim>
-        where booking_no = #{bookingNo}
+        where id = #{id}
     </update>
 
-    <delete id="deleteBookingConsolidatedByBookingNo" parameterType="String">
-        delete from booking_consolidated where booking_no = #{bookingNo}
+    <delete id="deleteBookingConsolidatedByBookingNo" parameterType="Long">
+        delete from bill_of_lading_v3 where id = #{id}
     </delete>
 
-    <delete id="deleteBookingConsolidatedByBookingNos" parameterType="String">
-        delete from booking_consolidated where booking_no in 
-        <foreach item="bookingNo" collection="array" open="(" separator="," close=")">
-            #{bookingNo}
+    <delete id="deleteBookingConsolidatedByBookingNos" parameterType="Long">
+        delete from bill_of_lading_v3 where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
         </foreach>
     </delete>
 

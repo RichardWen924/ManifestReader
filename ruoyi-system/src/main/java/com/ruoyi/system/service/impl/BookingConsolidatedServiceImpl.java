@@ -46,7 +46,6 @@ import org.springframework.web.client.RestTemplate;
 public class BookingConsolidatedServiceImpl implements IBookingConsolidatedService {
     private static final Logger log = LoggerFactory.getLogger(BookingConsolidatedServiceImpl.class);
 
-    private static final String DIFY_API_KEY_DIRECT = "app-TWO0gviA2zkp06u86rmEc2Ns";
     private static final String DIFY_API_KEY_ANALYZE = "app-qFk49MpWcQKiqY41Q7IdDwIj";
     private static final String DIFY_BASE_URL = "http://localhost/v1";
     private static final String REDIS_PREFIX = "pdf_edit:";
@@ -85,13 +84,19 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
     }
 
     @Override
-    public int deleteBookingConsolidatedByBookingNos(String bookingNos) {
-        return bookingConsolidatedMapper.deleteBookingConsolidatedByBookingNos(Convert.toStrArray(bookingNos));
+    public int deleteBookingConsolidatedByBookingNos(String ids) {
+        // 将逗号分隔的id字符串转换为Long数组
+        String[] idStrArray = Convert.toStrArray(ids);
+        Long[] idArray = new Long[idStrArray.length];
+        for (int i = 0; i < idStrArray.length; i++) {
+            idArray[i] = Long.parseLong(idStrArray[i]);
+        }
+        return bookingConsolidatedMapper.deleteBookingConsolidatedByBookingNos(idArray);
     }
 
     @Override
-    public int deleteBookingConsolidatedByBookingNo(String bookingNo) {
-        return bookingConsolidatedMapper.deleteBookingConsolidatedByBookingNo(bookingNo);
+    public int deleteBookingConsolidatedByBookingNo(Long id) {
+        return bookingConsolidatedMapper.deleteBookingConsolidatedByBookingNo(id);
     }
 
     /**

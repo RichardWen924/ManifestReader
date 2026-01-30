@@ -46,18 +46,18 @@ public interface IBookingConsolidatedService {
     /**
      * 批量删除订舱与集装箱合并信息
      * 
-     * @param bookingNos 需要删除的订舱与集装箱合并信息主键集合
+     * @param ids 需要删除的订舱与集装箱合并信息主键集合
      * @return 结果
      */
-    public int deleteBookingConsolidatedByBookingNos(String bookingNos);
+    public int deleteBookingConsolidatedByBookingNos(String ids);
 
     /**
      * 删除订舱与集装箱合并信息信息
      * 
-     * @param bookingNo 订舱与集装箱合并信息主键
+     * @param id 订舱与集装箱合并信息主键
      * @return 结果
      */
-    public int deleteBookingConsolidatedByBookingNo(String bookingNo);
+    public int deleteBookingConsolidatedByBookingNo(Long id);
 
     /**
      * 直接保存模式：接受编辑后的数据直接保存（不调用Dify）

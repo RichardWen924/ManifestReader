@@ -9,8 +9,7 @@ import com.ruoyi.system.domain.BookingConsolidated;
  * @author ruoyi
  * @date 2026-01-27
  */
-public interface BookingConsolidatedMapper 
-{
+public interface BookingConsolidatedMapper {
     /**
      * 查询订舱与集装箱合并信息
      * 
@@ -46,16 +45,16 @@ public interface BookingConsolidatedMapper
     /**
      * 删除订舱与集装箱合并信息
      * 
-     * @param bookingNo 订舱与集装箱合并信息主键
+     * @param id 订舱与集装箱合并信息主键
      * @return 结果
      */
-    public int deleteBookingConsolidatedByBookingNo(String bookingNo);
+    public int deleteBookingConsolidatedByBookingNo(Long id);
 
     /**
      * 批量删除订舱与集装箱合并信息
      * 
-     * @param bookingNos 需要删除的数据主键集合
+     * @param ids 需要删除的数据主键集合
      * @return 结果
      */
-    public int deleteBookingConsolidatedByBookingNos(String[] bookingNos);
+    public int deleteBookingConsolidatedByBookingNos(Long[] ids);
 }
