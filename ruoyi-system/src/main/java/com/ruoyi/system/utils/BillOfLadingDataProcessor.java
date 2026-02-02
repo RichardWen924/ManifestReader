@@ -24,47 +24,66 @@ public class BillOfLadingDataProcessor {
         Map<String, Object> processed = new HashMap<>();
 
         for (Map.Entry<String, Object> entry : rawData.entrySet()) {
-            String key = entry.getKey();
+            String originalKey = entry.getKey();
             Object value = entry.getValue();
 
             // 1. 处理 "N/A" 或 null
-            if (value == null || "N/A".equalsIgnoreCase(value.toString())
-                    || "None".equalsIgnoreCase(value.toString())) {
-                processed.put(key, "");
-                continue;
+            String valStr = "";
+            if (value != null && !"N/A".equalsIgnoreCase(value.toString())
+                    && !"None".equalsIgnoreCase(value.toString())) {
+                valStr = value.toString().trim();
             }
 
-            String valStr = value.toString().trim();
-
-            // 2. 针对特定字段进行预处理
-            if (isNumericField(key)) {
-                processed.put(key, cleanNumeric(valStr));
-            } else if (isMultilineField(key)) {
-                // 保留换行符，poi-tl 默认支持换行
-                processed.put(key, valStr);
-            } else {
-                processed.put(key, valStr);
+            // 2. 清洗数据内容
+            Object finalValue = valStr;
+            if (isNumericField(originalKey)) {
+                finalValue = cleanNumeric(valStr);
             }
+
+            // 3. 映射到 Word 模板标签：数据库字段名 + "1"
+            // 同时保留原键值对，并添加下划线格式 + "1" 的格式
+            String snakeKey = toSnakeCase(originalKey);
+            processed.put(originalKey, finalValue); // 原样保留
+            processed.put(originalKey + "1", finalValue); // 原样 + 1
+            processed.put(snakeKey + "1", finalValue); // 下划线 + 1
         }
 
         return processed;
     }
 
     /**
-     * 判断是否为数值字段
+     * 驼峰转下划线 (优化版)
      */
-    private static boolean isNumericField(String key) {
-        return key.contains("weight") || key.contains("measurement") || key.contains("tons")
-                || key.contains("amount") || key.contains("quantity") || key.contains("rate");
+    private static String toSnakeCase(String str) {
+        if (str == null)
+            return null;
+        // 如果已经是下画线格式，直接返回
+        if (str.contains("_"))
+            return str.toLowerCase();
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < str.length(); i++) {
+            char c = str.charAt(i);
+            if (Character.isUpperCase(c)) {
+                if (i > 0)
+                    sb.append("_");
+                sb.append(Character.toLowerCase(c));
+            } else {
+                sb.append(c);
+            }
+        }
+        return sb.toString();
     }
 
     /**
-     * 判断是否为多行文本字段
+     * 判断是否为数值字段
      */
-    private static boolean isMultilineField(String key) {
-        return "shipper".equalsIgnoreCase(key) || "consignee".equalsIgnoreCase(key)
-                || "notify_party".equalsIgnoreCase(key) || "goods_description".equalsIgnoreCase(key)
-                || "marks".equalsIgnoreCase(key);
+    private static boolean isNumericField(String key) {
+        if (key == null)
+            return false;
+        String lowerKey = key.toLowerCase();
+        return lowerKey.contains("weight") || lowerKey.contains("measurement") || lowerKey.contains("tons")
+                || lowerKey.contains("amount") || lowerKey.contains("quantity") || lowerKey.contains("rate");
     }
 
     /**

@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.util.Map;
 
 /**
@@ -22,9 +21,6 @@ import java.util.Map;
 @Service
 public class BillOfLadingExportService {
     private static final Logger log = LoggerFactory.getLogger(BillOfLadingExportService.class);
-
-    // 默认模板路径（用户指定的路径）
-    private static final String DEFAULT_TEMPLATE_PATH = "/Users/richard/Downloads/1.docx";
 
     /**
      * 导出提单为 PDF 字节数组
@@ -39,7 +35,7 @@ public class BillOfLadingExportService {
             log.info("提单数据预处理完成");
 
             // 2. 填充 Word 模板
-            byte[] wordBytes = fillWordTemplate(processedData, DEFAULT_TEMPLATE_PATH);
+            byte[] wordBytes = fillWordTemplate(processedData);
             log.info("Word 模板填充完成，大小: {} 字节", wordBytes.length);
 
             // 3. 转换为 PDF
@@ -54,16 +50,17 @@ public class BillOfLadingExportService {
     }
 
     /**
-     * 使用 poi-tl 填充 Word 模板
+     * 使用 poi-tl 填充 Word 模板 (内部自动从 ClassPath 加载)
      */
-    private byte[] fillWordTemplate(Map<String, Object> data, String templatePath) throws Exception {
-        File templateFile = new File(templatePath);
-        if (!templateFile.exists()) {
-            throw new RuntimeException("模板文件不存在: " + templatePath);
-        }
+    private byte[] fillWordTemplate(Map<String, Object> data) throws Exception {
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream();
+                java.io.InputStream templateStream = getClass().getResourceAsStream("/templates/bill_of_lading.docx")) {
 
-        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            XWPFTemplate template = XWPFTemplate.compile(templatePath).render(data);
+            if (templateStream == null) {
+                throw new RuntimeException("未能找到模板文件: /templates/bill_of_lading.docx");
+            }
+
+            XWPFTemplate template = XWPFTemplate.compile(templateStream).render(data);
             template.write(out);
             template.close();
             return out.toByteArray();
