@@ -41,11 +41,38 @@ public class BillOfLadingDataProcessor {
             }
 
             // 3. 映射到 Word 模板标签：数据库字段名 + "1"
-            // 同时保留原键值对，并添加下划线格式 + "1" 的格式
             String snakeKey = toSnakeCase(originalKey);
             processed.put(originalKey, finalValue); // 原样保留
             processed.put(originalKey + "1", finalValue); // 原样 + 1
             processed.put(snakeKey + "1", finalValue); // 下划线 + 1
+
+            // 4. V4/V5 特殊自定义映射逻辑 (根据用户 SQL 里的注释)
+            if ("preCarriageBy".equalsIgnoreCase(originalKey) || "pre_carriage_by".equalsIgnoreCase(originalKey)) {
+                processed.put("PRE-CARRIAGE BY", finalValue);
+            }
+            if ("carrierAgent".equalsIgnoreCase(originalKey) || "carrier_agent".equalsIgnoreCase(originalKey)) {
+                processed.put("Carrier Agent1", finalValue);
+            }
+            if ("serviceMode".equalsIgnoreCase(originalKey) || "service_mode".equalsIgnoreCase(originalKey)) {
+                processed.put("service-mode1", finalValue);
+            }
+            if ("collectAmount".equalsIgnoreCase(originalKey) || "collect_amount".equalsIgnoreCase(originalKey)) {
+                processed.put("collect_type1", finalValue);
+            }
+
+            // V5 新增映射
+            if ("containerNo".equalsIgnoreCase(originalKey) || "container_no".equalsIgnoreCase(originalKey)) {
+                processed.put("container_number1", finalValue);
+            }
+            if ("sealNo".equalsIgnoreCase(originalKey) || "seal_no".equalsIgnoreCase(originalKey)) {
+                processed.put("seal_number1", finalValue);
+            }
+            if ("containerWeight".equalsIgnoreCase(originalKey) || "container_weight".equalsIgnoreCase(originalKey)) {
+                processed.put("container_weight1", finalValue);
+            }
+            if ("vgmWeight".equalsIgnoreCase(originalKey) || "vgm_weight".equalsIgnoreCase(originalKey)) {
+                processed.put("VGM", finalValue);
+            }
         }
 
         return processed;

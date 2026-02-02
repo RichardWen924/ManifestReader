@@ -25,6 +25,10 @@
                                 <input type="text" name="vesselVoyage" />
                             </li>
                             <li>
+                                <label>前段运输：</label>
+                                <input type="text" name="preCarriageBy" />
+                            </li>
+                            <li>
                                 <label>装货港：</label>
                                 <input type="text" name="portOfLoading" />
                             </li>
@@ -39,6 +43,10 @@
                             <li>
                                 <label>服务类型：</label>
                                 <input type="text" name="serviceType" />
+                            </li>
+                            <li>
+                                <label>服务模式：</label>
+                                <input type="text" name="serviceMode" />
                             </li>
                             <li>
                                 <label>费用条款：</label>
@@ -140,6 +148,10 @@
                     title: '船名航次'
                 },
                 {
+                    field: 'preCarriageBy',
+                    title: '前段运输'
+                },
+                {
                     field: 'portOfLoading',
                     title: '装货港'
                 },
@@ -172,12 +184,24 @@
                     title: '体积(CBM)'
                 },
                 {
+                    field: 'containerNo',
+                    title: '箱号'
+                },
+                {
+                    field: 'sealNo',
+                    title: '封号'
+                },
+                {
                     field: 'containerSealInfo',
-                    title: '集装箱/封条'
+                    title: '原始描述'
                 },
                 {
                     field: 'serviceType',
                     title: '服务类型'
+                },
+                {
+                    field: 'serviceMode',
+                    title: '服务模式'
                 },
                 {
                     field: 'freightTerm',

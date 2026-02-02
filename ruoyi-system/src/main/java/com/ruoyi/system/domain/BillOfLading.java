@@ -58,6 +58,10 @@ public class BillOfLading extends BaseEntity {
     @Excel(name = "船名航次")
     private String vesselVoyage;
 
+    /** 前段运输 */
+    @Excel(name = "前段运输")
+    private String preCarriageBy;
+
     /** 收货地 */
     @Excel(name = "收货地")
     private String placeOfReceipt;
@@ -114,6 +118,10 @@ public class BillOfLading extends BaseEntity {
     @Excel(name = "服务类型")
     private String serviceType;
 
+    /** 服务模式 */
+    @Excel(name = "服务模式")
+    private String serviceMode;
+
     /** 计费吨 */
     @Excel(name = "计费吨")
     private BigDecimal revenueTons;
@@ -140,6 +148,22 @@ public class BillOfLading extends BaseEntity {
 
     /** PDF文件路径 */
     private String filePath;
+
+    /** 集装箱号 */
+    @Excel(name = "集装箱号")
+    private String containerNo;
+
+    /** 封号 */
+    @Excel(name = "封号")
+    private String sealNo;
+
+    /** 箱重 */
+    @Excel(name = "箱重")
+    private BigDecimal containerWeight;
+
+    /** VGM核实总重 */
+    @Excel(name = "VGM核实总重")
+    private BigDecimal vgmWeight;
 
     public void setId(Long id) {
         this.id = id;
@@ -227,6 +251,14 @@ public class BillOfLading extends BaseEntity {
 
     public String getVesselVoyage() {
         return vesselVoyage;
+    }
+
+    public void setPreCarriageBy(String preCarriageBy) {
+        this.preCarriageBy = preCarriageBy;
+    }
+
+    public String getPreCarriageBy() {
+        return preCarriageBy;
     }
 
     public void setPlaceOfReceipt(String placeOfReceipt) {
@@ -341,6 +373,14 @@ public class BillOfLading extends BaseEntity {
         return serviceType;
     }
 
+    public void setServiceMode(String serviceMode) {
+        this.serviceMode = serviceMode;
+    }
+
+    public String getServiceMode() {
+        return serviceMode;
+    }
+
     public void setRevenueTons(BigDecimal revenueTons) {
         this.revenueTons = revenueTons;
     }
@@ -397,6 +437,38 @@ public class BillOfLading extends BaseEntity {
         return filePath;
     }
 
+    public void setContainerNo(String containerNo) {
+        this.containerNo = containerNo;
+    }
+
+    public String getContainerNo() {
+        return containerNo;
+    }
+
+    public void setSealNo(String sealNo) {
+        this.sealNo = sealNo;
+    }
+
+    public String getSealNo() {
+        return sealNo;
+    }
+
+    public void setContainerWeight(BigDecimal containerWeight) {
+        this.containerWeight = containerWeight;
+    }
+
+    public BigDecimal getContainerWeight() {
+        return containerWeight;
+    }
+
+    public void setVgmWeight(BigDecimal vgmWeight) {
+        this.vgmWeight = vgmWeight;
+    }
+
+    public BigDecimal getVgmWeight() {
+        return vgmWeight;
+    }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE)
@@ -431,6 +503,12 @@ public class BillOfLading extends BaseEntity {
                 .append("collectAmount", getCollectAmount())
                 .append("payableAt", getPayableAt())
                 .append("ladenOnBoard", getLadenOnBoard())
+                .append("preCarriageBy", getPreCarriageBy())
+                .append("serviceMode", getServiceMode())
+                .append("containerNo", getContainerNo())
+                .append("sealNo", getSealNo())
+                .append("containerWeight", getContainerWeight())
+                .append("vgmWeight", getVgmWeight())
                 .append("filePath", getFilePath())
                 .append("createTime", getCreateTime())
                 .toString();

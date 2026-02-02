@@ -114,14 +114,22 @@
                 </div>
                 <div class="col-sm-6">
                     <div class="form-group">
+                        <label class="col-sm-4 control-label">前段运输：</label>
+                        <div class="col-sm-8">
+                            <input name="preCarriageBy" th:field="*{preCarriageBy}" class="form-control" type="text">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-6">
+                    <div class="form-group">
                         <label class="col-sm-4 control-label">收货地：</label>
                         <div class="col-sm-8">
                             <input name="placeOfReceipt" th:field="*{placeOfReceipt}" class="form-control" type="text">
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="row">
                 <div class="col-sm-6">
                     <div class="form-group">
                         <label class="col-sm-4 control-label">装货港：</label>
@@ -130,6 +138,8 @@
                         </div>
                     </div>
                 </div>
+            </div>
+            <div class="row">
                 <div class="col-sm-6">
                     <div class="form-group">
                         <label class="col-sm-4 control-label">卸货港：</label>
@@ -139,8 +149,6 @@
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="row">
                 <div class="col-sm-6">
                     <div class="form-group">
                         <label class="col-sm-4 control-label">交货地：</label>
@@ -152,13 +160,55 @@
                 </div>
             </div>
 
-            <h4 class="form-header h4">货物明细</h4>
+            <h4 class="form-header h4">集装箱明细 (V5)</h4>
+            <div class="row">
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label">集装箱号：</label>
+                        <div class="col-sm-8">
+                            <input name="containerNo" th:field="*{containerNo}" class="form-control" type="text"
+                                placeholder="{{container_number1}}">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label">封号：</label>
+                        <div class="col-sm-8">
+                            <input name="sealNo" th:field="*{sealNo}" class="form-control" type="text"
+                                placeholder="{{seal_number1}}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label">箱重：</label>
+                        <div class="col-sm-8">
+                            <input name="containerWeight" th:field="*{containerWeight}" class="form-control" type="text"
+                                placeholder="{{container_weight1}}">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label">VGM总重：</label>
+                        <div class="col-sm-8">
+                            <input name="vgmWeight" th:field="*{vgmWeight}" class="form-control" type="text"
+                                placeholder="{{VGM}}">
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div class="form-group">
-                <label class="col-sm-2 control-label">集装箱/封条：</label>
+                <label class="col-sm-2 control-label">原始综合描述：</label>
                 <div class="col-sm-9">
                     <input name="containerSealInfo" th:field="*{containerSealInfo}" class="form-control" type="text">
                 </div>
             </div>
+
+            <h4 class="form-header h4">货物与包装</h4>
             <div class="form-group">
                 <label class="col-sm-2 control-label">货物描述：</label>
                 <div class="col-sm-9">
@@ -203,6 +253,16 @@
                         </div>
                     </div>
                 </div>
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label">服务模式：</label>
+                        <div class="col-sm-8">
+                            <input name="serviceMode" th:field="*{serviceMode}" class="form-control" type="text">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
                 <div class="col-sm-6">
                     <div class="form-group">
                         <label class="col-sm-4 control-label">计费吨：</label>
@@ -284,25 +344,6 @@
                 </div>
             </div>
 
-            <h4 class="form-header h4">其他信息</h4>
-            <div class="row">
-                <div class="col-sm-6">
-                    <div class="form-group">
-                        <label class="col-sm-4 control-label">VGM数值：</label>
-                        <div class="col-sm-8">
-                            <input name="vgm" th:field="*{vgm}" class="form-control" type="text">
-                        </div>
-                    </div>
-                </div>
-                <div class="col-sm-6">
-                    <div class="form-group">
-                        <label class="col-sm-4 control-label">VGM单位：</label>
-                        <div class="col-sm-8">
-                            <input name="vgmUnit" th:field="*{vgmUnit}" class="form-control" type="text">
-                        </div>
-                    </div>
-                </div>
-            </div>
             <div class="form-group">
                 <label class="col-sm-2 control-label is-required">文件路径：</label>
                 <div class="col-sm-9">

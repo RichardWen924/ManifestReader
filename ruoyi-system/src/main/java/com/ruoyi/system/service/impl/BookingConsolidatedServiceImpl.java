@@ -553,6 +553,8 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
                 "OCEAN_VESSEL");
         addAlias(map, "vesselName", "vessel_name", "VESSEL_NAME", "VesselName", "vessel");
         addAlias(map, "voyageNo", "voyage_no", "VOYAGE_NO", "VoyageNo", "voyage");
+        addAlias(map, "preCarriageBy", "pre_carriage_by", "PRE_CARRIAGE_BY", "PreCarriageBy", "pre_carriage",
+                "PRE_CARRIAGE");
 
         // 集装箱和封条
         addAlias(map, "containerNo", "container_no", "CONTAINER_NO", "ContainerNo", "container", "CONTAINER");
@@ -573,6 +575,9 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
         addAlias(map, "grossWeightKgs", "gross_weight_kgs", "GROSS_WEIGHT_KGS", "GrossWeightKgs");
         addAlias(map, "measurement", "MEASUREMENT", "Measurement", "volume", "VOLUME");
         addAlias(map, "measurementCbm", "measurement_cbm", "MEASUREMENT_CBM", "MeasurementCbm");
+        addAlias(map, "containerWeight", "container_weight", "CONTAINER_WEIGHT", "ContainerWeight", "boxWeight",
+                "box_weight");
+        addAlias(map, "vgmWeight", "vgm_weight", "VGM_WEIGHT", "VgmWeight", "vgm", "VGM");
 
         // 运费相关
         addAlias(map, "freightTerm", "freight_term", "FREIGHT_TERM", "FreightTerm", "freightCharges", "freight_charges",
@@ -602,6 +607,7 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
 
         // 其他字段
         addAlias(map, "serviceType", "service_type", "SERVICE_TYPE", "ServiceType", "service", "SERVICE");
+        addAlias(map, "serviceMode", "service_mode", "SERVICE_MODE", "ServiceMode", "mode", "MODE");
         addAlias(map, "issuePlace", "issue_place", "ISSUE_PLACE", "IssuePlace");
         addAlias(map, "ladenOnBoard", "laden_on_board", "LADEN_ON_BOARD", "LadenOnBoard", "ladenOnBoardDate",
                 "laden_on_board_date");
