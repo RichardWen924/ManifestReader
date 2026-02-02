@@ -17,11 +17,36 @@ public class BillOfLadingDataProcessor {
      * @return 清洗后的数据 Map
      */
     public static Map<String, Object> process(Map<String, Object> rawData) {
-        if (rawData == null) {
-            return new HashMap<>();
-        }
-
         Map<String, Object> processed = new HashMap<>();
+
+        // 预设 V5 核心字段为空字符串，确保未提取到的字段在 PDF 中显示为空白
+        String[] v5Fields = {
+                "blNo", "bookingNo", "docNo", "serialNo", "shipper", "consignee", "notifyParty",
+                "carrierAgent", "deliveryAgent", "preCarriageBy", "vesselVoyage", "placeOfReceipt",
+                "portOfLoading", "portOfDischarge", "placeOfDelivery", "containerNo", "sealNo",
+                "containerWeight", "vgmWeight", "containerSealInfo", "packageQuantity", "packageUnit",
+                "goodsDescription", "grossWeightKgs", "measurementCbm", "serviceType", "serviceMode",
+                "revenueTons", "freightTerm", "freightRate", "prepaidAmount", "collectAmount",
+                "payableAt", "originalBlCount", "issuePlace", "ladenOnBoard"
+        };
+        for (String field : v5Fields) {
+            processed.put(field, "");
+            processed.put(field + "1", "");
+            processed.put(toSnakeCase(field) + "1", "");
+        }
+        // 特殊占位符初始化
+        processed.put("PRE-CARRIAGE BY", "");
+        processed.put("Carrier Agent1", "");
+        processed.put("service-mode1", "");
+        processed.put("collect_type1", "");
+        processed.put("container_number1", "");
+        processed.put("seal_number1", "");
+        processed.put("container_weight1", "");
+        processed.put("VGM", "");
+
+        if (rawData == null) {
+            return processed;
+        }
 
         for (Map.Entry<String, Object> entry : rawData.entrySet()) {
             String originalKey = entry.getKey();
@@ -40,13 +65,13 @@ public class BillOfLadingDataProcessor {
                 finalValue = cleanNumeric(valStr);
             }
 
-            // 3. 映射到 Word 模板标签：数据库字段名 + "1"
+            // 3. 映射到 Word 模板标签
             String snakeKey = toSnakeCase(originalKey);
-            processed.put(originalKey, finalValue); // 原样保留
-            processed.put(originalKey + "1", finalValue); // 原样 + 1
-            processed.put(snakeKey + "1", finalValue); // 下划线 + 1
+            processed.put(originalKey, finalValue);
+            processed.put(originalKey + "1", finalValue);
+            processed.put(snakeKey + "1", finalValue);
 
-            // 4. V4/V5 特殊自定义映射逻辑 (根据用户 SQL 里的注释)
+            // 4. V4/V5 特殊自定义映射逻辑
             if ("preCarriageBy".equalsIgnoreCase(originalKey) || "pre_carriage_by".equalsIgnoreCase(originalKey)) {
                 processed.put("PRE-CARRIAGE BY", finalValue);
             }
@@ -75,6 +100,23 @@ public class BillOfLadingDataProcessor {
             }
         }
 
+        // 5. 增强逻辑：根据运费条款自动设置 "AS ARRANGED"
+        String freightTerm = (String) processed.getOrDefault("freightTerm", "");
+        if (StringUtils.isNotEmpty(freightTerm)) {
+            String termUpper = freightTerm.toUpperCase();
+            if (termUpper.contains("PREPAID")) {
+                processed.put("prepaidAmount", "AS ARRANGED");
+                processed.put("prepaid_amount1", "AS ARRANGED");
+                processed.put("prepaidAmount1", "AS ARRANGED");
+            }
+            if (termUpper.contains("COLLECT")) {
+                processed.put("collectAmount", "AS ARRANGED");
+                processed.put("collect_amount1", "AS ARRANGED");
+                processed.put("collectAmount1", "AS ARRANGED");
+                processed.put("collect_type1", "AS ARRANGED");
+            }
+        }
+
         return processed;
     }
 
@@ -84,7 +126,6 @@ public class BillOfLadingDataProcessor {
     private static String toSnakeCase(String str) {
         if (str == null)
             return null;
-        // 如果已经是下画线格式，直接返回
         if (str.contains("_"))
             return str.toLowerCase();
 
@@ -118,14 +159,12 @@ public class BillOfLadingDataProcessor {
      */
     private static String cleanNumeric(String val) {
         if (StringUtils.isEmpty(val)) {
-            return "0.00";
+            return "";
         }
-        // 去除所有非数字和非焦点的字符（保留点号）
         String cleaned = val.replaceAll("[^0-9.]", "");
         if (StringUtils.isEmpty(cleaned)) {
-            return "0.00";
+            return "";
         }
-        // 如果有多个点，只保留第一个
         if (cleaned.indexOf(".") != cleaned.lastIndexOf(".")) {
             int firstDot = cleaned.indexOf(".");
             cleaned = cleaned.substring(0, firstDot + 1) + cleaned.substring(firstDot + 1).replace(".", "");

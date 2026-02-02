@@ -268,7 +268,7 @@ public class BookingConsolidatedController extends BaseController {
     @Log(title = "订舱与集装箱合并信息", businessType = BusinessType.UPDATE)
     @PostMapping("/edit")
     @ResponseBody
-    public AjaxResult editSave(BookingConsolidated bookingConsolidated) {
+    public AjaxResult editSave(@RequestBody BookingConsolidated bookingConsolidated) {
         return toAjax(bookingConsolidatedService.updateBookingConsolidated(bookingConsolidated));
     }
 

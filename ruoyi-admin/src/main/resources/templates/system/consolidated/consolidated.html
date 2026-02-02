@@ -53,6 +53,14 @@
                                 <input type="text" name="freightTerm" />
                             </li>
                             <li>
+                                <label>集装箱号：</label>
+                                <input type="text" name="containerNo" />
+                            </li>
+                            <li>
+                                <label>封号：</label>
+                                <input type="text" name="sealNo" />
+                            </li>
+                            <li>
                                 <label>创建时间：</label>
                                 <input type="text" class="time-input" placeholder="请选择创建时间" name="createdAt" />
                             </li>
@@ -182,6 +190,14 @@
                 {
                     field: 'measurementCbm',
                     title: '体积(CBM)'
+                },
+                {
+                    field: 'containerWeight',
+                    title: '箱重'
+                },
+                {
+                    field: 'vgmWeight',
+                    title: 'VGM'
                 },
                 {
                     field: 'containerNo',

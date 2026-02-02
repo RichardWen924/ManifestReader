@@ -139,7 +139,7 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
             bl.setFilePath(filePath);
         }
 
-        log.info("准备插入bill_of_lading_v3表，bl_no: {}, booking_no: {}, 文件路径: {}",
+        log.info("准备插入bill_of_lading_v5表，bl_no: {}, booking_no: {}, 文件路径: {}",
                 bl.getBlNo(), bl.getBookingNo(), filePath);
         billOfLadingMapper.insertBillOfLading(bl);
 
@@ -396,7 +396,7 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
             bl.setBlNo("BL" + System.currentTimeMillis());
         }
 
-        log.info("准备插入bill_of_lading_v3表，bl_no: {}, booking_no: {}",
+        log.info("准备插入bill_of_lading_v5表，bl_no: {}, booking_no: {}",
                 bl.getBlNo(), bl.getBookingNo());
         billOfLadingMapper.insertBillOfLading(bl);
 
@@ -654,6 +654,12 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
         fieldMapping.put("originalBlCount", "original_bl_count");
         fieldMapping.put("issuePlace", "issue_place");
         fieldMapping.put("ladenOnBoard", "laden_on_board");
+        fieldMapping.put("preCarriageBy", "pre_carriage_by");
+        fieldMapping.put("serviceMode", "service_mode");
+        fieldMapping.put("containerNo", "container_no");
+        fieldMapping.put("sealNo", "seal_no");
+        fieldMapping.put("containerWeight", "container_weight");
+        fieldMapping.put("vgmWeight", "vgm_weight");
 
         // 遍历映射表，从JSON提取数据
         for (Map.Entry<String, String> entry : fieldMapping.entrySet()) {
@@ -775,6 +781,13 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
         fieldMapping.put("originalBlCount", "original_bl_count");
         fieldMapping.put("issuePlace", "issue_place");
         fieldMapping.put("ladenOnBoard", "laden_on_board");
+        fieldMapping.put("preCarriageBy", "pre_carriage_by");
+        fieldMapping.put("serviceMode", "service_mode");
+        fieldMapping.put("containerNo", "container_no");
+        fieldMapping.put("sealNo", "seal_no");
+        fieldMapping.put("containerWeight", "container_weight");
+        fieldMapping.put("vgmWeight", "vgm_weight");
+        fieldMapping.put("filePath", "file_path");
 
         // 特殊处理：vesselName + voyageNo -> vessel_voyage
         if (camelMap.containsKey("vesselName") || camelMap.containsKey("voyageNo")) {
@@ -923,6 +936,15 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
         bl.setCollectAmount((String) getVal(map, "collect_amount", "collectAmount"));
         bl.setFreightRate((String) getVal(map, "freight_rate", "freightRate", "rate"));
         bl.setRevenueTons(extractBigDecimal(getVal(map, "revenue_tons", "revenueTons")));
+        bl.setFilePath((String) getVal(map, "file_path", "filePath"));
+
+        // V5 字段
+        bl.setPreCarriageBy((String) getVal(map, "pre_carriage_by", "preCarriageBy"));
+        bl.setServiceMode((String) getVal(map, "service_mode", "serviceMode"));
+        bl.setContainerNo((String) getVal(map, "container_no", "containerNo"));
+        bl.setSealNo((String) getVal(map, "seal_no", "sealNo"));
+        bl.setContainerWeight(extractBigDecimal(getVal(map, "container_weight", "containerWeight")));
+        bl.setVgmWeight(extractBigDecimal(getVal(map, "vgm_weight", "vgmWeight")));
 
         return bl;
     }
@@ -1007,6 +1029,13 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
         fieldMapping.put("original_bl_count", "originalBlCount");
         fieldMapping.put("issue_place", "issuePlace");
         fieldMapping.put("laden_on_board", "ladenOnBoard");
+        fieldMapping.put("pre_carriage_by", "preCarriageBy");
+        fieldMapping.put("service_mode", "serviceMode");
+        fieldMapping.put("container_no", "containerNo");
+        fieldMapping.put("seal_no", "sealNo");
+        fieldMapping.put("container_weight", "containerWeight");
+        fieldMapping.put("vgm_weight", "vgmWeight");
+        fieldMapping.put("file_path", "filePath");
         fieldMapping.put("originalFilePath", "originalFilePath");
         fieldMapping.put("templateFilePath", "templateFilePath");
 

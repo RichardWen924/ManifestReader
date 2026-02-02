@@ -15,6 +15,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="notifyParty"    column="notify_party"    />
         <result property="carrierAgent"    column="carrier_agent"    />
         <result property="deliveryAgent"    column="delivery_agent"    />
+        <result property="preCarriageBy"    column="pre_carriage_by"    />
         <result property="vesselVoyage"    column="vessel_voyage"    />
         <result property="placeOfReceipt"    column="place_of_receipt"    />
         <result property="portOfLoading"    column="port_of_loading"    />
@@ -23,12 +24,15 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="containerSealInfo"    column="container_seal_info"    />
         <result property="containerNo"    column="container_no"    />
         <result property="sealNo"    column="seal_no"    />
-        <result property="packageQuantity"    column="package_quantity_text"    />
+        <result property="containerWeight"    column="container_weight"    />
+        <result property="vgmWeight"    column="vgm_weight"    />
+        <result property="packageQuantity"    column="package_quantity"    />
         <result property="packageUnit"    column="package_unit"    />
         <result property="goodsDescription"    column="goods_description"    />
         <result property="grossWeightKgs"    column="gross_weight_kgs"    />
         <result property="measurementCbm"    column="measurement_cbm"    />
         <result property="serviceType"    column="service_type"    />
+        <result property="serviceMode"    column="service_mode"    />
         <result property="revenueTons"    column="revenue_tons"    />
         <result property="freightTerm"    column="freight_term"    />
         <result property="freightRate"    column="freight_rate"    />
@@ -38,22 +42,18 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="originalBlCount"    column="original_bl_count"    />
         <result property="issuePlace"    column="issue_place"    />
         <result property="ladenOnBoard"    column="laden_on_board"    />
-        <result property="vgm"    column="vgm"    />
-        <result property="vgmUnit"    column="vgm_unit"    />
         <result property="filePath"    column="file_path"    />
         <result property="createdAt"    column="created_at"    />
     </resultMap>
 
     <sql id="selectBookingConsolidatedVo">
         select id, bl_no, booking_no, doc_no, serial_no, shipper, consignee, notify_party, carrier_agent, delivery_agent, 
-            vessel_voyage, place_of_receipt, port_of_loading, port_of_discharge, place_of_delivery, container_seal_info,
-            SUBSTRING_INDEX(container_seal_info, '/', 1) as container_no, 
-            SUBSTRING_INDEX(container_seal_info, '/', -1) as seal_no,
-            CONCAT(IFNULL(package_quantity, ''), ' ', IFNULL(package_unit, '')) as package_quantity_text,
-            package_unit, goods_description, gross_weight_kgs, measurement_cbm, service_type, revenue_tons, 
-            freight_term, freight_rate, prepaid_amount, collect_amount, payable_at, original_bl_count, issue_place, 
-            laden_on_board, NULL as vgm, NULL as vgm_unit, file_path, created_at
-        from bill_of_lading_v3
+            pre_carriage_by, vessel_voyage, place_of_receipt, port_of_loading, port_of_discharge, place_of_delivery, 
+            container_seal_info, container_no, seal_no, container_weight, vgm_weight,
+            package_quantity, package_unit, goods_description, gross_weight_kgs, measurement_cbm, service_type, service_mode,
+            revenue_tons, freight_term, freight_rate, prepaid_amount, collect_amount, payable_at, original_bl_count, issue_place, 
+            laden_on_board, file_path, created_at
+        from bill_of_lading_v5
     </sql>
 
     <select id="selectBookingConsolidatedList" parameterType="BookingConsolidated" resultMap="BookingConsolidatedResult">
@@ -61,6 +61,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <where>  
             <if test="blNo != null  and blNo != ''"> and bl_no like concat('%', #{blNo}, '%')</if>
             <if test="bookingNo != null  and bookingNo != ''"> and booking_no like concat('%', #{bookingNo}, '%')</if>
+            <if test="containerNo != null  and containerNo != ''"> and container_no like concat('%', #{containerNo}, '%')</if>
+            <if test="sealNo != null  and sealNo != ''"> and seal_no like concat('%', #{sealNo}, '%')</if>
             <if test="vesselVoyage != null  and vesselVoyage != ''"> and vessel_voyage like concat('%', #{vesselVoyage}, '%')</if>
             <if test="portOfLoading != null  and portOfLoading != ''"> and port_of_loading like concat('%', #{portOfLoading}, '%')</if>
             <if test="portOfDischarge != null  and portOfDischarge != ''"> and port_of_discharge like concat('%', #{portOfDischarge}, '%')</if>
@@ -77,7 +79,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
 
     <insert id="insertBookingConsolidated" parameterType="BookingConsolidated" useGeneratedKeys="true" keyProperty="id">
-        insert into bill_of_lading_v3
+        insert into bill_of_lading_v5
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="blNo != null">bl_no,</if>
             <if test="bookingNo != null">booking_no,</if>
@@ -88,18 +90,24 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="notifyParty != null">notify_party,</if>
             <if test="carrierAgent != null">carrier_agent,</if>
             <if test="deliveryAgent != null">delivery_agent,</if>
+            <if test="preCarriageBy != null">pre_carriage_by,</if>
             <if test="vesselVoyage != null">vessel_voyage,</if>
             <if test="placeOfReceipt != null">place_of_receipt,</if>
             <if test="portOfLoading != null">port_of_loading,</if>
             <if test="portOfDischarge != null">port_of_discharge,</if>
             <if test="placeOfDelivery != null">place_of_delivery,</if>
             <if test="containerSealInfo != null">container_seal_info,</if>
+            <if test="containerNo != null">container_no,</if>
+            <if test="sealNo != null">seal_no,</if>
+            <if test="containerWeight != null">container_weight,</if>
+            <if test="vgmWeight != null">vgm_weight,</if>
             <if test="packageQuantity != null">package_quantity,</if>
             <if test="packageUnit != null">package_unit,</if>
             <if test="goodsDescription != null">goods_description,</if>
             <if test="grossWeightKgs != null">gross_weight_kgs,</if>
             <if test="measurementCbm != null">measurement_cbm,</if>
             <if test="serviceType != null">service_type,</if>
+            <if test="serviceMode != null">service_mode,</if>
             <if test="revenueTons != null">revenue_tons,</if>
             <if test="freightTerm != null">freight_term,</if>
             <if test="freightRate != null">freight_rate,</if>
@@ -122,18 +130,24 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="notifyParty != null">#{notifyParty},</if>
             <if test="carrierAgent != null">#{carrierAgent},</if>
             <if test="deliveryAgent != null">#{deliveryAgent},</if>
+            <if test="preCarriageBy != null">#{preCarriageBy},</if>
             <if test="vesselVoyage != null">#{vesselVoyage},</if>
             <if test="placeOfReceipt != null">#{placeOfReceipt},</if>
             <if test="portOfLoading != null">#{portOfLoading},</if>
             <if test="portOfDischarge != null">#{portOfDischarge},</if>
             <if test="placeOfDelivery != null">#{placeOfDelivery},</if>
             <if test="containerSealInfo != null">#{containerSealInfo},</if>
+            <if test="containerNo != null">#{containerNo},</if>
+            <if test="sealNo != null">#{sealNo},</if>
+            <if test="containerWeight != null">#{containerWeight},</if>
+            <if test="vgmWeight != null">#{vgmWeight},</if>
             <if test="packageQuantity != null">#{packageQuantity},</if>
             <if test="packageUnit != null">#{packageUnit},</if>
             <if test="goodsDescription != null">#{goodsDescription},</if>
             <if test="grossWeightKgs != null">#{grossWeightKgs},</if>
             <if test="measurementCbm != null">#{measurementCbm},</if>
             <if test="serviceType != null">#{serviceType},</if>
+            <if test="serviceMode != null">#{serviceMode},</if>
             <if test="revenueTons != null">#{revenueTons},</if>
             <if test="freightTerm != null">#{freightTerm},</if>
             <if test="freightRate != null">#{freightRate},</if>
@@ -149,7 +163,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </insert>
 
     <update id="updateBookingConsolidated" parameterType="BookingConsolidated">
-        update bill_of_lading_v3
+        update bill_of_lading_v5
         <trim prefix="SET" suffixOverrides=",">
             <if test="blNo != null">bl_no = #{blNo},</if>
             <if test="bookingNo != null">booking_no = #{bookingNo},</if>
@@ -160,18 +174,24 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="notifyParty != null">notify_party = #{notifyParty},</if>
             <if test="carrierAgent != null">carrier_agent = #{carrierAgent},</if>
             <if test="deliveryAgent != null">delivery_agent = #{deliveryAgent},</if>
+            <if test="preCarriageBy != null">pre_carriage_by = #{preCarriageBy},</if>
             <if test="vesselVoyage != null">vessel_voyage = #{vesselVoyage},</if>
             <if test="placeOfReceipt != null">place_of_receipt = #{placeOfReceipt},</if>
             <if test="portOfLoading != null">port_of_loading = #{portOfLoading},</if>
             <if test="portOfDischarge != null">port_of_discharge = #{portOfDischarge},</if>
             <if test="placeOfDelivery != null">place_of_delivery = #{placeOfDelivery},</if>
             <if test="containerSealInfo != null">container_seal_info = #{containerSealInfo},</if>
+            <if test="containerNo != null">container_no = #{containerNo},</if>
+            <if test="sealNo != null">seal_no = #{sealNo},</if>
+            <if test="containerWeight != null">container_weight = #{containerWeight},</if>
+            <if test="vgmWeight != null">vgm_weight = #{vgmWeight},</if>
             <if test="packageQuantity != null">package_quantity = #{packageQuantity},</if>
             <if test="packageUnit != null">package_unit = #{packageUnit},</if>
             <if test="goodsDescription != null">goods_description = #{goodsDescription},</if>
             <if test="grossWeightKgs != null">gross_weight_kgs = #{grossWeightKgs},</if>
             <if test="measurementCbm != null">measurement_cbm = #{measurementCbm},</if>
             <if test="serviceType != null">service_type = #{serviceType},</if>
+            <if test="serviceMode != null">service_mode = #{serviceMode},</if>
             <if test="revenueTons != null">revenue_tons = #{revenueTons},</if>
             <if test="freightTerm != null">freight_term = #{freightTerm},</if>
             <if test="freightRate != null">freight_rate = #{freightRate},</if>
@@ -187,11 +207,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </update>
 
     <delete id="deleteBookingConsolidatedByBookingNo" parameterType="Long">
-        delete from bill_of_lading_v3 where id = #{id}
+        delete from bill_of_lading_v5 where id = #{id}
     </delete>
 
     <delete id="deleteBookingConsolidatedByBookingNos" parameterType="Long">
-        delete from bill_of_lading_v3 where id in 
+        delete from bill_of_lading_v5 where id in 
         <foreach item="id" collection="array" open="(" separator="," close=")">
             #{id}
         </foreach>

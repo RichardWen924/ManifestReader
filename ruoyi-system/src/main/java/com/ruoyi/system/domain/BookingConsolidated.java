@@ -9,10 +9,10 @@ import com.ruoyi.common.annotation.Excel;
 import com.ruoyi.common.core.domain.BaseEntity;
 
 /**
- * 订舱与集装箱合并信息对象 booking_consolidated (对应 bill_of_lading_v3 表)
+ * 订舱与集装箱合并信息对象 booking_consolidated (V5 版本)
  * 
  * @author ruoyi
- * @date 2026-01-27
+ * @date 2026-02-02
  */
 public class BookingConsolidated extends BaseEntity {
     private static final long serialVersionUID = 1L;
@@ -56,9 +56,21 @@ public class BookingConsolidated extends BaseEntity {
     @Excel(name = "交货代理")
     private String deliveryAgent;
 
+    /** 前段运输 */
+    @Excel(name = "前段运输")
+    private String preCarriageBy;
+
     /** 船名航次 */
     @Excel(name = "船名航次")
     private String vesselVoyage;
+
+    /** 船名 */
+    @Excel(name = "船名")
+    private String vesselName;
+
+    /** 航次 */
+    @Excel(name = "航次")
+    private String voyageNo;
 
     /** 收货地 */
     @Excel(name = "收货地")
@@ -80,11 +92,21 @@ public class BookingConsolidated extends BaseEntity {
     @Excel(name = "集装箱/封条")
     private String containerSealInfo;
 
-    /** 集装箱号 (逻辑字段) */
+    /** 箱号 */
+    @Excel(name = "箱号")
     private String containerNo;
 
-    /** 封条号 (逻辑字段) */
+    /** 封号 */
+    @Excel(name = "封号")
     private String sealNo;
+
+    /** 箱重 */
+    @Excel(name = "箱重")
+    private BigDecimal containerWeight;
+
+    /** VGM 核实总重 */
+    @Excel(name = "VGM核实总重")
+    private BigDecimal vgmWeight;
 
     /** 包装数量 (件数+单位) */
     @Excel(name = "包装数量")
@@ -98,6 +120,10 @@ public class BookingConsolidated extends BaseEntity {
     @Excel(name = "货物描述")
     private String goodsDescription;
 
+    /** 唛头 */
+    @Excel(name = "唛头")
+    private String marks;
+
     /** 毛重(KGS) */
     @Excel(name = "毛重(KGS)")
     private BigDecimal grossWeightKgs;
@@ -109,6 +135,10 @@ public class BookingConsolidated extends BaseEntity {
     /** 服务类型 */
     @Excel(name = "服务类型")
     private String serviceType;
+
+    /** 服务模式 */
+    @Excel(name = "服务模式")
+    private String serviceMode;
 
     /** 计费吨 */
     @Excel(name = "计费吨")
@@ -146,14 +176,6 @@ public class BookingConsolidated extends BaseEntity {
     @Excel(name = "装船批注")
     private String ladenOnBoard;
 
-    /** 核验总重 (VGM) */
-    @Excel(name = "核验总重")
-    private BigDecimal vgm;
-
-    /** 重量单位 */
-    @Excel(name = "重量单位")
-    private String vgmUnit;
-
     /** 文件存储路径 */
     @Excel(name = "文件存储路径")
     private String filePath;
@@ -164,301 +186,340 @@ public class BookingConsolidated extends BaseEntity {
     private Date createdAt;
 
     // Getters and Setters
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
     public Long getId() {
         return id;
     }
 
-    public void setBlNo(String blNo) {
-        this.blNo = blNo;
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public String getBlNo() {
         return blNo;
     }
 
-    public void setBookingNo(String bookingNo) {
-        this.bookingNo = bookingNo;
+    public void setBlNo(String blNo) {
+        this.blNo = blNo;
     }
 
     public String getBookingNo() {
         return bookingNo;
     }
 
-    public void setDocNo(String docNo) {
-        this.docNo = docNo;
+    public void setBookingNo(String bookingNo) {
+        this.bookingNo = bookingNo;
     }
 
     public String getDocNo() {
         return docNo;
     }
 
-    public void setSerialNo(String serialNo) {
-        this.serialNo = serialNo;
+    public void setDocNo(String docNo) {
+        this.docNo = docNo;
     }
 
     public String getSerialNo() {
         return serialNo;
     }
 
-    public void setShipper(String shipper) {
-        this.shipper = shipper;
+    public void setSerialNo(String serialNo) {
+        this.serialNo = serialNo;
     }
 
     public String getShipper() {
         return shipper;
     }
 
-    public void setConsignee(String consignee) {
-        this.consignee = consignee;
+    public void setShipper(String shipper) {
+        this.shipper = shipper;
     }
 
     public String getConsignee() {
         return consignee;
     }
 
-    public void setNotifyParty(String notifyParty) {
-        this.notifyParty = notifyParty;
+    public void setConsignee(String consignee) {
+        this.consignee = consignee;
     }
 
     public String getNotifyParty() {
         return notifyParty;
     }
 
-    public void setCarrierAgent(String carrierAgent) {
-        this.carrierAgent = carrierAgent;
+    public void setNotifyParty(String notifyParty) {
+        this.notifyParty = notifyParty;
     }
 
     public String getCarrierAgent() {
         return carrierAgent;
     }
 
-    public void setDeliveryAgent(String deliveryAgent) {
-        this.deliveryAgent = deliveryAgent;
+    public void setCarrierAgent(String carrierAgent) {
+        this.carrierAgent = carrierAgent;
     }
 
     public String getDeliveryAgent() {
         return deliveryAgent;
     }
 
-    public void setVesselVoyage(String vesselVoyage) {
-        this.vesselVoyage = vesselVoyage;
+    public void setDeliveryAgent(String deliveryAgent) {
+        this.deliveryAgent = deliveryAgent;
+    }
+
+    public String getPreCarriageBy() {
+        return preCarriageBy;
+    }
+
+    public void setPreCarriageBy(String preCarriageBy) {
+        this.preCarriageBy = preCarriageBy;
     }
 
     public String getVesselVoyage() {
         return vesselVoyage;
     }
 
-    public void setPlaceOfReceipt(String placeOfReceipt) {
-        this.placeOfReceipt = placeOfReceipt;
+    public void setVesselVoyage(String vesselVoyage) {
+        this.vesselVoyage = vesselVoyage;
+    }
+
+    public String getVesselName() {
+        return vesselName;
+    }
+
+    public void setVesselName(String vesselName) {
+        this.vesselName = vesselName;
+    }
+
+    public String getVoyageNo() {
+        return voyageNo;
+    }
+
+    public void setVoyageNo(String voyageNo) {
+        this.voyageNo = voyageNo;
     }
 
     public String getPlaceOfReceipt() {
         return placeOfReceipt;
     }
 
-    public void setPortOfLoading(String portOfLoading) {
-        this.portOfLoading = portOfLoading;
+    public void setPlaceOfReceipt(String placeOfReceipt) {
+        this.placeOfReceipt = placeOfReceipt;
     }
 
     public String getPortOfLoading() {
         return portOfLoading;
     }
 
-    public void setPortOfDischarge(String portOfDischarge) {
-        this.portOfDischarge = portOfDischarge;
+    public void setPortOfLoading(String portOfLoading) {
+        this.portOfLoading = portOfLoading;
     }
 
     public String getPortOfDischarge() {
         return portOfDischarge;
     }
 
-    public void setPlaceOfDelivery(String placeOfDelivery) {
-        this.placeOfDelivery = placeOfDelivery;
+    public void setPortOfDischarge(String portOfDischarge) {
+        this.portOfDischarge = portOfDischarge;
     }
 
     public String getPlaceOfDelivery() {
         return placeOfDelivery;
     }
 
-    public void setContainerSealInfo(String containerSealInfo) {
-        this.containerSealInfo = containerSealInfo;
+    public void setPlaceOfDelivery(String placeOfDelivery) {
+        this.placeOfDelivery = placeOfDelivery;
     }
 
     public String getContainerSealInfo() {
         return containerSealInfo;
     }
 
-    public void setContainerNo(String containerNo) {
-        this.containerNo = containerNo;
+    public void setContainerSealInfo(String containerSealInfo) {
+        this.containerSealInfo = containerSealInfo;
     }
 
     public String getContainerNo() {
         return containerNo;
     }
 
-    public void setSealNo(String sealNo) {
-        this.sealNo = sealNo;
+    public void setContainerNo(String containerNo) {
+        this.containerNo = containerNo;
     }
 
     public String getSealNo() {
         return sealNo;
     }
 
-    public void setPackageQuantity(String packageQuantity) {
-        this.packageQuantity = packageQuantity;
+    public void setSealNo(String sealNo) {
+        this.sealNo = sealNo;
+    }
+
+    public BigDecimal getContainerWeight() {
+        return containerWeight;
+    }
+
+    public void setContainerWeight(BigDecimal containerWeight) {
+        this.containerWeight = containerWeight;
+    }
+
+    public BigDecimal getVgmWeight() {
+        return vgmWeight;
+    }
+
+    public void setVgmWeight(BigDecimal vgmWeight) {
+        this.vgmWeight = vgmWeight;
     }
 
     public String getPackageQuantity() {
         return packageQuantity;
     }
 
-    public void setPackageUnit(String packageUnit) {
-        this.packageUnit = packageUnit;
+    public void setPackageQuantity(String packageQuantity) {
+        this.packageQuantity = packageQuantity;
     }
 
     public String getPackageUnit() {
         return packageUnit;
     }
 
-    public void setGoodsDescription(String goodsDescription) {
-        this.goodsDescription = goodsDescription;
+    public void setPackageUnit(String packageUnit) {
+        this.packageUnit = packageUnit;
     }
 
     public String getGoodsDescription() {
         return goodsDescription;
     }
 
-    public void setGrossWeightKgs(BigDecimal grossWeightKgs) {
-        this.grossWeightKgs = grossWeightKgs;
+    public void setGoodsDescription(String goodsDescription) {
+        this.goodsDescription = goodsDescription;
+    }
+
+    public String getMarks() {
+        return marks;
+    }
+
+    public void setMarks(String marks) {
+        this.marks = marks;
     }
 
     public BigDecimal getGrossWeightKgs() {
         return grossWeightKgs;
     }
 
-    public void setMeasurementCbm(BigDecimal measurementCbm) {
-        this.measurementCbm = measurementCbm;
+    public void setGrossWeightKgs(BigDecimal grossWeightKgs) {
+        this.grossWeightKgs = grossWeightKgs;
     }
 
     public BigDecimal getMeasurementCbm() {
         return measurementCbm;
     }
 
-    public void setServiceType(String serviceType) {
-        this.serviceType = serviceType;
+    public void setMeasurementCbm(BigDecimal measurementCbm) {
+        this.measurementCbm = measurementCbm;
     }
 
     public String getServiceType() {
         return serviceType;
     }
 
-    public void setRevenueTons(BigDecimal revenueTons) {
-        this.revenueTons = revenueTons;
+    public void setServiceType(String serviceType) {
+        this.serviceType = serviceType;
+    }
+
+    public String getServiceMode() {
+        return serviceMode;
+    }
+
+    public void setServiceMode(String serviceMode) {
+        this.serviceMode = serviceMode;
     }
 
     public BigDecimal getRevenueTons() {
         return revenueTons;
     }
 
-    public void setFreightTerm(String freightTerm) {
-        this.freightTerm = freightTerm;
+    public void setRevenueTons(BigDecimal revenueTons) {
+        this.revenueTons = revenueTons;
     }
 
     public String getFreightTerm() {
         return freightTerm;
     }
 
-    public void setFreightRate(String freightRate) {
-        this.freightRate = freightRate;
+    public void setFreightTerm(String freightTerm) {
+        this.freightTerm = freightTerm;
     }
 
     public String getFreightRate() {
         return freightRate;
     }
 
-    public void setPrepaidAmount(String prepaidAmount) {
-        this.prepaidAmount = prepaidAmount;
+    public void setFreightRate(String freightRate) {
+        this.freightRate = freightRate;
     }
 
     public String getPrepaidAmount() {
         return prepaidAmount;
     }
 
-    public void setCollectAmount(String collectAmount) {
-        this.collectAmount = collectAmount;
+    public void setPrepaidAmount(String prepaidAmount) {
+        this.prepaidAmount = prepaidAmount;
     }
 
     public String getCollectAmount() {
         return collectAmount;
     }
 
-    public void setPayableAt(String payableAt) {
-        this.payableAt = payableAt;
+    public void setCollectAmount(String collectAmount) {
+        this.collectAmount = collectAmount;
     }
 
     public String getPayableAt() {
         return payableAt;
     }
 
-    public void setOriginalBlCount(String originalBlCount) {
-        this.originalBlCount = originalBlCount;
+    public void setPayableAt(String payableAt) {
+        this.payableAt = payableAt;
     }
 
     public String getOriginalBlCount() {
         return originalBlCount;
     }
 
-    public void setIssuePlace(String issuePlace) {
-        this.issuePlace = issuePlace;
+    public void setOriginalBlCount(String originalBlCount) {
+        this.originalBlCount = originalBlCount;
     }
 
     public String getIssuePlace() {
         return issuePlace;
     }
 
-    public void setLadenOnBoard(String ladenOnBoard) {
-        this.ladenOnBoard = ladenOnBoard;
+    public void setIssuePlace(String issuePlace) {
+        this.issuePlace = issuePlace;
     }
 
     public String getLadenOnBoard() {
         return ladenOnBoard;
     }
 
-    public void setVgm(BigDecimal vgm) {
-        this.vgm = vgm;
-    }
-
-    public BigDecimal getVgm() {
-        return vgm;
-    }
-
-    public void setVgmUnit(String vgmUnit) {
-        this.vgmUnit = vgmUnit;
-    }
-
-    public String getVgmUnit() {
-        return vgmUnit;
-    }
-
-    public void setFilePath(String filePath) {
-        this.filePath = filePath;
+    public void setLadenOnBoard(String ladenOnBoard) {
+        this.ladenOnBoard = ladenOnBoard;
     }
 
     public String getFilePath() {
         return filePath;
     }
 
-    public void setCreatedAt(Date createdAt) {
-        this.createdAt = createdAt;
+    public void setFilePath(String filePath) {
+        this.filePath = filePath;
     }
 
     public Date getCreatedAt() {
         return createdAt;
+    }
+
+    public void setCreatedAt(Date createdAt) {
+        this.createdAt = createdAt;
     }
 
     @Override
@@ -467,24 +528,9 @@ public class BookingConsolidated extends BaseEntity {
                 .append("id", getId())
                 .append("blNo", getBlNo())
                 .append("bookingNo", getBookingNo())
-                .append("docNo", getDocNo())
-                .append("serialNo", getSerialNo())
-                .append("shipper", getShipper())
-                .append("consignee", getConsignee())
-                .append("notifyParty", getNotifyParty())
-                .append("carrierAgent", getCarrierAgent())
-                .append("deliveryAgent", getDeliveryAgent())
-                .append("vesselVoyage", getVesselVoyage())
-                .append("placeOfReceipt", getPlaceOfReceipt())
-                .append("portOfLoading", getPortOfLoading())
-                .append("portOfDischarge", getPortOfDischarge())
-                .append("placeOfDelivery", getPlaceOfDelivery())
-                .append("containerSealInfo", getContainerSealInfo())
-                .append("packageQuantity", getPackageQuantity())
-                .append("goodsDescription", getGoodsDescription())
-                .append("serviceType", getServiceType())
-                .append("freightTerm", getFreightTerm())
-                .append("createdAt", getCreatedAt())
+                .append("containerNo", getContainerNo())
+                .append("sealNo", getSealNo())
+                .append("vgmWeight", getVgmWeight())
                 .toString();
     }
 }
