@@ -1,211 +1,448 @@
 <!DOCTYPE html>
-<html lang="zh" xmlns:th="http://www.thymeleaf.org" >
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+
 <head>
     <th:block th:include="include :: header('修改订舱与集装箱合并信息')" />
     <th:block th:include="include :: datetimepicker-css" />
-    <th:block th:include="include :: bootstrap-fileinput-css"/>
+    <th:block th:include="include :: bootstrap-fileinput-css" />
+    <style>
+        .form-group {
+            margin-bottom: 10px;
+        }
+
+        .control-label {
+            font-size: 13px;
+            padding-top: 7px;
+        }
+
+        .ibox-content {
+            padding: 15px 20px 20px 20px;
+        }
+    </style>
 </head>
+
 <body class="white-bg">
     <div class="wrapper wrapper-content animated fadeInRight ibox-content">
         <form class="form-horizontal m" id="form-consolidated-edit" th:object="${bookingConsolidated}">
-            <input name="bookingNo" th:field="*{bookingNo}" type="hidden">
-            <div class="col-xs-12">
-                <div class="form-group">
-                    <label class="col-sm-3 control-label">发货人信息：</label>
-                    <div class="col-sm-8">
-                        <textarea name="shipper" class="form-control">[[*{shipper}]]</textarea>
+            <input name="id" th:field="*{id}" type="hidden">
+
+            <h4 class="form-header h4">基础编号</h4>
+            <div class="row">
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label">B/L NO.：</label>
+                        <div class="col-sm-8">
+                            <input name="blNo" th:field="*{blNo}" class="form-control" type="text">
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="col-xs-12">
-                <div class="form-group">
-                    <label class="col-sm-3 control-label">收货人信息：</label>
-                    <div class="col-sm-8">
-                        <textarea name="consignee" class="form-control">[[*{consignee}]]</textarea>
-                    </div>
-                </div>
-            </div>
-            <div class="col-xs-12">
-                <div class="form-group">
-                    <label class="col-sm-3 control-label">通知方信息：</label>
-                    <div class="col-sm-8">
-                        <textarea name="notifyParty" class="form-control">[[*{notifyParty}]]</textarea>
-                    </div>
-                </div>
-            </div>
-            <div class="col-xs-12">
-                <div class="form-group">
-                    <label class="col-sm-3 control-label">船名航次：</label>
-                    <div class="col-sm-8">
-                        <input name="vesselVoyage" th:field="*{vesselVoyage}" class="form-control" type="text">
-                    </div>
-                </div>
-            </div>
-            <div class="col-xs-12">
-                <div class="form-group">
-                    <label class="col-sm-3 control-label">装货港：</label>
-                    <div class="col-sm-8">
-                        <input name="portOfLoading" th:field="*{portOfLoading}" class="form-control" type="text">
-                    </div>
-                </div>
-            </div>
-            <div class="col-xs-12">
-                <div class="form-group">
-                    <label class="col-sm-3 control-label">卸货港：</label>
-                    <div class="col-sm-8">
-                        <input name="portOfDischarge" th:field="*{portOfDischarge}" class="form-control" type="text">
-                    </div>
-                </div>
-            </div>
-            <div class="col-xs-12">
-                <div class="form-group">
-                    <label class="col-sm-3 control-label">交货地：</label>
-                    <div class="col-sm-8">
-                        <input name="placeOfDelivery" th:field="*{placeOfDelivery}" class="form-control" type="text">
-                    </div>
-                </div>
-            </div>
-            <div class="col-xs-12">
-                <div class="form-group">
-                    <label class="col-sm-3 control-label">货物描述：</label>
-                    <div class="col-sm-8">
-                        <textarea name="cargoDescription" class="form-control">[[*{cargoDescription}]]</textarea>
-                    </div>
-                </div>
-            </div>
-            <div class="col-xs-12">
-                <div class="form-group">
-                    <label class="col-sm-3 control-label">货物数量：</label>
-                    <div class="col-sm-8">
-                        <input name="cargoQuantity" th:field="*{cargoQuantity}" class="form-control" type="text">
-                    </div>
-                </div>
-            </div>
-            <div class="col-xs-12">
-                <div class="form-group">
-                    <label class="col-sm-3 control-label">货物毛重(KGS)：</label>
-                    <div class="col-sm-8">
-                        <input name="cargoGrossWeight" th:field="*{cargoGrossWeight}" class="form-control" type="text">
-                    </div>
-                </div>
-            </div>
-            <div class="col-xs-12">
-                <div class="form-group">
-                    <label class="col-sm-3 control-label">货物体积(CBM)：</label>
-                    <div class="col-sm-8">
-                        <input name="cargoMeasurement" th:field="*{cargoMeasurement}" class="form-control" type="text">
-                    </div>
-                </div>
-            </div>
-            <div class="col-xs-12">
-                <div class="form-group">
-                    <label class="col-sm-3 control-label">集装箱号：</label>
-                    <div class="col-sm-8">
-                        <input name="containerNo" th:field="*{containerNo}" class="form-control" type="text">
-                    </div>
-                </div>
-            </div>
-            <div class="col-xs-12">
-                <div class="form-group">
-                    <label class="col-sm-3 control-label">封条号：</label>
-                    <div class="col-sm-8">
-                        <input name="sealNo" th:field="*{sealNo}" class="form-control" type="text">
-                    </div>
-                </div>
-            </div>
-            <div class="col-xs-12">
-                <div class="form-group">
-                    <label class="col-sm-3 control-label">核验总重：</label>
-                    <div class="col-sm-8">
-                        <input name="vgm" th:field="*{vgm}" class="form-control" type="text">
-                    </div>
-                </div>
-            </div>
-            <div class="col-xs-12">
-                <div class="form-group">
-                    <label class="col-sm-3 control-label">重量单位：</label>
-                    <div class="col-sm-8">
-                        <input name="vgmUnit" th:field="*{vgmUnit}" class="form-control" type="text">
-                    </div>
-                </div>
-            </div>
-            <div class="col-xs-12">
-                <div class="form-group">
-                    <label class="col-sm-3 control-label is-required">文件存储路径：</label>
-                    <div class="col-sm-8">
-                        <input type="hidden" name="filePath" th:field="*{filePath}">
-                       <div class="file-loading">
-                            <input class="form-control file-upload" id="filePath" name="file" type="file">
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label">BOOKING NO.：</label>
+                        <div class="col-sm-8">
+                            <input name="bookingNo" th:field="*{bookingNo}" class="form-control" type="text" readonly>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="col-xs-12">
-                <div class="form-group">
-                    <label class="col-sm-3 control-label">创建时间：</label>
-                    <div class="col-sm-8">
-                        <div class="input-group date">
-                            <input name="createdAt" th:value="${#dates.format(bookingConsolidated.createdAt, 'yyyy-MM-dd')}" class="form-control" placeholder="yyyy-MM-dd" type="text">
-                            <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
+            <div class="row">
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label">DOC. NO.：</label>
+                        <div class="col-sm-8">
+                            <input name="docNo" th:field="*{docNo}" class="form-control" type="text">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label">SERIAL NO.：</label>
+                        <div class="col-sm-8">
+                            <input name="serialNo" th:field="*{serialNo}" class="form-control" type="text">
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="col-xs-12">
-                <div class="form-group">
-                    <label class="col-sm-3 control-label">更新时间：</label>
-                    <div class="col-sm-8">
-                        <div class="input-group date">
-                            <input name="updatedAt" th:value="${#dates.format(bookingConsolidated.updatedAt, 'yyyy-MM-dd')}" class="form-control" placeholder="yyyy-MM-dd" type="text">
-                            <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
+
+            <h4 class="form-header h4">运输主体</h4>
+            <div class="form-group">
+                <label class="col-sm-2 control-label">发货人信息：</label>
+                <div class="col-sm-9">
+                    <textarea name="shipper" class="form-control" rows="3">[[*{shipper}]]</textarea>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-2 control-label">收货人信息：</label>
+                <div class="col-sm-9">
+                    <textarea name="consignee" class="form-control" rows="3">[[*{consignee}]]</textarea>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-2 control-label">通知方信息：</label>
+                <div class="col-sm-9">
+                    <textarea name="notifyParty" class="form-control" rows="2">[[*{notifyParty}]]</textarea>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label">承运人代理：</label>
+                        <div class="col-sm-8">
+                            <input name="carrierAgent" th:field="*{carrierAgent}" class="form-control" type="text">
                         </div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label">交货代理：</label>
+                        <div class="col-sm-8">
+                            <textarea name="deliveryAgent" class="form-control" rows="2">[[*{deliveryAgent}]]</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h4 class="form-header h4">船期规划</h4>
+            <div class="row">
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label">船名航次：</label>
+                        <div class="col-sm-8">
+                            <input name="vesselVoyage" th:field="*{vesselVoyage}" class="form-control" type="text">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label">收货地：</label>
+                        <div class="col-sm-8">
+                            <input name="placeOfReceipt" th:field="*{placeOfReceipt}" class="form-control" type="text">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label">装货港：</label>
+                        <div class="col-sm-8">
+                            <input name="portOfLoading" th:field="*{portOfLoading}" class="form-control" type="text">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label">卸货港：</label>
+                        <div class="col-sm-8">
+                            <input name="portOfDischarge" th:field="*{portOfDischarge}" class="form-control"
+                                type="text">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label">交货地：</label>
+                        <div class="col-sm-8">
+                            <input name="placeOfDelivery" th:field="*{placeOfDelivery}" class="form-control"
+                                type="text">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h4 class="form-header h4">货物明细</h4>
+            <div class="form-group">
+                <label class="col-sm-2 control-label">集装箱/封条：</label>
+                <div class="col-sm-9">
+                    <input name="containerSealInfo" th:field="*{containerSealInfo}" class="form-control" type="text">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-2 control-label">货物描述：</label>
+                <div class="col-sm-9">
+                    <textarea name="goodsDescription" class="form-control" rows="4">[[*{goodsDescription}]]</textarea>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-4">
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label">包装数量：</label>
+                        <div class="col-sm-8">
+                            <input name="packageQuantity" th:field="*{packageQuantity}" class="form-control"
+                                type="text">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-4">
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label">毛重(KGS)：</label>
+                        <div class="col-sm-8">
+                            <input name="grossWeightKgs" th:field="*{grossWeightKgs}" class="form-control" type="text">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-4">
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label">体积(CBM)：</label>
+                        <div class="col-sm-8">
+                            <input name="measurementCbm" th:field="*{measurementCbm}" class="form-control" type="text">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h4 class="form-header h4">服务与费用</h4>
+            <div class="row">
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label">服务类型：</label>
+                        <div class="col-sm-8">
+                            <input name="serviceType" th:field="*{serviceType}" class="form-control" type="text">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label">计费吨：</label>
+                        <div class="col-sm-8">
+                            <input name="revenueTons" th:field="*{revenueTons}" class="form-control" type="text">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label">费用条款：</label>
+                        <div class="col-sm-8">
+                            <input name="freightTerm" th:field="*{freightTerm}" class="form-control" type="text">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label">费率：</label>
+                        <div class="col-sm-8">
+                            <input name="freightRate" th:field="*{freightRate}" class="form-control" type="text">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-4">
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label">预付：</label>
+                        <div class="col-sm-8">
+                            <input name="prepaidAmount" th:field="*{prepaidAmount}" class="form-control" type="text">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-4">
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label">到付：</label>
+                        <div class="col-sm-8">
+                            <input name="collectAmount" th:field="*{collectAmount}" class="form-control" type="text">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-4">
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label">支付地：</label>
+                        <div class="col-sm-8">
+                            <input name="payableAt" th:field="*{payableAt}" class="form-control" type="text">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h4 class="form-header h4">签发与批注</h4>
+            <div class="row">
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label">正本份数：</label>
+                        <div class="col-sm-8">
+                            <input name="originalBlCount" th:field="*{originalBlCount}" class="form-control"
+                                type="text">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label">签发地：</label>
+                        <div class="col-sm-8">
+                            <input name="issuePlace" th:field="*{issuePlace}" class="form-control" type="text">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-2 control-label">装船批注：</label>
+                <div class="col-sm-9">
+                    <textarea name="ladenOnBoard" class="form-control" rows="2">[[*{ladenOnBoard}]]</textarea>
+                </div>
+            </div>
+
+            <h4 class="form-header h4">其他信息</h4>
+            <div class="row">
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label">VGM数值：</label>
+                        <div class="col-sm-8">
+                            <input name="vgm" th:field="*{vgm}" class="form-control" type="text">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label">VGM单位：</label>
+                        <div class="col-sm-8">
+                            <input name="vgmUnit" th:field="*{vgmUnit}" class="form-control" type="text">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-2 control-label is-required">文件路径：</label>
+                <div class="col-sm-9">
+                    <input name="filePath" th:field="*{filePath}" class="form-control" type="text" readonly>
+                    <div class="file-loading" style="margin-top: 5px;">
+                        <input class="form-control file-upload" id="filePath" name="file" type="file">
                     </div>
                 </div>
             </div>
         </form>
+
+        <div class="row" style="margin-top: 30px; margin-bottom: 50px;">
+            <div class="col-sm-offset-4 col-sm-8">
+                <button type="button" class="btn btn-primary" onclick="submitHandler()">
+                    <i class="fa fa-save"></i> 确定保存
+                </button>
+                <button type="button" class="btn btn-danger" onclick="closeItem()">
+                    <i class="fa fa-close"></i> 关闭
+                </button>
+            </div>
+        </div>
     </div>
+
     <th:block th:include="include :: footer" />
     <th:block th:include="include :: datetimepicker-js" />
-    <th:block th:include="include :: bootstrap-fileinput-js"/>
+    <th:block th:include="include :: bootstrap-fileinput-js" />
     <script th:inline="javascript">
         var prefix = ctx + "system/consolidated";
+
         $("#form-consolidated-edit").validate({
             focusCleanup: true
         });
 
+        $(function () {
+            // 隐藏弹窗默认的右下角按钮
+            var index = parent.layer.getFrameIndex(window.name);
+            parent.$("#layui-layer" + index).find(".layui-layer-btn").hide();
+
+            // 初始化文件上传组件
+            $(".file-upload").fileinput({
+                uploadUrl: ctx + 'common/upload',
+                autoReplace: true,
+                maxFileCount: 1,
+                initialPreviewAsData: true,
+                initialPreview: [$("#filePath").val()]
+            }).on('fileuploaded', function (event, data, previewId, index) {
+                $("input[name='filePath']").val(data.response.fileName);
+            }).on('fileremoved', function (event, id, index) {
+                $("input[name='filePath']").val('')
+            });
+        });
+
         function submitHandler() {
             if ($.validate.form()) {
-                $.operate.save(prefix + "/edit", $('#form-consolidated-edit').serialize());
+                layer.confirm('确认保存并导出PDF吗？', {
+                    btn: ['保存并导出PDF', '仅保存', '取消']
+                }, function (index) {
+                    doSave(true);
+                    layer.close(index);
+                }, function (index) {
+                    doSave(false);
+                    layer.close(index);
+                });
             }
         }
 
-        $("input[name='createdAt']").datetimepicker({
-            format: "yyyy-mm-dd",
-            minView: "month",
-            autoclose: true
-        });
+        function doSave(exportPdf) {
+            $.modal.loading("正在保存数据...");
 
-        $("input[name='updatedAt']").datetimepicker({
-            format: "yyyy-mm-dd",
-            minView: "month",
-            autoclose: true
-        });
+            // 收集表单数据
+            var formData = {};
+            $('#form-consolidated-edit').serializeArray().forEach(function (item) {
+                formData[item.name] = item.value;
+            });
 
-        $(".file-upload").each(function (i) {
-            var val = $("input[name='" + this.id + "']").val()
-            $(this).fileinput({
-                'uploadUrl': ctx + 'common/upload',
-                initialPreviewAsData: true,
-                initialPreview: [val],
-                maxFileCount: 1,
-                autoReplace: true
-            }).on('fileuploaded', function (event, data, previewId, index) {
-                $("input[name='" + event.currentTarget.id + "']").val(data.response.url)
-            }).on('fileremoved', function (event, id, index) {
-                $("input[name='" + event.currentTarget.id + "']").val('')
-            })
-            $(this).fileinput('_initFileActions');
-        });
+            $.ajax({
+                url: prefix + "/edit",
+                type: "POST",
+                contentType: "application/json",
+                data: JSON.stringify(formData),
+                success: function (result) {
+                    if (result.code == 0 || result.code == 200) {
+                        if (exportPdf) {
+                            exportPdfSilently(formData);
+                        } else {
+                            $.modal.closeLoading();
+                            $.modal.msgSuccess("保存成功");
+                            setTimeout(function () {
+                                $.modal.closeTab();
+                            }, 1000);
+                        }
+                    } else {
+                        $.modal.closeLoading();
+                        $.modal.alertError(result.msg || "保存失败");
+                    }
+                },
+                error: function () {
+                    $.modal.closeLoading();
+                    $.modal.alertError("网络错误，请重试");
+                }
+            });
+        }
+
+        function exportPdfSilently(formData) {
+            var dto = {
+                businessData: formData
+            };
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', prefix + "/export-pdf-only", true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.responseType = 'blob';
+
+            xhr.onload = function () {
+                $.modal.closeLoading();
+                if (xhr.status === 200) {
+                    var blob = xhr.response;
+                    var url = window.URL.createObjectURL(blob);
+                    var a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'BL_' + (formData.bookingNo || Date.now()) + '.pdf';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+
+                    $.modal.msgSuccess("保存成功并开始下载PDF");
+                    setTimeout(function () {
+                        $.modal.closeTab();
+                    }, 1500);
+                } else {
+                    $.modal.alertError("导出PDF失败");
+                }
+            };
+            xhr.send(JSON.stringify(dto));
+        }
+
+        function closeItem() {
+            $.modal.closeTab();
+        }
     </script>
 </body>
+
 </html>

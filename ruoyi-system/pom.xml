@@ -56,18 +56,24 @@
             <version>7.2.5</version>
         </dependency>
 
-        <!-- OpenHTML to PDF - HTML转PDF -->
+        <!-- poi-tl Word模板填充 -->
         <dependency>
-            <groupId>com.openhtmltopdf</groupId>
-            <artifactId>openhtmltopdf-core</artifactId>
-            <version>1.0.10</version>
-        </dependency>
-        <dependency>
-            <groupId>com.openhtmltopdf</groupId>
-            <artifactId>openhtmltopdf-pdfbox</artifactId>
-            <version>1.0.10</version>
+            <groupId>com.deepoove</groupId>
+            <artifactId>poi-tl</artifactId>
+            <version>1.10.5</version>
         </dependency>
 
+        <!-- JODConverter - PDF转换 (需要环境安装 LibreOffice) -->
+        <dependency>
+            <groupId>org.jodconverter</groupId>
+            <artifactId>jodconverter-local</artifactId>
+            <version>4.4.6</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jodconverter</groupId>
+            <artifactId>jodconverter-core</artifactId>
+            <version>4.4.6</version>
+        </dependency>
     </dependencies>
 
 </project>

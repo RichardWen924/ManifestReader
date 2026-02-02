@@ -55,8 +55,14 @@
                             <button type="button" class="btn btn-primary" onclick="startAIAnalysis()">
                                 <i class="fa fa-magic"></i> AI 智能提取与校对
                             </button>
+                            <button type="button" class="btn btn-success" onclick="submitHandler()">
+                                <i class="fa fa-save"></i> 普通保存
+                            </button>
+                            <button type="button" class="btn btn-danger" onclick="closeItem()">
+                                <i class="fa fa-close"></i> 关闭
+                            </button>
                             <span class="help-block m-b-none"><i class="fa fa-info-circle"></i>
-                                普通保存请直接点击右下角"确定"按钮；需要人工校对请点击上方 AI 按钮。</span>
+                                请点击上方 AI 按钮进行智能校对；若不需要 AI，请确认文件上传后点击页面中出现的保存按钮。</span>
                         </div>
                     </div>
                 </div>
@@ -98,7 +104,13 @@
             focusCleanup: true
         });
 
-        // 1. 普通保存 (原有逻辑)
+        $(function () {
+            // 隐藏弹窗默认的右下角按钮
+            var index = parent.layer.getFrameIndex(window.name);
+            parent.$("#layui-layer" + index).find(".layui-layer-btn").hide();
+        });
+
+        // 1. 普通保存 (修改为询问模式)
         function submitHandler() {
             if ($.validate.form()) {
                 var filePath = $("#filePathInput").val();
@@ -107,39 +119,54 @@
                     return;
                 }
 
-                // 构建JSON数据
-                var requestData = {
-                    filePath: filePath,
-                    editedData: {}
-                };
+                layer.confirm('确认保存并导出PDF吗？', {
+                    btn: ['保存并导出PDF', '仅保存', '取消']
+                }, function (index) {
+                    doSave(true, filePath, {});
+                    layer.close(index);
+                }, function (index) {
+                    doSave(false, filePath, {});
+                    layer.close(index);
+                });
+            }
+        }
 
-                $.ajax({
-                    url: prefix + "/add",
-                    type: "POST",
-                    contentType: "application/json",
-                    data: JSON.stringify(requestData),
-                    beforeSend: function () {
-                        $.modal.loading("正在保存，请稍候...");
-                    },
-                    success: function (result) {
-                        $.modal.closeLoading();
-                        if (result.code == 200 || result.code == 0) {
+        function doSave(exportPdf, filePath, editedData) {
+            $.modal.loading("正在保存数据...");
+            var requestData = {
+                filePath: filePath,
+                editedData: editedData
+            };
+
+            $.ajax({
+                url: prefix + "/add",
+                type: "POST",
+                contentType: "application/json",
+                data: JSON.stringify(requestData),
+                success: function (result) {
+                    if (result.code == 200 || result.code == 0) {
+                        if (exportPdf) {
+                            // 调用导出PDF逻辑 (暂存数据需要从 editedData 获取)
+                            exportPdfSilently(editedData);
+                        } else {
+                            $.modal.closeLoading();
                             $.modal.msgSuccess("保存成功");
                             setTimeout(function () {
                                 var index = parent.layer.getFrameIndex(window.name);
                                 parent.layer.close(index);
                                 parent.location.reload();
                             }, 1000);
-                        } else {
-                            $.modal.alertError(result.msg || "保存失败");
                         }
-                    },
-                    error: function () {
+                    } else {
                         $.modal.closeLoading();
-                        $.modal.alertError("网络错误，请重试");
+                        $.modal.alertError(result.msg || "保存失败");
                     }
-                });
-            }
+                },
+                error: function () {
+                    $.modal.closeLoading();
+                    $.modal.alertError("网络错误，请重试");
+                }
+            });
         }
 
         // 2. 文件上传处理
@@ -290,7 +317,7 @@
             console.log("字段渲染完成，共", Object.keys(data).length - 2, "个字段");
         }
 
-        // 6. 确认并保存到数据库（直接保存，不经过Dify）
+        // 6. 确认并保存到数据库（修改为询问模式）
         function confirmAIResult() {
             if (!currentUuid) {
                 $.modal.alertWarning("会话已失效");
@@ -303,17 +330,27 @@
 
             // 从原始数据开始，避免丢失任何字段
             var updatedData = $.extend(true, {}, originalBusinessData);
-
-            // 收集所有字段输入框的数据（用户修改后的数据）
             $(".field-input").each(function () {
                 var key = $(this).data("key");
                 var val = $(this).val();
                 updatedData[key] = val;
             });
 
-            console.log("直接保存的数据（不经过Dify）:", updatedData);
+            console.log("准备保存的数据:", updatedData);
 
-            // 直接保存到数据库（不生成PDF，不经过Dify）
+            layer.confirm('已经完成校对，确认保存吗？是否同步导出PDF？', {
+                btn: ['保存并导出PDF', '仅保存', '取消']
+            }, function (index) {
+                doSaveToDb(true, updatedData);
+                layer.close(index);
+            }, function (index) {
+                doSaveToDb(false, updatedData);
+                layer.close(index);
+            });
+        }
+
+        function doSaveToDb(exportPdf, updatedData) {
+            $.modal.loading("正在保存数据...");
             var postData = {
                 uuid: currentUuid,
                 businessData: updatedData
@@ -324,18 +361,19 @@
                 type: "post",
                 contentType: "application/json",
                 data: JSON.stringify(postData),
-                beforeSend: function () {
-                    $.modal.loading("正在保存数据...");
-                },
                 success: function (result) {
-                    $.modal.closeLoading();
-                    if (result.code == 200) {
-                        $.modal.msgSuccess("数据保存成功");
-                        // 跳转到列表页
-                        setTimeout(function () {
-                            location.href = ctx + "system/consolidated";
-                        }, 1000);
+                    if (result.code == 200 || result.code == 0) {
+                        if (exportPdf) {
+                            exportPdfSilently(updatedData);
+                        } else {
+                            $.modal.closeLoading();
+                            $.modal.msgSuccess("数据保存成功");
+                            setTimeout(function () {
+                                location.href = ctx + "system/consolidated";
+                            }, 1000);
+                        }
                     } else {
+                        $.modal.closeLoading();
                         $.modal.alertError(result.msg || "保存失败");
                     }
                 },
@@ -344,6 +382,40 @@
                     $.modal.alertError("网络错误，请重试");
                 }
             });
+        }
+
+        function exportPdfSilently(updatedData) {
+            var dto = {
+                uuid: currentUuid,
+                businessData: updatedData
+            };
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', prefix + "/export-pdf-only", true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.responseType = 'blob';
+
+            xhr.onload = function () {
+                $.modal.closeLoading();
+                if (xhr.status === 200) {
+                    var blob = xhr.response;
+                    var url = window.URL.createObjectURL(blob);
+                    var a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'BL_' + (updatedData.bookingNo || Date.now()) + '.pdf';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+
+                    $.modal.msgSuccess("保存成功并开始下载PDF");
+                    setTimeout(function () {
+                        location.href = ctx + "system/consolidated";
+                    }, 1500);
+                } else {
+                    $.modal.alertError("导出PDF失败");
+                }
+            };
+            xhr.send(JSON.stringify(dto));
         }
 
         // 7. 仅导出PDF（不保存到数据库）
@@ -441,6 +513,11 @@
 
             // 简单提示用户
             $.modal.msg("已取消，您可以继续编辑或关闭窗口");
+        }
+
+        function closeItem() {
+            var index = parent.layer.getFrameIndex(window.name);
+            parent.layer.close(index);
         }
     </script>
 </body>

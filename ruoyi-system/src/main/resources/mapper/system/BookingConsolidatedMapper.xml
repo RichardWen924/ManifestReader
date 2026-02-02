@@ -6,23 +6,38 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     
     <resultMap type="BookingConsolidated" id="BookingConsolidatedResult">
         <id property="id" column="id" />
+        <result property="blNo"    column="bl_no"    />
         <result property="bookingNo"    column="booking_no"    />
+        <result property="docNo"    column="doc_no"    />
+        <result property="serialNo"    column="serial_no"    />
         <result property="shipper"    column="shipper"    />
         <result property="consignee"    column="consignee"    />
         <result property="notifyParty"    column="notify_party"    />
+        <result property="carrierAgent"    column="carrier_agent"    />
+        <result property="deliveryAgent"    column="delivery_agent"    />
         <result property="vesselVoyage"    column="vessel_voyage"    />
+        <result property="placeOfReceipt"    column="place_of_receipt"    />
         <result property="portOfLoading"    column="port_of_loading"    />
         <result property="portOfDischarge"    column="port_of_discharge"    />
         <result property="placeOfDelivery"    column="place_of_delivery"    />
-        <!-- 注意：bill_of_lading表用的是goods_description，需要映射到cargoDescription -->
-        <result property="cargoDescription"    column="goods_description"    />
-        <!-- package_quantity + package_unit 需要合并为cargoQuantity -->
-        <result property="cargoQuantity"    column="package_quantity_text"    />
-        <result property="cargoGrossWeight"    column="gross_weight_kgs"    />
-        <result property="cargoMeasurement"    column="measurement_cbm"    />
-        <!-- container_seal_info需要拆分，但先整体映射 -->
+        <result property="containerSealInfo"    column="container_seal_info"    />
         <result property="containerNo"    column="container_no"    />
         <result property="sealNo"    column="seal_no"    />
+        <result property="packageQuantity"    column="package_quantity_text"    />
+        <result property="packageUnit"    column="package_unit"    />
+        <result property="goodsDescription"    column="goods_description"    />
+        <result property="grossWeightKgs"    column="gross_weight_kgs"    />
+        <result property="measurementCbm"    column="measurement_cbm"    />
+        <result property="serviceType"    column="service_type"    />
+        <result property="revenueTons"    column="revenue_tons"    />
+        <result property="freightTerm"    column="freight_term"    />
+        <result property="freightRate"    column="freight_rate"    />
+        <result property="prepaidAmount"    column="prepaid_amount"    />
+        <result property="collectAmount"    column="collect_amount"    />
+        <result property="payableAt"    column="payable_at"    />
+        <result property="originalBlCount"    column="original_bl_count"    />
+        <result property="issuePlace"    column="issue_place"    />
+        <result property="ladenOnBoard"    column="laden_on_board"    />
         <result property="vgm"    column="vgm"    />
         <result property="vgmUnit"    column="vgm_unit"    />
         <result property="filePath"    column="file_path"    />
@@ -30,50 +45,28 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectBookingConsolidatedVo">
-        select 
-            id,
-            booking_no, 
-            shipper, 
-            consignee, 
-            notify_party, 
-            vessel_voyage, 
-            port_of_loading, 
-            port_of_discharge, 
-            place_of_delivery, 
-            goods_description,
-            CONCAT(IFNULL(package_quantity, ''), ' ', IFNULL(package_unit, '')) as package_quantity_text,
-            gross_weight_kgs,
-            measurement_cbm,
-            SUBSTRING_INDEX(container_seal_info, '/', 1) as container_no,
+        select id, bl_no, booking_no, doc_no, serial_no, shipper, consignee, notify_party, carrier_agent, delivery_agent, 
+            vessel_voyage, place_of_receipt, port_of_loading, port_of_discharge, place_of_delivery, container_seal_info,
+            SUBSTRING_INDEX(container_seal_info, '/', 1) as container_no, 
             SUBSTRING_INDEX(container_seal_info, '/', -1) as seal_no,
-            NULL as vgm,
-            NULL as vgm_unit,
-            file_path, 
-            created_at
+            CONCAT(IFNULL(package_quantity, ''), ' ', IFNULL(package_unit, '')) as package_quantity_text,
+            package_unit, goods_description, gross_weight_kgs, measurement_cbm, service_type, revenue_tons, 
+            freight_term, freight_rate, prepaid_amount, collect_amount, payable_at, original_bl_count, issue_place, 
+            laden_on_board, NULL as vgm, NULL as vgm_unit, file_path, created_at
         from bill_of_lading_v3
     </sql>
-
-
-
-
 
     <select id="selectBookingConsolidatedList" parameterType="BookingConsolidated" resultMap="BookingConsolidatedResult">
         <include refid="selectBookingConsolidatedVo"/>
         <where>  
-            <if test="shipper != null  and shipper != ''"> and shipper like concat('%', #{shipper}, '%')</if>
-            <if test="consignee != null  and consignee != ''"> and consignee like concat('%', #{consignee}, '%')</if>
-            <if test="notifyParty != null  and notifyParty != ''"> and notify_party like concat('%', #{notifyParty}, '%')</if>
+            <if test="blNo != null  and blNo != ''"> and bl_no like concat('%', #{blNo}, '%')</if>
+            <if test="bookingNo != null  and bookingNo != ''"> and booking_no like concat('%', #{bookingNo}, '%')</if>
             <if test="vesselVoyage != null  and vesselVoyage != ''"> and vessel_voyage like concat('%', #{vesselVoyage}, '%')</if>
             <if test="portOfLoading != null  and portOfLoading != ''"> and port_of_loading like concat('%', #{portOfLoading}, '%')</if>
             <if test="portOfDischarge != null  and portOfDischarge != ''"> and port_of_discharge like concat('%', #{portOfDischarge}, '%')</if>
             <if test="placeOfDelivery != null  and placeOfDelivery != ''"> and place_of_delivery like concat('%', #{placeOfDelivery}, '%')</if>
-            <if test="cargoDescription != null  and cargoDescription != ''"> and goods_description like concat('%', #{cargoDescription}, '%')</if>
-            <if test="cargoQuantity != null  and cargoQuantity != ''"> and package_quantity = #{cargoQuantity}</if>
-            <if test="cargoGrossWeight != null "> and gross_weight_kgs = #{cargoGrossWeight}</if>
-            <if test="cargoMeasurement != null "> and measurement_cbm = #{cargoMeasurement}</if>
-            <if test="containerNo != null  and containerNo != ''"> and container_seal_info like concat('%', #{containerNo}, '%')</if>
-            <if test="sealNo != null  and sealNo != ''"> and container_seal_info like concat('%', #{sealNo}, '%')</if>
-            <if test="filePath != null  and filePath != ''"> and file_path like concat('%', #{filePath}, '%')</if>
+            <if test="serviceType != null  and serviceType != ''"> and service_type like concat('%', #{serviceType}, '%')</if>
+            <if test="freightTerm != null  and freightTerm != ''"> and freight_term like concat('%', #{freightTerm}, '%')</if>
         </where>
         order by created_at desc
     </select>
@@ -83,67 +76,111 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where booking_no = #{bookingNo}
     </select>
 
-    <insert id="insertBookingConsolidated" parameterType="BookingConsolidated">
-        insert into booking_consolidated
+    <insert id="insertBookingConsolidated" parameterType="BookingConsolidated" useGeneratedKeys="true" keyProperty="id">
+        insert into bill_of_lading_v3
         <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="blNo != null">bl_no,</if>
             <if test="bookingNo != null">booking_no,</if>
+            <if test="docNo != null">doc_no,</if>
+            <if test="serialNo != null">serial_no,</if>
             <if test="shipper != null">shipper,</if>
             <if test="consignee != null">consignee,</if>
             <if test="notifyParty != null">notify_party,</if>
+            <if test="carrierAgent != null">carrier_agent,</if>
+            <if test="deliveryAgent != null">delivery_agent,</if>
             <if test="vesselVoyage != null">vessel_voyage,</if>
+            <if test="placeOfReceipt != null">place_of_receipt,</if>
             <if test="portOfLoading != null">port_of_loading,</if>
             <if test="portOfDischarge != null">port_of_discharge,</if>
             <if test="placeOfDelivery != null">place_of_delivery,</if>
-            <if test="cargoDescription != null">cargo_description,</if>
-            <if test="cargoQuantity != null">cargo_quantity,</if>
-            <if test="cargoGrossWeight != null">cargo_gross_weight,</if>
-            <if test="cargoMeasurement != null">cargo_measurement,</if>
-            <if test="containerNo != null">container_no,</if>
-            <if test="sealNo != null">seal_no,</if>
-            <if test="vgm != null">vgm,</if>
-            <if test="vgmUnit != null">vgm_unit,</if>
+            <if test="containerSealInfo != null">container_seal_info,</if>
+            <if test="packageQuantity != null">package_quantity,</if>
+            <if test="packageUnit != null">package_unit,</if>
+            <if test="goodsDescription != null">goods_description,</if>
+            <if test="grossWeightKgs != null">gross_weight_kgs,</if>
+            <if test="measurementCbm != null">measurement_cbm,</if>
+            <if test="serviceType != null">service_type,</if>
+            <if test="revenueTons != null">revenue_tons,</if>
+            <if test="freightTerm != null">freight_term,</if>
+            <if test="freightRate != null">freight_rate,</if>
+            <if test="prepaidAmount != null">prepaid_amount,</if>
+            <if test="collectAmount != null">collect_amount,</if>
+            <if test="payableAt != null">payable_at,</if>
+            <if test="originalBlCount != null">original_bl_count,</if>
+            <if test="issuePlace != null">issue_place,</if>
+            <if test="ladenOnBoard != null">laden_on_board,</if>
             <if test="filePath != null and filePath != ''">file_path,</if>
             <if test="createdAt != null">created_at,</if>
-            <if test="updatedAt != null">updated_at,</if>
          </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="blNo != null">#{blNo},</if>
             <if test="bookingNo != null">#{bookingNo},</if>
+            <if test="docNo != null">#{docNo},</if>
+            <if test="serialNo != null">#{serialNo},</if>
             <if test="shipper != null">#{shipper},</if>
             <if test="consignee != null">#{consignee},</if>
             <if test="notifyParty != null">#{notifyParty},</if>
+            <if test="carrierAgent != null">#{carrierAgent},</if>
+            <if test="deliveryAgent != null">#{deliveryAgent},</if>
             <if test="vesselVoyage != null">#{vesselVoyage},</if>
+            <if test="placeOfReceipt != null">#{placeOfReceipt},</if>
             <if test="portOfLoading != null">#{portOfLoading},</if>
             <if test="portOfDischarge != null">#{portOfDischarge},</if>
             <if test="placeOfDelivery != null">#{placeOfDelivery},</if>
-            <if test="cargoDescription != null">#{cargoDescription},</if>
-            <if test="cargoQuantity != null">#{cargoQuantity},</if>
-            <if test="cargoGrossWeight != null">#{cargoGrossWeight},</if>
-            <if test="cargoMeasurement != null">#{cargoMeasurement},</if>
-            <if test="containerNo != null">#{containerNo},</if>
-            <if test="sealNo != null">#{sealNo},</if>
-            <if test="vgm != null">#{vgm},</if>
-            <if test="vgmUnit != null">#{vgmUnit},</if>
+            <if test="containerSealInfo != null">#{containerSealInfo},</if>
+            <if test="packageQuantity != null">#{packageQuantity},</if>
+            <if test="packageUnit != null">#{packageUnit},</if>
+            <if test="goodsDescription != null">#{goodsDescription},</if>
+            <if test="grossWeightKgs != null">#{grossWeightKgs},</if>
+            <if test="measurementCbm != null">#{measurementCbm},</if>
+            <if test="serviceType != null">#{serviceType},</if>
+            <if test="revenueTons != null">#{revenueTons},</if>
+            <if test="freightTerm != null">#{freightTerm},</if>
+            <if test="freightRate != null">#{freightRate},</if>
+            <if test="prepaidAmount != null">#{prepaidAmount},</if>
+            <if test="collectAmount != null">#{collectAmount},</if>
+            <if test="payableAt != null">#{payableAt},</if>
+            <if test="originalBlCount != null">#{originalBlCount},</if>
+            <if test="issuePlace != null">#{issuePlace},</if>
+            <if test="ladenOnBoard != null">#{ladenOnBoard},</if>
             <if test="filePath != null and filePath != ''">#{filePath},</if>
             <if test="createdAt != null">#{createdAt},</if>
-            <if test="updatedAt != null">#{updatedAt},</if>
          </trim>
     </insert>
 
     <update id="updateBookingConsolidated" parameterType="BookingConsolidated">
         update bill_of_lading_v3
         <trim prefix="SET" suffixOverrides=",">
+            <if test="blNo != null">bl_no = #{blNo},</if>
             <if test="bookingNo != null">booking_no = #{bookingNo},</if>
+            <if test="docNo != null">doc_no = #{docNo},</if>
+            <if test="serialNo != null">serial_no = #{serialNo},</if>
             <if test="shipper != null">shipper = #{shipper},</if>
             <if test="consignee != null">consignee = #{consignee},</if>
             <if test="notifyParty != null">notify_party = #{notifyParty},</if>
+            <if test="carrierAgent != null">carrier_agent = #{carrierAgent},</if>
+            <if test="deliveryAgent != null">delivery_agent = #{deliveryAgent},</if>
             <if test="vesselVoyage != null">vessel_voyage = #{vesselVoyage},</if>
+            <if test="placeOfReceipt != null">place_of_receipt = #{placeOfReceipt},</if>
             <if test="portOfLoading != null">port_of_loading = #{portOfLoading},</if>
             <if test="portOfDischarge != null">port_of_discharge = #{portOfDischarge},</if>
             <if test="placeOfDelivery != null">place_of_delivery = #{placeOfDelivery},</if>
-            <if test="cargoDescription != null">goods_description = #{cargoDescription},</if>
-            <if test="cargoGrossWeight != null">gross_weight_kgs = #{cargoGrossWeight},</if>
-            <if test="cargoMeasurement != null">measurement_cbm = #{cargoMeasurement},</if>
-            <if test="containerNo != null and sealNo != null">container_seal_info = CONCAT(#{containerNo}, '/', #{sealNo}),</if>
+            <if test="containerSealInfo != null">container_seal_info = #{containerSealInfo},</if>
+            <if test="packageQuantity != null">package_quantity = #{packageQuantity},</if>
+            <if test="packageUnit != null">package_unit = #{packageUnit},</if>
+            <if test="goodsDescription != null">goods_description = #{goodsDescription},</if>
+            <if test="grossWeightKgs != null">gross_weight_kgs = #{grossWeightKgs},</if>
+            <if test="measurementCbm != null">measurement_cbm = #{measurementCbm},</if>
+            <if test="serviceType != null">service_type = #{serviceType},</if>
+            <if test="revenueTons != null">revenue_tons = #{revenueTons},</if>
+            <if test="freightTerm != null">freight_term = #{freightTerm},</if>
+            <if test="freightRate != null">freight_rate = #{freightRate},</if>
+            <if test="prepaidAmount != null">prepaid_amount = #{prepaidAmount},</if>
+            <if test="collectAmount != null">collect_amount = #{collectAmount},</if>
+            <if test="payableAt != null">payable_at = #{payableAt},</if>
+            <if test="originalBlCount != null">original_bl_count = #{originalBlCount},</if>
+            <if test="issuePlace != null">issue_place = #{issuePlace},</if>
+            <if test="ladenOnBoard != null">laden_on_board = #{ladenOnBoard},</if>
             <if test="filePath != null and filePath != ''">file_path = #{filePath},</if>
         </trim>
         where id = #{id}

@@ -47,7 +47,6 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
     private static final Logger log = LoggerFactory.getLogger(BookingConsolidatedServiceImpl.class);
 
     private static final String DIFY_API_KEY_ANALYZE = "app-qFk49MpWcQKiqY41Q7IdDwIj";
-    private static final String DIFY_API_KEY_GENERATE_HTML = "app-ZMAt882RoK60mAH2MvgjNEub";
     private static final String DIFY_BASE_URL = "http://localhost/v1";
     private static final String REDIS_PREFIX = "pdf_edit:";
     private static final String DEFAULT_TEMPLATE_CODE = "booking_standard";
@@ -57,6 +56,9 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
 
     @Autowired
     private com.ruoyi.system.mapper.BillOfLadingMapper billOfLadingMapper;
+
+    @Autowired
+    private BillOfLadingExportService exportService;
 
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
@@ -289,28 +291,43 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
     public String generatePdfOnly(BookingConsolidatedDto userDto) {
         log.info("仅生成PDF（通过Dify HTML转换），UUID: {}", userDto.getUuid());
 
-        // 从 Redis 获取缓存
-        BookingConsolidatedDto cachedDto = (BookingConsolidatedDto) redisTemplate.opsForValue()
-                .get(REDIS_PREFIX + userDto.getUuid());
-        if (cachedDto == null) {
-            throw new RuntimeException("会话已过期，请重新上传文件");
+        Map<String, Object> mergedData = new HashMap<>();
+
+        // 1. 如果有 UUID，尝试从 Redis 获取缓存
+        if (StringUtils.isNotEmpty(userDto.getUuid())) {
+            BookingConsolidatedDto cachedDto = (BookingConsolidatedDto) redisTemplate.opsForValue()
+                    .get(REDIS_PREFIX + userDto.getUuid());
+            if (cachedDto != null) {
+                Map<String, Object> cachedData = (Map<String, Object>) cachedDto.getBusinessData();
+                if (cachedData != null) {
+                    mergedData.putAll(cachedData);
+                }
+            }
         }
 
-        // 合并数据：从缓存获取完整数据，然后用用户编辑的数据覆盖
-        Map<String, Object> cachedData = (Map<String, Object>) cachedDto.getBusinessData();
-        Map<String, Object> mergedData = new HashMap<>(cachedData);
+        // 2. 使用用户提交的数据覆盖（支持无 UUID 导出）
         Map<String, Object> userData = (Map<String, Object>) userDto.getBusinessData();
         if (userData != null) {
             mergedData.putAll(userData);
         }
-        log.info("合并后的数据: {}", mergedData);
+
+        if (mergedData.isEmpty()) {
+            throw new RuntimeException("导出失败：数据为空");
+        }
+
+        log.info("合并后的导出数据: {}", mergedData);
 
         // 应用业务规则
         com.ruoyi.system.utils.BillOfLadingValidator.applyBusinessRules(mergedData);
 
-        // 调用Dify生成HTML并转换为PDF
+        // 添加全面的字段别名，确保 Dify 模板能识别
+        addComprehensiveAliases(mergedData);
+
+        log.info("添加别名后的导出数据字段: {}", mergedData.keySet());
+
+        // 调用 Word 模板填充与 PDF 转换服务
         try {
-            byte[] pdfBytes = generatePdfFromDifyHtml(mergedData, DIFY_API_KEY_GENERATE_HTML);
+            byte[] pdfBytes = exportService.exportToPdf(mergedData);
 
             // 保存为临时文件供下载
             String tempFileName = "BL_" + System.currentTimeMillis() + ".pdf";
@@ -467,12 +484,28 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
             JSONObject workflowResult = JSON.parseObject(workflowResponse.getBody());
             JSONObject outputs = workflowResult.getJSONObject("data").getJSONObject("outputs");
 
-            if (outputs.containsKey("text")) {
-                String jsonText = outputs.getString("text");
-                if (jsonText.contains("```json")) {
-                    jsonText = jsonText.replaceAll("```json", "").replaceAll("```", "");
+            if (outputs.containsKey("text") || outputs.containsKey("output")) {
+                String rawText = outputs.containsKey("text") ? outputs.getString("text") : outputs.getString("output");
+                if (StringUtils.isEmpty(rawText))
+                    return null;
+
+                // 鲁棒的 JSON 提取逻辑：寻找第一个 { 和最后一个 }
+                try {
+                    String jsonPart = rawText;
+                    if (jsonPart.contains("```")) {
+                        jsonPart = jsonPart.replaceAll("(?s)```[a-z]*", "").replaceAll("```", "");
+                    }
+
+                    int start = jsonPart.indexOf("{");
+                    int end = jsonPart.lastIndexOf("}");
+                    if (start >= 0 && end > start) {
+                        jsonPart = jsonPart.substring(start, end + 1);
+                    }
+                    return JSON.parseObject(jsonPart.trim());
+                } catch (Exception e) {
+                    log.warn("分析 JSON 失败，回退到原始解析: {}", e.getMessage());
+                    return JSON.parseObject(rawText);
                 }
-                return JSON.parseObject(jsonText);
             }
         } catch (Exception e) {
             log.error("Dify 调用异常", e);
@@ -481,197 +514,101 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
     }
 
     /**
-     * 调用Dify工作流生成HTML并转换为PDF
-     * 
-     * @param data   业务数据（Map格式）
-     * @param apiKey Dify API密钥
-     * @return PDF字节数组
+     * 为 Map 添加别名（如果原字段存在且目标字段不存在）
      */
-    private byte[] generatePdfFromDifyHtml(Map<String, Object> data, String apiKey) {
-        log.info("调用Dify工作流生成HTML，数据: {}", data);
-
-        RestTemplate restTemplate = new RestTemplate();
-        try {
-            // 调用工作流
-            String workflowUrl = DIFY_BASE_URL + "/workflows/run";
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.set("Authorization", "Bearer " + apiKey);
-
-            // 构建请求体 - 将业务数据作为JSON对象传递给"data"字段
-            JSONObject inputs = new JSONObject();
-            inputs.put("data", data); // Dify工作流期望一个名为"data"的dict类型input字段
-
-            JSONObject workflowBody = new JSONObject();
-            workflowBody.put("inputs", inputs);
-            workflowBody.put("response_mode", "blocking");
-            workflowBody.put("user", "user-system");
-
-            HttpEntity<String> workflowRequest = new HttpEntity<>(workflowBody.toJSONString(), headers);
-            ResponseEntity<String> workflowResponse = restTemplate.postForEntity(workflowUrl, workflowRequest,
-                    String.class);
-
-            if (!workflowResponse.getStatusCode().is2xxSuccessful()) {
-                log.error("Dify工作流调用失败: {}", workflowResponse.getBody());
-                throw new RuntimeException("Dify工作流调用失败");
+    private void addAlias(Map<String, Object> map, String key, String... aliases) {
+        if (!map.containsKey(key)) {
+            // 如果主键缺失，尝试从别名中找一个填补
+            for (String alias : aliases) {
+                if (map.containsKey(alias)) {
+                    map.put(key, map.get(alias));
+                    break;
+                }
             }
+        }
 
-            // 解析响应获取HTML
-            JSONObject workflowResult = JSON.parseObject(workflowResponse.getBody());
-            JSONObject outputs = workflowResult.getJSONObject("data").getJSONObject("outputs");
-
-            // 从output字段获取HTML
-            String htmlContent = null;
-            if (outputs.containsKey("output")) {
-                htmlContent = outputs.getString("output");
-            } else if (outputs.containsKey("text")) {
-                htmlContent = outputs.getString("text");
+        // 确保所有别名也都有值
+        if (map.containsKey(key)) {
+            Object value = map.get(key);
+            for (String alias : aliases) {
+                if (!map.containsKey(alias)) {
+                    map.put(alias, value);
+                }
             }
-
-            if (StringUtils.isEmpty(htmlContent)) {
-                throw new RuntimeException("Dify工作流未返回HTML内容");
-            }
-
-            log.info("Dify返回HTML长度: {} 字符", htmlContent.length());
-
-            // 使用HtmlToPdfConverter转换HTML为PDF
-            byte[] pdfBytes = com.ruoyi.system.utils.HtmlToPdfConverter.convertHtmlToPdfBytes(htmlContent);
-            log.info("HTML转PDF成功，PDF大小: {} 字节", pdfBytes.length);
-
-            return pdfBytes;
-
-        } catch (Exception e) {
-            log.error("生成PDF失败", e);
-            throw new RuntimeException("生成PDF失败: " + e.getMessage(), e);
         }
     }
 
     /**
-     * 将 JSON 转换为 Entity (保留原有逻辑)
+     * 添加全面的字段别名，确保 Dify 模板能识别各种命名格式
      */
-    private BookingConsolidated mapJsonToEntity(JSONObject dataJson) {
-        BookingConsolidated bc = new BookingConsolidated();
-        Map<String, Object> map = mapJsonToMap(dataJson);
-        return mapMapToEntity(map);
+    private void addComprehensiveAliases(Map<String, Object> map) {
+        // 港口和地点字段
+        addAlias(map, "portOfLoading", "port_of_loading", "PORT_OF_LOADING", "PortOfLoading", "pol", "POL");
+        addAlias(map, "portOfDischarge", "port_of_discharge", "PORT_OF_DISCHARGE", "PortOfDischarge", "pod", "POD");
+        addAlias(map, "placeOfDelivery", "place_of_delivery", "PLACE_OF_DELIVERY", "PlaceOfDelivery");
+        addAlias(map, "placeOfReceipt", "place_of_receipt", "PLACE_OF_RECEIPT", "PlaceOfReceipt");
+
+        // 船名航次
+        addAlias(map, "vesselVoyage", "vessel_voyage", "VESSEL_VOYAGE", "VesselVoyage", "oceanVessel", "ocean_vessel",
+                "OCEAN_VESSEL");
+        addAlias(map, "vesselName", "vessel_name", "VESSEL_NAME", "VesselName", "vessel");
+        addAlias(map, "voyageNo", "voyage_no", "VOYAGE_NO", "VoyageNo", "voyage");
+
+        // 集装箱和封条
+        addAlias(map, "containerNo", "container_no", "CONTAINER_NO", "ContainerNo", "container", "CONTAINER");
+        addAlias(map, "sealNo", "seal_no", "SEAL_NO", "SealNo", "seal", "SEAL");
+        addAlias(map, "containerSealInfo", "container_seal_info", "CONTAINER_SEAL_INFO", "ContainerSealInfo",
+                "containerSeal", "container_seal");
+
+        // 包装和货物
+        addAlias(map, "packageQuantity", "package_quantity", "PACKAGE_QUANTITY", "PackageQuantity", "noOfPkgs",
+                "NO_OF_PKGS", "packages", "PACKAGES");
+        addAlias(map, "packageUnit", "package_unit", "PACKAGE_UNIT", "PackageUnit");
+        addAlias(map, "goodsDescription", "goods_description", "GOODS_DESCRIPTION", "GoodsDescription", "description",
+                "DESCRIPTION", "cargoDescription", "cargo_description");
+        addAlias(map, "marks", "MARKS", "Marks", "shippingMarks", "shipping_marks");
+
+        // 重量和体积
+        addAlias(map, "grossWeight", "gross_weight", "GROSS_WEIGHT", "GrossWeight", "weight", "WEIGHT");
+        addAlias(map, "grossWeightKgs", "gross_weight_kgs", "GROSS_WEIGHT_KGS", "GrossWeightKgs");
+        addAlias(map, "measurement", "MEASUREMENT", "Measurement", "volume", "VOLUME");
+        addAlias(map, "measurementCbm", "measurement_cbm", "MEASUREMENT_CBM", "MeasurementCbm");
+
+        // 运费相关
+        addAlias(map, "freightTerm", "freight_term", "FREIGHT_TERM", "FreightTerm", "freightCharges", "freight_charges",
+                "FREIGHT_CHARGES");
+        addAlias(map, "freightRate", "freight_rate", "FREIGHT_RATE", "FreightRate", "rate", "RATE", "Rate");
+        addAlias(map, "prepaidAmount", "prepaid_amount", "PREPAID_AMOUNT", "PrepaidAmount", "prepaid", "PREPAID",
+                "Prepaid");
+        addAlias(map, "collectAmount", "collect_amount", "COLLECT_AMOUNT", "CollectAmount", "collect", "COLLECT",
+                "Collect");
+        addAlias(map, "payableAt", "payable_at", "PAYABLE_AT", "PayableAt");
+        addAlias(map, "revenueTons", "revenue_tons", "REVENUE_TONS", "RevenueTons", "revTons", "REV_TONS");
+
+        // 提单信息
+        addAlias(map, "blNo", "bl_no", "BL_NO", "BlNo", "billOfLadingNo", "bill_of_lading_no");
+        addAlias(map, "bookingNo", "booking_no", "BOOKING_NO", "BookingNo");
+        addAlias(map, "docNo", "doc_no", "DOC_NO", "DocNo", "documentNo", "document_no");
+        addAlias(map, "serialNo", "serial_no", "SERIAL_NO", "SerialNo");
+        addAlias(map, "originalBlCount", "original_bl_count", "ORIGINAL_BL_COUNT", "OriginalBlCount", "originalBl",
+                "original_bl");
+
+        // 当事人信息
+        addAlias(map, "shipper", "SHIPPER", "Shipper");
+        addAlias(map, "consignee", "CONSIGNEE", "Consignee");
+        addAlias(map, "notifyParty", "notify_party", "NOTIFY_PARTY", "NotifyParty");
+        addAlias(map, "carrierAgent", "carrier_agent", "CARRIER_AGENT", "CarrierAgent");
+        addAlias(map, "deliveryAgent", "delivery_agent", "DELIVERY_AGENT", "DeliveryAgent");
+
+        // 其他字段
+        addAlias(map, "serviceType", "service_type", "SERVICE_TYPE", "ServiceType", "service", "SERVICE");
+        addAlias(map, "issuePlace", "issue_place", "ISSUE_PLACE", "IssuePlace");
+        addAlias(map, "ladenOnBoard", "laden_on_board", "LADEN_ON_BOARD", "LadenOnBoard", "ladenOnBoardDate",
+                "laden_on_board_date");
+
+        log.debug("别名添加完成，当前字段数量: {}", map.size());
     }
 
-    /**
-     * 将 Map 转换为 Entity
-     */
-    private BookingConsolidated mapMapToEntity(Map<String, Object> map) {
-        BookingConsolidated bc = new BookingConsolidated();
-        bc.setBookingNo((String) map.get("booking_no"));
-        bc.setShipper((String) map.get("shipper"));
-        bc.setConsignee((String) map.get("consignee"));
-        bc.setNotifyParty((String) map.get("notify_party"));
-        bc.setVesselVoyage((String) map.get("vessel_voyage"));
-        bc.setPortOfLoading((String) map.get("port_of_loading"));
-        bc.setPortOfDischarge((String) map.get("port_of_discharge"));
-        bc.setPlaceOfDelivery((String) map.get("place_of_delivery"));
-        bc.setCargoDescription((String) map.get("cargo_description"));
-        bc.setCargoQuantity((String) map.get("cargo_quantity"));
-
-        Object gw = map.get("cargo_gross_weight");
-        if (gw instanceof BigDecimal)
-            bc.setCargoGrossWeight((BigDecimal) gw);
-        else if (gw instanceof String)
-            bc.setCargoGrossWeight(extractBigDecimal((String) gw));
-
-        Object meas = map.get("cargo_measurement");
-        if (meas instanceof BigDecimal)
-            bc.setCargoMeasurement((BigDecimal) meas);
-        else if (meas instanceof String)
-            bc.setCargoMeasurement(extractBigDecimal((String) meas));
-
-        bc.setContainerNo((String) map.get("container_no"));
-        bc.setSealNo((String) map.get("seal_no"));
-
-        // 注意：marks, freight_term, vessel_name, voyage_no 等字段
-        // 可能在数据库中不存在，如果存在则需要添加对应的setter
-        // 这里假设只使用现有的数据库字段
-
-        return bc;
-    }
-
-    /**
-     * 将 Map (下划线命名) 转换为 BookingConsolidated Entity
-     * 用于同时保存到 booking_consolidated 表
-     */
-    private BookingConsolidated mapMapToBookingConsolidated(Map<String, Object> map) {
-        BookingConsolidated bc = new BookingConsolidated();
-
-        bc.setBookingNo((String) map.get("booking_no"));
-        bc.setShipper((String) map.get("shipper"));
-        bc.setConsignee((String) map.get("consignee"));
-        bc.setNotifyParty((String) map.get("notify_party"));
-        bc.setVesselVoyage((String) map.get("vessel_voyage"));
-        bc.setPortOfLoading((String) map.get("port_of_loading"));
-        bc.setPortOfDischarge((String) map.get("port_of_discharge"));
-        bc.setPlaceOfDelivery((String) map.get("place_of_delivery"));
-        bc.setCargoDescription((String) map.get("goods_description"));
-
-        // 处理 package_quantity → cargoQuantity
-        Object pkgQty = map.get("package_quantity");
-        Object pkgUnit = map.get("package_unit");
-        if (pkgQty != null && pkgUnit != null) {
-            bc.setCargoQuantity(pkgQty.toString() + " " + pkgUnit.toString());
-        } else if (pkgQty != null) {
-            bc.setCargoQuantity(pkgQty.toString());
-        }
-
-        // 处理 gross_weight_kgs
-        Object gw = map.get("gross_weight_kgs");
-        if (gw instanceof BigDecimal) {
-            bc.setCargoGrossWeight((BigDecimal) gw);
-        } else if (gw instanceof String) {
-            bc.setCargoGrossWeight(extractBigDecimal((String) gw));
-        } else if (gw instanceof Number) {
-            bc.setCargoGrossWeight(new BigDecimal(gw.toString()));
-        }
-
-        // 处理 measurement_cbm
-        Object meas = map.get("measurement_cbm");
-        if (meas instanceof BigDecimal) {
-            bc.setCargoMeasurement((BigDecimal) meas);
-        } else if (meas instanceof String) {
-            bc.setCargoMeasurement(extractBigDecimal((String) meas));
-        } else if (meas instanceof Number) {
-            bc.setCargoMeasurement(new BigDecimal(meas.toString()));
-        }
-
-        // 处理 container_no / seal_no
-        String containerSeal = (String) map.get("container_seal_info");
-        if (!StringUtils.isEmpty(containerSeal)) {
-            String[] parts = containerSeal.split("/");
-            if (parts.length >= 1) {
-                bc.setContainerNo(parts[0].trim());
-            }
-            if (parts.length >= 2) {
-                bc.setSealNo(parts[1].trim());
-            }
-        } else {
-            bc.setContainerNo((String) map.get("container_no"));
-            bc.setSealNo((String) map.get("seal_no"));
-        }
-
-        // VGM 字段
-        Object vgm = map.get("vgm");
-        if (vgm instanceof BigDecimal) {
-            bc.setVgm((BigDecimal) vgm);
-        } else if (vgm instanceof String) {
-            bc.setVgm(extractBigDecimal((String) vgm));
-        } else if (vgm instanceof Number) {
-            bc.setVgm(new BigDecimal(vgm.toString()));
-        }
-
-        bc.setVgmUnit((String) map.get("vgm_unit"));
-
-        return bc;
-    }
-
-    /**
-     * 将 JSON 转换为 Map (支持扁平结构和驼峰命名)
-     */
     private Map<String, Object> mapJsonToMap(JSONObject dataJson) {
         Map<String, Object> map = new HashMap<>();
 
@@ -791,18 +728,6 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
         }
 
         return locations;
-    }
-
-    private BigDecimal extractBigDecimal(String val) {
-        if (StringUtils.isEmpty(val))
-            return null;
-        try {
-            // 提取数字部分 (移除 "KGS", "CBM" 等)
-            String num = val.replaceAll("[^0-9.]", "");
-            return new BigDecimal(num);
-        } catch (Exception e) {
-            return null;
-        }
     }
 
     /**
@@ -941,57 +866,96 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
     private com.ruoyi.system.domain.BillOfLading mapMapToBillOfLading(Map<String, Object> map) {
         com.ruoyi.system.domain.BillOfLading bl = new com.ruoyi.system.domain.BillOfLading();
 
-        bl.setBlNo((String) map.get("bl_no"));
-        bl.setBookingNo((String) map.get("booking_no"));
-        bl.setDocNo((String) map.get("doc_no"));
-        bl.setShipper((String) map.get("shipper"));
-        bl.setConsignee((String) map.get("consignee"));
-        bl.setNotifyParty((String) map.get("notify_party"));
-        bl.setCarrierAgent((String) map.get("carrier_agent"));
-        bl.setDeliveryAgent((String) map.get("delivery_agent"));
-        bl.setVesselVoyage((String) map.get("vessel_voyage"));
-        bl.setPlaceOfReceipt((String) map.get("place_of_receipt"));
-        bl.setPortOfLoading((String) map.get("port_of_loading"));
-        bl.setPortOfDischarge((String) map.get("port_of_discharge"));
-        bl.setPlaceOfDelivery((String) map.get("place_of_delivery"));
-        bl.setContainerSealInfo((String) map.get("container_seal_info"));
+        bl.setBlNo((String) getVal(map, "bl_no", "blNo"));
+        bl.setBookingNo((String) getVal(map, "booking_no", "bookingNo"));
+        bl.setDocNo((String) getVal(map, "doc_no", "docNo"));
+        bl.setSerialNo((String) getVal(map, "serial_no", "serialNo"));
+        bl.setShipper((String) getVal(map, "shipper"));
+        bl.setConsignee((String) getVal(map, "consignee"));
+        bl.setNotifyParty((String) getVal(map, "notify_party", "notifyParty"));
+        bl.setCarrierAgent((String) getVal(map, "carrier_agent", "carrierAgent"));
+        bl.setDeliveryAgent((String) getVal(map, "delivery_agent", "deliveryAgent"));
+        bl.setVesselVoyage((String) getVal(map, "vessel_voyage", "vesselVoyage"));
+        bl.setPlaceOfReceipt((String) getVal(map, "place_of_receipt", "placeOfReceipt"));
+        bl.setPortOfLoading((String) getVal(map, "port_of_loading", "portOfLoading"));
+        bl.setPortOfDischarge((String) getVal(map, "port_of_discharge", "portOfDischarge"));
+        bl.setPlaceOfDelivery((String) getVal(map, "place_of_delivery", "placeOfDelivery"));
+        bl.setContainerSealInfo((String) getVal(map, "container_seal_info", "containerSealInfo"));
 
         // 包装数量
-        Object pkgQty = map.get("package_quantity");
+        Object pkgQty = getVal(map, "package_quantity", "packageQuantity", "cargo_quantity");
         if (pkgQty instanceof Integer) {
             bl.setPackageQuantity((Integer) pkgQty);
-        } else if (pkgQty instanceof String) {
+        } else if (pkgQty != null) {
             try {
-                bl.setPackageQuantity(Integer.parseInt((String) pkgQty));
+                String s = pkgQty.toString().replaceAll("[^0-9]", "");
+                if (!s.isEmpty())
+                    bl.setPackageQuantity(Integer.parseInt(s));
             } catch (Exception e) {
                 log.warn("无法解析package_quantity: {}", pkgQty);
             }
         }
 
-        bl.setPackageUnit((String) map.get("package_unit"));
-        bl.setGoodsDescription((String) map.get("goods_description"));
+        bl.setPackageUnit((String) getVal(map, "package_unit", "packageUnit"));
+        bl.setGoodsDescription((String) getVal(map, "goods_description", "goodsDescription", "cargo_description"));
 
         // 毛重
-        Object gw = map.get("gross_weight_kgs");
-        if (gw instanceof BigDecimal) {
-            bl.setGrossWeightKgs((BigDecimal) gw);
-        } else if (gw instanceof String) {
-            bl.setGrossWeightKgs(extractBigDecimal((String) gw));
-        }
+        bl.setGrossWeightKgs(extractBigDecimal(
+                getVal(map, "gross_weight_kgs", "grossWeightKgs", "cargo_gross_weight", "grossWeight")));
 
         // 体积
-        Object meas = map.get("measurement_cbm");
-        if (meas instanceof BigDecimal) {
-            bl.setMeasurementCbm((BigDecimal) meas);
-        } else if (meas instanceof String) {
-            bl.setMeasurementCbm(extractBigDecimal((String) meas));
-        }
+        bl.setMeasurementCbm(extractBigDecimal(
+                getVal(map, "measurement_cbm", "measurementCbm", "cargo_measurement", "measurement")));
 
-        bl.setFreightTerm((String) map.get("freight_term"));
-        bl.setOriginalBlCount((String) map.get("original_bl_count"));
-        bl.setIssuePlace((String) map.get("issue_place"));
+        bl.setFreightTerm((String) getVal(map, "freight_term", "freightTerm"));
+        bl.setOriginalBlCount((String) getVal(map, "original_bl_count", "originalBlCount"));
+        bl.setIssuePlace((String) getVal(map, "issue_place", "issuePlace"));
+        bl.setServiceType((String) getVal(map, "service_type", "serviceType"));
+        bl.setLadenOnBoard((String) getVal(map, "laden_on_board", "ladenOnBoard"));
+        bl.setPayableAt((String) getVal(map, "payable_at", "payableAt"));
+        bl.setPrepaidAmount((String) getVal(map, "prepaid_amount", "prepaidAmount"));
+        bl.setCollectAmount((String) getVal(map, "collect_amount", "collectAmount"));
+        bl.setFreightRate((String) getVal(map, "freight_rate", "freightRate", "rate"));
+        bl.setRevenueTons(extractBigDecimal(getVal(map, "revenue_tons", "revenueTons")));
 
         return bl;
+    }
+
+    // 辅助方法：从Object中提取BigDecimal
+    private BigDecimal extractBigDecimal(Object val) {
+        if (val == null)
+            return null;
+        if (val instanceof BigDecimal)
+            return (BigDecimal) val;
+        if (val instanceof String) {
+            String s = (String) val;
+            if (StringUtils.isEmpty(s))
+                return null;
+            try {
+                String num = s.replaceAll("[^0-9.]", "");
+                if (StringUtils.isEmpty(num))
+                    return null;
+                return new BigDecimal(num);
+            } catch (Exception e) {
+                log.warn("无法从字符串 '{}' 解析BigDecimal: {}", s, e.getMessage());
+                return null;
+            }
+        }
+        log.warn("无法从类型 {} 解析BigDecimal: {}", val.getClass().getName(), val);
+        return null;
+    }
+
+    // 辅助方法：安全获取Map中的值，支持多个key优先级
+    private Object getVal(Map<String, Object> map, String... keys) {
+        for (String key : keys) {
+            if (map.containsKey(key)) {
+                Object value = map.get(key);
+                if (value != null && !StringUtils.isEmpty(value.toString())) {
+                    return value;
+                }
+            }
+        }
+        return null;
     }
 
     /**

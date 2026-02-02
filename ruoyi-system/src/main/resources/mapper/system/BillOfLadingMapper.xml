@@ -28,15 +28,24 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="freightTerm"    column="freight_term"    />
         <result property="originalBlCount"    column="original_bl_count"    />
         <result property="issuePlace"    column="issue_place"    />
+        <result property="serviceType"    column="service_type"    />
+        <result property="revenueTons"    column="revenue_tons"    />
+        <result property="freightRate"    column="freight_rate"    />
+        <result property="prepaidAmount"    column="prepaid_amount"    />
+        <result property="collectAmount"    column="collect_amount"    />
+        <result property="payableAt"    column="payable_at"    />
+        <result property="ladenOnBoard"    column="laden_on_board"    />
+        <result property="serialNo"    column="serial_no"    />
         <result property="filePath"    column="file_path"    />
         <result property="createTime"    column="created_at"    />
     </resultMap>
 
     <sql id="selectBillOfLadingVo">
-        select id, bl_no, booking_no, doc_no, shipper, consignee, notify_party, carrier_agent, 
+        select id, bl_no, booking_no, doc_no, serial_no, shipper, consignee, notify_party, carrier_agent, 
                delivery_agent, vessel_voyage, place_of_receipt, port_of_loading, port_of_discharge, 
                place_of_delivery, container_seal_info, package_quantity, package_unit, goods_description, 
-               gross_weight_kgs, measurement_cbm, freight_term, original_bl_count, issue_place, 
+               gross_weight_kgs, measurement_cbm, freight_term, service_type, revenue_tons, freight_rate, 
+               prepaid_amount, collect_amount, payable_at, laden_on_board, original_bl_count, issue_place, 
                file_path, created_at 
         from bill_of_lading_v3
     </sql>
