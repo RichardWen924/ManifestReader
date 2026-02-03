@@ -8,52 +8,46 @@ package com.ruoyi.common.utils;
  */
 public class DocNoGenerator {
 
-    private static final java.time.format.DateTimeFormatter TIMESTAMP_FORMATTER = java.time.format.DateTimeFormatter
-            .ofPattern("yyMMddHHmmss");
-    private static final int PREFIX_LENGTH = 4;
-    private static final java.util.Random RANDOM = new java.util.Random();
+    private static final java.time.format.DateTimeFormatter MONTH_FORMATTER = java.time.format.DateTimeFormatter
+            .ofPattern("yyyyMM");
+    private static final java.util.concurrent.atomic.AtomicLong SEQUENCE = new java.util.concurrent.atomic.AtomicLong(
+            0);
+    private static volatile String lastMonth = "";
+    private static final java.util.concurrent.locks.ReentrantLock LOCK = new java.util.concurrent.locks.ReentrantLock();
 
     /**
-     * 生成下一个业务单号
-     * 18位 = 前缀(4) + 时间戳(12: yyMMddHHmmss) + 随机数(2)
+     * 生成下一个业务单号 (V5 更新规则)
+     * 18位 = EVHL(4) + 年月(6: yyyyMM) + 序列号(8: 00000001开始)
      * 
-     * @param prefix 前缀（大写字母，不足4位补X，多于4位截取）
+     * @param prefix 原始逻辑传参（新规则下强制使用 EVHL）
      * @return 18位单号
      */
     public static String nextDocNo(String prefix) {
-        // 1. 处理前缀
-        String finalPrefix = normalizePrefix(prefix);
+        // 1. 获取当前年月 (6位)
+        String currentMonth = java.time.LocalDateTime.now().format(MONTH_FORMATTER);
 
-        // 2. 获取当前时间戳 (12位)
-        String timestamp = java.time.LocalDateTime.now().format(TIMESTAMP_FORMATTER);
+        // 2. 获取序列号 (支持按月重置)
+        long seq = getNextSequence(currentMonth);
 
-        // 3. 生成2位随机数 (确保凑齐18位)
-        int randomPart = RANDOM.nextInt(90) + 10; // 10-99
-
-        return finalPrefix + timestamp + randomPart;
+        // 3. 拼接结果: EVHL + yyyyMM + 8位序列 (4 + 6 + 8 = 18)
+        return String.format("EVHL%s%08d", currentMonth, seq);
     }
 
     /**
-     * 前缀规范化：转大写，补'X'或截取
+     * 获取序列号，若月份变更则重置
      */
-    private static String normalizePrefix(String prefix) {
-        if (prefix == null || prefix.trim().isEmpty()) {
-            return "XXXX";
-        }
-        // 提取字母和数字，转大写
-        String p = prefix.replaceAll("[^a-zA-Z0-9]", "").toUpperCase();
-        if (p.isEmpty())
-            return "XXXX";
-
-        if (p.length() < PREFIX_LENGTH) {
-            StringBuilder sb = new StringBuilder(p);
-            while (sb.length() < PREFIX_LENGTH) {
-                sb.append('X');
+    private static long getNextSequence(String currentMonth) {
+        if (!currentMonth.equals(lastMonth)) {
+            LOCK.lock();
+            try {
+                if (!currentMonth.equals(lastMonth)) {
+                    lastMonth = currentMonth;
+                    SEQUENCE.set(0);
+                }
+            } finally {
+                LOCK.unlock();
             }
-            return sb.toString();
-        } else if (p.length() > PREFIX_LENGTH) {
-            return p.substring(0, PREFIX_LENGTH);
         }
-        return p;
+        return SEQUENCE.incrementAndGet();
     }
 }

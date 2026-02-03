@@ -99,4 +99,13 @@ public interface IBookingConsolidatedService {
      * @return 保存结果
      */
     BookingConsolidated saveToDbOnly(com.ruoyi.system.domain.BookingConsolidatedDto dto);
+
+    /**
+     * 校验单号是否唯一
+     * 
+     * @param docNo 单号
+     * @param id    排除的ID（可选）
+     * @return 结果 true 唯一 false 不唯一
+     */
+    public boolean checkDocNoUnique(String docNo, Long id);
 }

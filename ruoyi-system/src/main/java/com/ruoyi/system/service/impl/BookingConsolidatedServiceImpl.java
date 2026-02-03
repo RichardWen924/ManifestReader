@@ -1129,4 +1129,16 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
         log.debug("字段名转换：{} 个字段从snake_case转为camelCase", camelMap.size());
         return camelMap;
     }
+
+    /**
+     * 校验单号是否唯一 (V5)
+     */
+    @Override
+    public boolean checkDocNoUnique(String docNo, Long id) {
+        if (StringUtils.isEmpty(docNo)) {
+            return true;
+        }
+        int count = billOfLadingMapper.checkDocNoUnique(docNo, id);
+        return count == 0;
+    }
 }

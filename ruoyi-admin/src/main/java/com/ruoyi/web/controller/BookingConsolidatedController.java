@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import com.ruoyi.common.config.RuoYiConfig;
-import com.ruoyi.common.utils.file.FileUploadUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,8 +22,6 @@ import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
-import org.springframework.web.multipart.MultipartFile;
-
 import com.ruoyi.system.domain.BookingConsolidatedDto;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -208,6 +204,15 @@ public class BookingConsolidatedController extends BaseController {
         } catch (Exception e) {
             return error(e.getMessage());
         }
+    }
+
+    /**
+     * 校验单号是否唯一 (V5)
+     */
+    @PostMapping("/checkDocNoUnique")
+    @ResponseBody
+    public String checkDocNoUnique(String docNo, Long id) {
+        return bookingConsolidatedService.checkDocNoUnique(docNo, id) ? "0" : "1";
     }
 
     /**

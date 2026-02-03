@@ -407,6 +407,24 @@
             rules: {
                 blNo: { required: true },
                 bookingNo: { required: true },
+                docNo: {
+                    remote: {
+                        url: prefix + "/checkDocNoUnique",
+                        type: "post",
+                        dataType: "json",
+                        data: {
+                            "docNo": function () {
+                                return $.common.trim($("#docNo").val());
+                            },
+                            "id": function () {
+                                return $.common.trim($("input[name='id']").val());
+                            }
+                        },
+                        dataFilter: function (data, type) {
+                            return $.validate.unique(data);
+                        }
+                    }
+                },
                 packageQuantity: { digits: true },
                 grossWeightKgs: { number: true },
                 measurementCbm: { number: true },
@@ -416,6 +434,7 @@
             messages: {
                 blNo: { required: "提单号不能为空" },
                 bookingNo: { required: "订舱号不能为空" },
+                docNo: { remote: "业务单号已存在，请核对" },
                 packageQuantity: { digits: "应填数字类型：整数 (如 100)" },
                 grossWeightKgs: { number: "应填数据类型：有效数字 (如 12.34)" },
                 measurementCbm: { number: "应填数据类型：有效数字 (如 12.34)" },

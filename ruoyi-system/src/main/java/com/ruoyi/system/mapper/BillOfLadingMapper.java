@@ -65,4 +65,14 @@ public interface BillOfLadingMapper {
      * @return 结果
      */
     public int deleteBillOfLadingByIds(String[] ids);
+
+    /**
+     * 校验单号是否唯一
+     * 
+     * @param docNo 单号
+     * @param id    排除的ID
+     * @return 结果
+     */
+    public int checkDocNoUnique(@org.apache.ibatis.annotations.Param("docNo") String docNo,
+            @org.apache.ibatis.annotations.Param("id") Long id);
 }

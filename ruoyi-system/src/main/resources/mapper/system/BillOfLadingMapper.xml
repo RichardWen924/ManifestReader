@@ -220,4 +220,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             #{id}
         </foreach>
     </delete>
+    <select id="checkDocNoUnique" resultType="int">
+        select count(1) from bill_of_lading_v5
+        where doc_no = #{docNo}
+        <if test="id != null"> and id != #{id}</if>
+    </select>
 </mapper>
