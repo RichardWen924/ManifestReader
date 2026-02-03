@@ -620,69 +620,82 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
 
         log.info("开始映射Dify JSON数据，字段数量: {}", dataJson.size());
 
-        // 字段映射：Dify驼峰命名 -> 数据库下划线命名
-        Map<String, String> fieldMapping = new HashMap<>();
-        fieldMapping.put("blNo", "bl_no");
-        fieldMapping.put("bookingNo", "booking_no");
-        fieldMapping.put("docNo", "doc_no");
-        fieldMapping.put("serialNo", "serial_no");
-        fieldMapping.put("shipper", "shipper");
-        fieldMapping.put("consignee", "consignee");
-        fieldMapping.put("notifyParty", "notify_party");
-        fieldMapping.put("carrierAgent", "carrier_agent");
-        fieldMapping.put("deliveryAgent", "delivery_agent");
-        fieldMapping.put("vesselName", "vessel_name");
-        fieldMapping.put("voyageNo", "voyage_no");
-        fieldMapping.put("placeOfReceipt", "place_of_receipt");
-        fieldMapping.put("portOfLoading", "port_of_loading");
-        fieldMapping.put("portOfDischarge", "port_of_discharge");
-        fieldMapping.put("placeOfDelivery", "place_of_delivery");
-        fieldMapping.put("containerNo", "container_no");
-        fieldMapping.put("sealNo", "seal_no");
-        fieldMapping.put("packageQuantity", "package_quantity");
-        fieldMapping.put("description", "goods_description");
-        fieldMapping.put("marks", "goods_description");
-        fieldMapping.put("grossWeight", "gross_weight");
-        fieldMapping.put("measurement", "measurement");
-        fieldMapping.put("serviceType", "service_type");
-        fieldMapping.put("revenueTons", "revenue_tons");
-        fieldMapping.put("freightTerm", "freight_term");
-        fieldMapping.put("freightRate", "freight_rate");
-        fieldMapping.put("prepaidAmount", "prepaid_amount");
-        fieldMapping.put("collectAmount", "collect_amount");
-        fieldMapping.put("payableAt", "payable_at");
-        fieldMapping.put("originalBlCount", "original_bl_count");
-        fieldMapping.put("issuePlace", "issue_place");
-        fieldMapping.put("ladenOnBoard", "laden_on_board");
-        fieldMapping.put("preCarriageBy", "pre_carriage_by");
-        fieldMapping.put("serviceMode", "service_mode");
-        fieldMapping.put("containerNo", "container_no");
-        fieldMapping.put("sealNo", "seal_no");
-        fieldMapping.put("containerWeight", "container_weight");
-        fieldMapping.put("vgmWeight", "vgm_weight");
+        // 核心字段矩阵：定义数据库字段名及其对应的候选 Dify 字段名（含驼峰和下划线）
+        Map<String, String[]> mappingMatrix = new HashMap<>();
+        mappingMatrix.put("bl_no", new String[] { "blNo", "bl_no" });
+        mappingMatrix.put("booking_no", new String[] { "bookingNo", "booking_no" });
+        mappingMatrix.put("doc_no", new String[] { "docNo", "doc_no" });
+        mappingMatrix.put("serial_no", new String[] { "serialNo", "serial_no" });
+        mappingMatrix.put("shipper", new String[] { "shipper", "SHIPPER" });
+        mappingMatrix.put("consignee", new String[] { "consignee", "CONSIGNEE" });
+        mappingMatrix.put("notify_party", new String[] { "notifyParty", "notify_party" });
+        mappingMatrix.put("carrier_agent", new String[] { "carrierAgent", "carrier_agent" });
+        mappingMatrix.put("delivery_agent", new String[] { "deliveryAgent", "delivery_agent" });
+        mappingMatrix.put("vessel_name", new String[] { "vesselName", "vessel_name", "vessel" });
+        mappingMatrix.put("voyage_no", new String[] { "voyageNo", "voyage_no", "voyage" });
+        mappingMatrix.put("vessel_voyage", new String[] { "vesselVoyage", "vessel_voyage" });
+        mappingMatrix.put("place_of_receipt", new String[] { "placeOfReceipt", "place_of_receipt" });
+        mappingMatrix.put("port_of_loading", new String[] { "portOfLoading", "port_of_loading", "pol" });
+        mappingMatrix.put("port_of_discharge", new String[] { "portOfDischarge", "port_of_discharge", "pod" });
+        mappingMatrix.put("place_of_delivery", new String[] { "placeOfDelivery", "place_of_delivery" });
+        mappingMatrix.put("pre_carriage_by", new String[] { "preCarriageBy", "pre_carriage_by" });
+        mappingMatrix.put("container_no", new String[] { "containerNo", "container_no" });
+        mappingMatrix.put("seal_no", new String[] { "sealNo", "seal_no" });
+        mappingMatrix.put("container_weight", new String[] { "containerWeight", "container_weight" });
+        mappingMatrix.put("vgm_weight", new String[] { "vgmWeight", "vgm_weight" });
+        mappingMatrix.put("container_seal_info", new String[] { "containerSealInfo", "container_seal_info" });
+        mappingMatrix.put("package_quantity", new String[] { "packageQuantity", "package_quantity" });
+        mappingMatrix.put("package_unit", new String[] { "packageUnit", "package_unit" });
+        mappingMatrix.put("goods_description", new String[] { "goodsDescription", "goods_description", "description" });
+        mappingMatrix.put("marks", new String[] { "marks", "MARKS" });
+        mappingMatrix.put("gross_weight_kgs",
+                new String[] { "grossWeightKgs", "gross_weight_kgs", "gross_weight", "grossWeight" });
+        mappingMatrix.put("measurement_cbm",
+                new String[] { "measurementCbm", "measurement_cbm", "measurement", "MEASUREMENT" });
+        mappingMatrix.put("service_type", new String[] { "serviceType", "service_type" });
+        mappingMatrix.put("service_mode", new String[] { "serviceMode", "service_mode", "mode" });
+        mappingMatrix.put("revenue_tons", new String[] { "revenueTons", "revenue_tons" });
+        mappingMatrix.put("freight_term", new String[] { "freightTerm", "freight_term" });
+        mappingMatrix.put("freight_rate", new String[] { "freightRate", "freight_rate", "rate" });
+        mappingMatrix.put("prepaid_amount", new String[] { "prepaidAmount", "prepaid_amount" });
+        mappingMatrix.put("collect_amount", new String[] { "collectAmount", "collect_amount" });
+        mappingMatrix.put("payable_at", new String[] { "payableAt", "payable_at" });
+        mappingMatrix.put("original_bl_count", new String[] { "originalBlCount", "original_bl_count" });
+        mappingMatrix.put("issue_place", new String[] { "issuePlace", "issue_place" });
+        mappingMatrix.put("laden_on_board", new String[] { "ladenOnBoard", "laden_on_board" });
 
-        // 遍历映射表，从JSON提取数据
-        for (Map.Entry<String, String> entry : fieldMapping.entrySet()) {
-            String difyField = entry.getKey();
-            String dbField = entry.getValue();
+        // 遍历矩阵进行深度优先匹配
+        for (Map.Entry<String, String[]> entry : mappingMatrix.entrySet()) {
+            String dbField = entry.getKey();
+            String[] candidates = entry.getValue();
 
-            if (dataJson.containsKey(difyField)) {
-                Object value = dataJson.get(difyField);
+            for (String candidate : candidates) {
+                if (dataJson.containsKey(candidate)) {
+                    Object value = dataJson.get(candidate);
+                    if (value != null) {
+                        // 特殊处理数值类字段
+                        String[] numericFields = { "gross_weight_kgs", "measurement_cbm", "revenue_tons",
+                                "container_weight", "vgm_weight" };
+                        boolean isNumeric = false;
+                        for (String nf : numericFields)
+                            if (nf.equals(dbField))
+                                isNumeric = true;
 
-                // 处理数值类型字段
-                if (dbField.equals("cargo_gross_weight") || dbField.equals("cargo_measurement")) {
-                    if (value instanceof String) {
-                        map.put(dbField, extractBigDecimal((String) value));
-                    } else if (value instanceof Number) {
-                        map.put(dbField, new BigDecimal(value.toString()));
+                        if (isNumeric) {
+                            map.put(dbField, extractBigDecimal(value));
+                        } else if (dbField.equals("package_quantity")) {
+                            // 件数可能是数字也可能是字符串 "100"
+                            String valStr = value.toString().replaceAll("[^0-9]", "");
+                            if (StringUtils.isNotEmpty(valStr)) {
+                                map.put(dbField, Integer.parseInt(valStr));
+                            }
+                        } else {
+                            map.put(dbField, value.toString());
+                        }
+                        log.debug("识别到字段: {} (来自 {}) = {}", dbField, candidate, value);
+                        break; // 找到第一个匹配候选者即停止
                     }
-                } else {
-                    map.put(dbField, value != null ? value.toString() : null);
                 }
-
-                log.debug("映射字段: {} -> {} = {}", difyField, dbField, value);
-            } else {
-                log.debug("Dify未返回字段: {}", difyField);
             }
         }
 
@@ -945,6 +958,7 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
         bl.setSealNo((String) getVal(map, "seal_no", "sealNo"));
         bl.setContainerWeight(extractBigDecimal(getVal(map, "container_weight", "containerWeight")));
         bl.setVgmWeight(extractBigDecimal(getVal(map, "vgm_weight", "vgmWeight")));
+        bl.setMarks((String) getVal(map, "marks", "MARKS"));
 
         return bl;
     }
@@ -1035,6 +1049,7 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
         fieldMapping.put("seal_no", "sealNo");
         fieldMapping.put("container_weight", "containerWeight");
         fieldMapping.put("vgm_weight", "vgmWeight");
+        fieldMapping.put("marks", "marks");
         fieldMapping.put("file_path", "filePath");
         fieldMapping.put("originalFilePath", "originalFilePath");
         fieldMapping.put("templateFilePath", "templateFilePath");

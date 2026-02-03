@@ -27,7 +27,7 @@ public class BillOfLadingDataProcessor {
                 "containerWeight", "vgmWeight", "containerSealInfo", "packageQuantity", "packageUnit",
                 "goodsDescription", "grossWeightKgs", "measurementCbm", "serviceType", "serviceMode",
                 "revenueTons", "freightTerm", "freightRate", "prepaidAmount", "collectAmount",
-                "payableAt", "originalBlCount", "issuePlace", "ladenOnBoard"
+                "payableAt", "originalBlCount", "issuePlace", "ladenOnBoard", "marks"
         };
         for (String field : v5Fields) {
             processed.put(field, "");

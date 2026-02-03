@@ -42,6 +42,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="originalBlCount"    column="original_bl_count"    />
         <result property="issuePlace"    column="issue_place"    />
         <result property="ladenOnBoard"    column="laden_on_board"    />
+        <result property="marks"    column="marks"    />
         <result property="filePath"    column="file_path"    />
         <result property="createdAt"    column="created_at"    />
     </resultMap>
@@ -50,7 +51,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         select id, bl_no, booking_no, doc_no, serial_no, shipper, consignee, notify_party, carrier_agent, delivery_agent, 
             pre_carriage_by, vessel_voyage, place_of_receipt, port_of_loading, port_of_discharge, place_of_delivery, 
             container_seal_info, container_no, seal_no, container_weight, vgm_weight,
-            package_quantity, package_unit, goods_description, gross_weight_kgs, measurement_cbm, service_type, service_mode,
+            package_quantity, package_unit, goods_description, marks, gross_weight_kgs, measurement_cbm, service_type, service_mode,
             revenue_tons, freight_term, freight_rate, prepaid_amount, collect_amount, payable_at, original_bl_count, issue_place, 
             laden_on_board, file_path, created_at
         from bill_of_lading_v5
@@ -117,6 +118,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="originalBlCount != null">original_bl_count,</if>
             <if test="issuePlace != null">issue_place,</if>
             <if test="ladenOnBoard != null">laden_on_board,</if>
+            <if test="marks != null">marks,</if>
             <if test="filePath != null and filePath != ''">file_path,</if>
             <if test="createdAt != null">created_at,</if>
          </trim>
@@ -157,6 +159,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="originalBlCount != null">#{originalBlCount},</if>
             <if test="issuePlace != null">#{issuePlace},</if>
             <if test="ladenOnBoard != null">#{ladenOnBoard},</if>
+            <if test="marks != null">#{marks},</if>
             <if test="filePath != null and filePath != ''">#{filePath},</if>
             <if test="createdAt != null">#{createdAt},</if>
          </trim>
@@ -201,6 +204,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="originalBlCount != null">original_bl_count = #{originalBlCount},</if>
             <if test="issuePlace != null">issue_place = #{issuePlace},</if>
             <if test="ladenOnBoard != null">laden_on_board = #{ladenOnBoard},</if>
+            <if test="marks != null">marks = #{marks},</if>
             <if test="filePath != null and filePath != ''">file_path = #{filePath},</if>
         </trim>
         where id = #{id}

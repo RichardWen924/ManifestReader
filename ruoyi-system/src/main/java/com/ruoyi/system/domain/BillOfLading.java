@@ -146,6 +146,10 @@ public class BillOfLading extends BaseEntity {
     @Excel(name = "装船信息")
     private String ladenOnBoard;
 
+    /** 唛头 */
+    @Excel(name = "唛头")
+    private String marks;
+
     /** PDF文件路径 */
     private String filePath;
 
@@ -429,6 +433,14 @@ public class BillOfLading extends BaseEntity {
         return ladenOnBoard;
     }
 
+    public void setMarks(String marks) {
+        this.marks = marks;
+    }
+
+    public String getMarks() {
+        return marks;
+    }
+
     public void setFilePath(String filePath) {
         this.filePath = filePath;
     }
@@ -503,6 +515,7 @@ public class BillOfLading extends BaseEntity {
                 .append("collectAmount", getCollectAmount())
                 .append("payableAt", getPayableAt())
                 .append("ladenOnBoard", getLadenOnBoard())
+                .append("marks", getMarks())
                 .append("preCarriageBy", getPreCarriageBy())
                 .append("serviceMode", getServiceMode())
                 .append("containerNo", getContainerNo())
