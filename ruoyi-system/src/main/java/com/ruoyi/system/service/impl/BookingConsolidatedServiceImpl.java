@@ -622,37 +622,38 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
 
         // 核心字段矩阵：定义数据库字段名及其对应的候选 Dify 字段名（含驼峰和下划线）
         Map<String, String[]> mappingMatrix = new HashMap<>();
-        mappingMatrix.put("bl_no", new String[] { "blNo", "bl_no" });
-        mappingMatrix.put("booking_no", new String[] { "bookingNo", "booking_no" });
-        mappingMatrix.put("doc_no", new String[] { "docNo", "doc_no" });
-        mappingMatrix.put("serial_no", new String[] { "serialNo", "serial_no" });
-        mappingMatrix.put("shipper", new String[] { "shipper", "SHIPPER" });
-        mappingMatrix.put("consignee", new String[] { "consignee", "CONSIGNEE" });
-        mappingMatrix.put("notify_party", new String[] { "notifyParty", "notify_party" });
-        mappingMatrix.put("carrier_agent", new String[] { "carrierAgent", "carrier_agent" });
-        mappingMatrix.put("delivery_agent", new String[] { "deliveryAgent", "delivery_agent" });
+        mappingMatrix.put("bl_no", new String[] { "blNo", "bl_no", "bl_number", "bill_of_lading_no" });
+        mappingMatrix.put("booking_no", new String[] { "bookingNo", "booking_no", "booking_number" });
+        mappingMatrix.put("doc_no", new String[] { "docNo", "doc_no", "document_no" });
+        mappingMatrix.put("serial_no", new String[] { "serialNo", "serial_no", "sequence_no" });
+        mappingMatrix.put("shipper", new String[] { "shipper", "SHIPPER", "shipper_details" });
+        mappingMatrix.put("consignee", new String[] { "consignee", "CONSIGNEE", "consignee_details" });
+        mappingMatrix.put("notify_party", new String[] { "notifyParty", "notify_party", "notify" });
+        mappingMatrix.put("carrier_agent", new String[] { "carrierAgent", "carrier_agent", "carrier" });
+        mappingMatrix.put("delivery_agent", new String[] { "deliveryAgent", "delivery_agent", "destination_agent" });
         mappingMatrix.put("vessel_name", new String[] { "vesselName", "vessel_name", "vessel" });
         mappingMatrix.put("voyage_no", new String[] { "voyageNo", "voyage_no", "voyage" });
-        mappingMatrix.put("vessel_voyage", new String[] { "vesselVoyage", "vessel_voyage" });
+        mappingMatrix.put("vessel_voyage", new String[] { "vesselVoyage", "vessel_voyage", "ship_voyage" });
         mappingMatrix.put("place_of_receipt", new String[] { "placeOfReceipt", "place_of_receipt" });
         mappingMatrix.put("port_of_loading", new String[] { "portOfLoading", "port_of_loading", "pol" });
         mappingMatrix.put("port_of_discharge", new String[] { "portOfDischarge", "port_of_discharge", "pod" });
         mappingMatrix.put("place_of_delivery", new String[] { "placeOfDelivery", "place_of_delivery" });
         mappingMatrix.put("pre_carriage_by", new String[] { "preCarriageBy", "pre_carriage_by" });
-        mappingMatrix.put("container_no", new String[] { "containerNo", "container_no" });
-        mappingMatrix.put("seal_no", new String[] { "sealNo", "seal_no" });
-        mappingMatrix.put("container_weight", new String[] { "containerWeight", "container_weight" });
-        mappingMatrix.put("vgm_weight", new String[] { "vgmWeight", "vgm_weight" });
+        mappingMatrix.put("container_no", new String[] { "containerNo", "container_no", "cntr_no" });
+        mappingMatrix.put("seal_no", new String[] { "sealNo", "seal_no", "seal" });
+        mappingMatrix.put("container_weight", new String[] { "containerWeight", "container_weight", "tare_weight" });
+        mappingMatrix.put("vgm_weight", new String[] { "vgmWeight", "vgm_weight", "vgm" });
         mappingMatrix.put("container_seal_info", new String[] { "containerSealInfo", "container_seal_info" });
         mappingMatrix.put("package_quantity", new String[] { "packageQuantity", "package_quantity" });
-        mappingMatrix.put("package_unit", new String[] { "packageUnit", "package_unit" });
-        mappingMatrix.put("goods_description", new String[] { "goodsDescription", "goods_description", "description" });
-        mappingMatrix.put("marks", new String[] { "marks", "MARKS" });
+        mappingMatrix.put("package_unit", new String[] { "packageUnit", "package_unit", "unit" });
+        mappingMatrix.put("goods_description",
+                new String[] { "goodsDescription", "goods_description", "description", "cargo_description" });
+        mappingMatrix.put("marks", new String[] { "marks", "MARKS", "shipping_marks" });
         mappingMatrix.put("gross_weight_kgs",
-                new String[] { "grossWeightKgs", "gross_weight_kgs", "gross_weight", "grossWeight" });
+                new String[] { "grossWeightKgs", "gross_weight_kgs", "gross_weight", "grossWeight", "total_weight" });
         mappingMatrix.put("measurement_cbm",
-                new String[] { "measurementCbm", "measurement_cbm", "measurement", "MEASUREMENT" });
-        mappingMatrix.put("service_type", new String[] { "serviceType", "service_type" });
+                new String[] { "measurementCbm", "measurement_cbm", "measurement", "MEASUREMENT", "total_volume" });
+        mappingMatrix.put("service_type", new String[] { "serviceType", "service_type", "type" });
         mappingMatrix.put("service_mode", new String[] { "serviceMode", "service_mode", "mode" });
         mappingMatrix.put("revenue_tons", new String[] { "revenueTons", "revenue_tons" });
         mappingMatrix.put("freight_term", new String[] { "freightTerm", "freight_term" });
@@ -780,10 +781,11 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
         fieldMapping.put("containerSealInfo", "container_seal_info");
         fieldMapping.put("packageUnit", "package_unit");
         fieldMapping.put("goodsDescription", "goods_description");
-        fieldMapping.put("description", "goods_description");
-        fieldMapping.put("marks", "goods_description");
+        fieldMapping.put("marks", "marks");
         fieldMapping.put("grossWeightKgs", "gross_weight_kgs");
+        fieldMapping.put("total_weight", "gross_weight_kgs");
         fieldMapping.put("measurementCbm", "measurement_cbm");
+        fieldMapping.put("total_volume", "measurement_cbm");
         fieldMapping.put("serviceType", "service_type");
         fieldMapping.put("revenueTons", "revenue_tons");
         fieldMapping.put("freightTerm", "freight_term");
@@ -800,79 +802,60 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
         fieldMapping.put("sealNo", "seal_no");
         fieldMapping.put("containerWeight", "container_weight");
         fieldMapping.put("vgmWeight", "vgm_weight");
+        fieldMapping.put("vgm", "vgm_weight");
         fieldMapping.put("filePath", "file_path");
 
-        // 特殊处理：vesselName + voyageNo -> vessel_voyage
-        if (camelMap.containsKey("vesselName") || camelMap.containsKey("voyageNo")) {
-            String vessel = getStringHelper(camelMap, "vesselName");
-            String voyage = getStringHelper(camelMap, "voyageNo");
-            underscoreMap.put("vessel_voyage", (vessel + " " + voyage).trim());
-        }
-
-        // 特殊处理：containerNo + sealNo -> container_seal_info
-        if (camelMap.containsKey("containerNo") || camelMap.containsKey("sealNo")) {
-            String container = getStringHelper(camelMap, "containerNo");
-            String seal = getStringHelper(camelMap, "sealNo");
-            underscoreMap.put("container_seal_info", (container + " / " + seal).trim());
-        }
-
-        // 特殊处理：packageQuantity 拆分 "748 CARTONS"
-        if (camelMap.containsKey("packageQuantity")) {
-            String pkgQty = getStringHelper(camelMap, "packageQuantity");
-            if (!StringUtils.isEmpty(pkgQty)) {
-                String[] parts = pkgQty.trim().split("\\s+", 2);
-                try {
-                    underscoreMap.put("package_quantity", Integer.parseInt(parts[0]));
-                    if (parts.length > 1)
-                        underscoreMap.put("package_unit", parts[1]);
-                } catch (NumberFormatException e) {
-                    log.warn("无法解析packageQuantity: {}", pkgQty);
-                }
-            }
-        }
-
-        // 特殊处理：grossWeight 提取数字 "20030 KGS"
-        if (camelMap.containsKey("grossWeight")) {
-            String weight = getStringHelper(camelMap, "grossWeight");
-            if (!StringUtils.isEmpty(weight)) {
-                try {
-                    String numStr = weight.replaceAll("[^0-9.]", "").trim();
-                    if (!StringUtils.isEmpty(numStr)) {
-                        underscoreMap.put("gross_weight_kgs", new BigDecimal(numStr));
-                    }
-                } catch (Exception e) {
-                    log.warn("无法解析grossWeight: {}", weight);
-                }
-            }
-        }
-
-        // 特殊处理：measurement 提取数字 "68 CBM"
-        if (camelMap.containsKey("measurement")) {
-            String measure = getStringHelper(camelMap, "measurement");
-            if (!StringUtils.isEmpty(measure)) {
-                try {
-                    String numStr = measure.replaceAll("[^0-9.]", "").trim();
-                    if (!StringUtils.isEmpty(numStr)) {
-                        underscoreMap.put("measurement_cbm", new BigDecimal(numStr));
-                    }
-                } catch (Exception e) {
-                    log.warn("无法解析measurement: {}", measure);
-                }
-            }
-        }
-
+        // 执行常规映射（来自前端确认表单的数据应拥有最高优先级）
         for (Map.Entry<String, String> entry : fieldMapping.entrySet()) {
             String camelKey = entry.getKey();
             String underscoreKey = entry.getValue();
             if (camelMap.containsKey(camelKey)) {
                 Object value = camelMap.get(camelKey);
                 if (value != null && !StringUtils.isEmpty(value.toString())) {
-                    if (!underscoreMap.containsKey(underscoreKey)) {
-                        underscoreMap.put(underscoreKey, value);
-                    }
+                    underscoreMap.put(underscoreKey, value);
                 }
             }
         }
+
+        // 特殊处理：辅助拆分与提取（仅在目标字段尚未由表单提供有效值时生效）
+        // 1. vesselName + voyageNo -> vessel_voyage
+        if (!underscoreMap.containsKey("vessel_voyage")
+                || StringUtils.isEmpty(underscoreMap.get("vessel_voyage").toString())) {
+            if (camelMap.containsKey("vesselName") || camelMap.containsKey("voyageNo")) {
+                String vessel = getStringHelper(camelMap, "vesselName");
+                String voyage = getStringHelper(camelMap, "voyageNo");
+                underscoreMap.put("vessel_voyage", (vessel + " " + voyage).trim());
+            }
+        }
+
+        // 2. containerNo + sealNo -> container_seal_info
+        if (!underscoreMap.containsKey("container_seal_info")
+                || StringUtils.isEmpty(underscoreMap.get("container_seal_info").toString())) {
+            if (camelMap.containsKey("containerNo") || camelMap.containsKey("sealNo")) {
+                String container = getStringHelper(camelMap, "containerNo");
+                String seal = getStringHelper(camelMap, "sealNo");
+                underscoreMap.put("container_seal_info", (container + " / " + seal).trim());
+            }
+        }
+
+        // 3. packageQuantity 拆分 "748 CARTONS" (仅在 package_quantity 为空或为0时尝试)
+        if (underscoreMap.get("package_quantity") == null
+                || "0".equals(underscoreMap.get("package_quantity").toString())) {
+            String pkgQty = getStringHelper(camelMap, "packageQuantity");
+            if (!StringUtils.isEmpty(pkgQty) && pkgQty.contains(" ")) {
+                String[] parts = pkgQty.trim().split("\\s+", 2);
+                try {
+                    underscoreMap.put("package_quantity", Integer.parseInt(parts[0]));
+                    if (parts.length > 1 && !underscoreMap.containsKey("package_unit"))
+                        underscoreMap.put("package_unit", parts[1]);
+                } catch (NumberFormatException e) {
+                }
+            }
+        }
+
+        // 4. 数值提取 (grossWeight -> gross_weight_kgs, measurement -> measurement_cbm)
+        extractNumericIfEmpty(camelMap, underscoreMap, "grossWeight", "gross_weight_kgs");
+        extractNumericIfEmpty(camelMap, underscoreMap, "measurement", "measurement_cbm");
 
         // 保留内部字段
         if (camelMap.containsKey("originalFilePath")) {
@@ -1000,6 +983,23 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
         return null;
     }
 
+    private void extractNumericIfEmpty(Map<String, Object> camelMap, Map<String, Object> underscoreMap, String camelKey,
+            String underscoreKey) {
+        if (!underscoreMap.containsKey(underscoreKey) || underscoreMap.get(underscoreKey) == null) {
+            String value = getStringHelper(camelMap, camelKey);
+            if (!StringUtils.isEmpty(value)) {
+                try {
+                    String numStr = value.replaceAll("[^0-9.]", "").trim();
+                    if (!StringUtils.isEmpty(numStr)) {
+                        underscoreMap.put(underscoreKey, new BigDecimal(numStr));
+                    }
+                } catch (Exception e) {
+                    log.warn("无法解析 {} 数值: {}", camelKey, value);
+                }
+            }
+        }
+    }
+
     /**
      * 将下划线命名转换为驼峰命名（用于前端显示）
      */
@@ -1008,31 +1008,42 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
 
         Map<String, String> fieldMapping = new HashMap<>();
         fieldMapping.put("bl_no", "blNo");
+        fieldMapping.put("bl_number", "blNo");
+        fieldMapping.put("bill_of_lading_no", "blNo");
         fieldMapping.put("booking_no", "bookingNo");
+        fieldMapping.put("booking_number", "bookingNo");
         fieldMapping.put("doc_no", "docNo");
+        fieldMapping.put("document_no", "docNo");
         fieldMapping.put("serial_no", "serialNo");
+        fieldMapping.put("sequence_no", "serialNo");
         fieldMapping.put("shipper", "shipper");
         fieldMapping.put("consignee", "consignee");
         fieldMapping.put("notify_party", "notifyParty");
         fieldMapping.put("carrier_agent", "carrierAgent");
         fieldMapping.put("delivery_agent", "deliveryAgent");
+        fieldMapping.put("destination_agent", "deliveryAgent");
         fieldMapping.put("vessel_voyage", "vesselVoyage");
         fieldMapping.put("vessel_name", "vesselName");
         fieldMapping.put("voyage_no", "voyageNo");
         fieldMapping.put("place_of_receipt", "placeOfReceipt");
         fieldMapping.put("port_of_loading", "portOfLoading");
+        fieldMapping.put("pol", "portOfLoading");
         fieldMapping.put("port_of_discharge", "portOfDischarge");
+        fieldMapping.put("pod", "portOfDischarge");
         fieldMapping.put("place_of_delivery", "placeOfDelivery");
         fieldMapping.put("container_seal_info", "containerSealInfo");
         fieldMapping.put("container_no", "containerNo");
+        fieldMapping.put("cntr_no", "containerNo");
         fieldMapping.put("seal_no", "sealNo");
         fieldMapping.put("package_quantity", "packageQuantity");
         fieldMapping.put("package_unit", "packageUnit");
+        fieldMapping.put("unit", "packageUnit");
         fieldMapping.put("goods_description", "goodsDescription");
+        fieldMapping.put("cargo_description", "goodsDescription");
         fieldMapping.put("gross_weight_kgs", "grossWeightKgs");
-        fieldMapping.put("gross_weight", "grossWeight");
+        fieldMapping.put("total_weight", "grossWeightKgs");
         fieldMapping.put("measurement_cbm", "measurementCbm");
-        fieldMapping.put("measurement", "measurement");
+        fieldMapping.put("total_volume", "measurementCbm");
         fieldMapping.put("service_type", "serviceType");
         fieldMapping.put("revenue_tons", "revenueTons");
         fieldMapping.put("freight_term", "freightTerm");
@@ -1045,11 +1056,11 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
         fieldMapping.put("laden_on_board", "ladenOnBoard");
         fieldMapping.put("pre_carriage_by", "preCarriageBy");
         fieldMapping.put("service_mode", "serviceMode");
-        fieldMapping.put("container_no", "containerNo");
-        fieldMapping.put("seal_no", "sealNo");
         fieldMapping.put("container_weight", "containerWeight");
         fieldMapping.put("vgm_weight", "vgmWeight");
+        fieldMapping.put("vgm", "vgmWeight");
         fieldMapping.put("marks", "marks");
+        fieldMapping.put("shipping_marks", "marks");
         fieldMapping.put("file_path", "filePath");
         fieldMapping.put("originalFilePath", "originalFilePath");
         fieldMapping.put("templateFilePath", "templateFilePath");
