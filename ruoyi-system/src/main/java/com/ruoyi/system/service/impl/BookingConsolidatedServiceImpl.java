@@ -121,7 +121,8 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
 
         // 自动生成 doc_no (V5)
         if (StringUtils.isEmpty((String) dbData.get("doc_no"))) {
-            String docNo = com.ruoyi.common.utils.DocNoGenerator.nextDocNo("DOCX");
+            String deliveryAgent = (String) dbData.get("delivery_agent");
+            String docNo = com.ruoyi.common.utils.DocNoGenerator.nextDocNo(deliveryAgent);
             dbData.put("doc_no", docNo);
             editedData.put("docNo", docNo); // 同步回编辑数据
             log.info("生成的 doc_no: {}", docNo);
@@ -150,6 +151,12 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
         log.info("准备插入bill_of_lading_v5表，bl_no: {}, booking_no: {}, 文件路径: {}",
                 bl.getBlNo(), bl.getBookingNo(), filePath);
         billOfLadingMapper.insertBillOfLading(bl);
+
+        // 新增功能结束自动将上传的文件进行删除 (V5)
+        if (StringUtils.isNotEmpty(filePath)) {
+            boolean deleted = com.ruoyi.common.utils.file.FileUtils.deleteFile(filePath);
+            log.info("上传文件处理完毕，清理原始文件: {}, 结果: {}", filePath, deleted);
+        }
 
         // 返回结果（为了兼容性）
         BookingConsolidated bc = new BookingConsolidated();
@@ -249,7 +256,8 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
 
         // 自动生成 doc_no (V5)
         if (StringUtils.isEmpty((String) dbData.get("doc_no"))) {
-            String docNo = com.ruoyi.common.utils.DocNoGenerator.nextDocNo("DOCX");
+            String deliveryAgent = (String) dbData.get("delivery_agent");
+            String docNo = com.ruoyi.common.utils.DocNoGenerator.nextDocNo(deliveryAgent);
             dbData.put("doc_no", docNo);
             mergedData.put("docNo", docNo); // 同步回合并数据，确保 PDF 中有该单号
             log.info("生成的 doc_no: {}", docNo);
@@ -289,6 +297,13 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
         log.info("准备插入bill_of_lading表，bl_no: {}, booking_no: {}, 文件路径: {}",
                 bl.getBlNo(), bl.getBookingNo(), newPdfPath);
         billOfLadingMapper.insertBillOfLading(bl);
+
+        // 新增功能结束自动将上传的文件进行删除 (V5)
+        String originalFilePath = (String) cachedData.get("originalFilePath");
+        if (StringUtils.isNotEmpty(originalFilePath)) {
+            boolean deleted = com.ruoyi.common.utils.file.FileUtils.deleteFile(originalFilePath);
+            log.info("上传文件处理完毕，清理原始文件: {}, 结果: {}", originalFilePath, deleted);
+        }
 
         // 为了兼容性，也返回BookingConsolidated对象（后续可以统一为BillOfLading）
         BookingConsolidated bc = new BookingConsolidated();
@@ -338,7 +353,8 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
 
         // 自动生成 doc_no (V5) - 确保导出的 PDF 中也有单号
         if (StringUtils.isEmpty((String) mergedData.get("docNo"))) {
-            String docNo = com.ruoyi.common.utils.DocNoGenerator.nextDocNo("DOCX");
+            String deliveryAgent = (String) mergedData.get("deliveryAgent");
+            String docNo = com.ruoyi.common.utils.DocNoGenerator.nextDocNo(deliveryAgent);
             mergedData.put("docNo", docNo);
             log.info("仅导出 PDF 环节生成的临时 doc_no: {}", docNo);
         }
@@ -406,7 +422,8 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
 
         // 自动生成 doc_no (V5)
         if (StringUtils.isEmpty((String) dbData.get("doc_no"))) {
-            String docNo = com.ruoyi.common.utils.DocNoGenerator.nextDocNo("DOCX");
+            String deliveryAgent = (String) dbData.get("delivery_agent");
+            String docNo = com.ruoyi.common.utils.DocNoGenerator.nextDocNo(deliveryAgent);
             dbData.put("doc_no", docNo);
             mergedData.put("docNo", docNo);
             log.info("生成的 doc_no: {}", docNo);
@@ -430,6 +447,13 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
         log.info("准备插入bill_of_lading_v5表，bl_no: {}, booking_no: {}",
                 bl.getBlNo(), bl.getBookingNo());
         billOfLadingMapper.insertBillOfLading(bl);
+
+        // 新增功能结束自动将上传的文件进行删除 (V5)
+        String originalFilePath = (String) cachedData.get("originalFilePath");
+        if (StringUtils.isNotEmpty(originalFilePath)) {
+            boolean deleted = com.ruoyi.common.utils.file.FileUtils.deleteFile(originalFilePath);
+            log.info("上传文件处理完毕，清理原始文件: {}, 结果: {}", originalFilePath, deleted);
+        }
 
         // 返回结果
         BookingConsolidated bc = new BookingConsolidated();

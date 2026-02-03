@@ -54,7 +54,17 @@
                     <div class="form-group">
                         <label class="col-sm-4 control-label">DOC. NO.：</label>
                         <div class="col-sm-8">
-                            <input name="docNo" th:field="*{docNo}" class="form-control" type="text">
+                            <div class="input-group">
+                                <input id="docNo" name="docNo" th:field="*{docNo}" class="form-control" type="text"
+                                    readonly>
+                                <span class="input-group-addon" style="padding: 0 10px;">
+                                    <label style="margin-bottom: 0; cursor: pointer;" title="确认后可开启编辑">
+                                        <input type="checkbox" id="enableDocNoEdit" style="vertical-align: middle;"> <i
+                                            class="fa fa-lock" id="docNoLockIcon"
+                                            style="font-size: 14px; margin-left: 2px;"></i>
+                                    </label>
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -441,6 +451,16 @@
                 $("input[name='filePath']").val(data.response.fileName);
             }).on('fileremoved', function (event, id, index) {
                 $("input[name='filePath']").val('')
+            });
+
+            // 控制 DocNo 的锁定状态 (V5)
+            $("#enableDocNoEdit").on('change', function () {
+                var checked = $(this).prop('checked');
+                $("#docNo").prop('readonly', !checked);
+                $("#docNoLockIcon").attr('class', checked ? 'fa fa-unlock' : 'fa fa-lock');
+                if (checked) {
+                    $.modal.msg("业务单号已解锁，修改需谨慎。");
+                }
             });
         });
 
