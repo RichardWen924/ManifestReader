@@ -72,6 +72,11 @@
         <!-- AI 校对区域 (默认隐藏) -->
         <div id="ai-review-area" style="display:none; margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px;">
             <h3>AI 智能提取校对</h3>
+            <!-- 校验错误边栏提示区 -->
+            <div id="validation-summary-bar" class="alert alert-danger" style="display:none; margin-bottom: 15px;">
+                <i class="fa fa-warning"></i> <strong>请重新输入：</strong> 以下字段输入不合法，请根据提示修正后再保存。
+                <ul id="validation-error-list" style="margin-top: 5px; margin-bottom: 0;"></ul>
+            </div>
             <div class="row">
                 <div class="col-sm-12">
                     <div class="btn-group pull-right">
@@ -312,12 +317,73 @@
                 } else {
                     formHtml += '<input type="text" class="form-control field-input" data-key="' + k + '" value="' + value + '">';
                 }
+                formHtml += '<span class="help-block m-b-none error-msg text-danger" style="display:none;"></span>';
                 formHtml += '</div></div>';
             }
             formHtml += '</form></div></div>';
             $(container).append(formHtml);
             console.log("字段渲染完成，共", Object.keys(data).length - 2, "个字段");
         }
+
+        // 实时校验单元函数
+        function validateSingleField($input) {
+            var key = $input.data("key");
+            var val = $input.val();
+            var fieldError = null;
+
+            if ((key === 'blNo' || key === 'bookingNo') && !val) {
+                fieldError = "该字段不能为空";
+            } else if (val) {
+                if (['grossWeightKgs', 'measurementCbm', 'containerWeight', 'vgmWeight'].indexOf(key) !== -1) {
+                    // 使用正则检测纯数字/小数，避免 parseFloat("100abc") 返回 100 的弱性质
+                    if (!/^-?\d*\.?\d+$/.test(val)) {
+                        fieldError = "应填数据类型：有效数字 (如 12.34)";
+                    }
+                } else if (key === 'packageQuantity') {
+                    if (!/^\d+$/.test(val)) {
+                        fieldError = "应填数据类型：整数 (如 100)";
+                    }
+                }
+            }
+
+            var $group = $input.closest(".form-group");
+            var $error = $input.next(".error-msg");
+            if (fieldError) {
+                $group.addClass("has-error");
+                $error.text(fieldError).show();
+            } else {
+                $group.removeClass("has-error");
+                $error.hide().text("");
+            }
+            updateSummaryBar();
+        }
+
+        // 更新顶部错误汇总栏
+        function updateSummaryBar() {
+            var errors = [];
+            $(".field-input").each(function () {
+                var $input = $(this);
+                if ($input.closest(".form-group").hasClass("has-error")) {
+                    var key = $input.data("key");
+                    var label = fieldLabels[key] || key;
+                    var msg = $input.next(".error-msg").text();
+                    errors.push("<li><strong>" + label + "</strong>: " + msg + "</li>");
+                }
+            });
+
+            if (errors.length > 0) {
+                $("#validation-error-list").html(errors.join(""));
+                $("#validation-summary-bar").show();
+            } else {
+                $("#validation-summary-bar").hide();
+                $("#validation-error-list").empty();
+            }
+        }
+
+        // 绑定动态事件监听
+        $(document).on('input', '.field-input', function () {
+            validateSingleField($(this));
+        });
 
         // 6. 确认并保存到数据库（修改为询问模式）
         function confirmAIResult() {
@@ -330,12 +396,27 @@
                 return;
             }
 
-            // 从原始数据开始，避免丢失任何字段
+            // 全量校验一次
+            var hasError = false;
+            $(".field-input").each(function () {
+                validateSingleField($(this));
+                if ($(this).closest(".form-group").hasClass("has-error")) {
+                    hasError = true;
+                }
+            });
+
+            if (hasError) {
+                // 滚动到顶部错误栏
+                $('html, body').animate({
+                    scrollTop: $("#validation-summary-bar").offset().top - 20
+                }, 300);
+                return;
+            }
+
+            // 收集数据
             var updatedData = $.extend(true, {}, originalBusinessData);
             $(".field-input").each(function () {
-                var key = $(this).data("key");
-                var val = $(this).val();
-                updatedData[key] = val;
+                updatedData[$(this).data("key")] = $(this).val();
             });
 
             console.log("准备保存的数据:", updatedData);
