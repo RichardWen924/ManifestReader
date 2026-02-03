@@ -150,7 +150,7 @@ public class BillOfLadingDataProcessor {
         if (key == null)
             return false;
         String lowerKey = key.toLowerCase();
-        return lowerKey.contains("weight") || lowerKey.contains("measurement") || lowerKey.contains("tons")
+        return lowerKey.contains("weight") || lowerKey.contains("measurement")
                 || lowerKey.contains("amount") || lowerKey.contains("quantity") || lowerKey.contains("rate");
     }
 

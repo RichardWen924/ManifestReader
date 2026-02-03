@@ -124,7 +124,7 @@ public class BillOfLading extends BaseEntity {
 
     /** 计费吨 */
     @Excel(name = "计费吨")
-    private BigDecimal revenueTons;
+    private String revenueTons;
 
     /** 运费费率 */
     @Excel(name = "运费费率")
@@ -385,11 +385,11 @@ public class BillOfLading extends BaseEntity {
         return serviceMode;
     }
 
-    public void setRevenueTons(BigDecimal revenueTons) {
+    public void setRevenueTons(String revenueTons) {
         this.revenueTons = revenueTons;
     }
 
-    public BigDecimal getRevenueTons() {
+    public String getRevenueTons() {
         return revenueTons;
     }
 

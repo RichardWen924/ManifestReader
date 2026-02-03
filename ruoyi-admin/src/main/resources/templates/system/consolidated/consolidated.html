@@ -121,11 +121,21 @@
                 },
                 {
                     field: 'blNo',
-                    title: 'B/L NO.'
+                    title: 'B/L NO.',
+                    sortable: true
                 },
                 {
                     field: 'bookingNo',
-                    title: 'BOOKING NO.'
+                    title: 'BOOKING NO.',
+                    sortable: true
+                },
+                {
+                    field: 'docNo',
+                    title: 'DOC NO.'
+                },
+                {
+                    field: 'serialNo',
+                    title: 'SERIAL NO.'
                 },
                 {
                     field: 'shipper',
@@ -152,12 +162,24 @@
                     }
                 },
                 {
+                    field: 'carrierAgent',
+                    title: '承运代理'
+                },
+                {
+                    field: 'deliveryAgent',
+                    title: '交付代理'
+                },
+                {
                     field: 'vesselVoyage',
                     title: '船名航次'
                 },
                 {
                     field: 'preCarriageBy',
                     title: '前段运输'
+                },
+                {
+                    field: 'placeOfReceipt',
+                    title: '收货地'
                 },
                 {
                     field: 'portOfLoading',
@@ -172,24 +194,12 @@
                     title: '交货地'
                 },
                 {
-                    field: 'goodsDescription',
-                    title: '货物描述',
-                    formatter: function (value, row, index) {
-                        if (!value) return '';
-                        return value.length > 40 ? value.substring(0, 40) + '...' : value;
-                    }
+                    field: 'containerNo',
+                    title: '箱号'
                 },
                 {
-                    field: 'packageQuantity',
-                    title: '包装数量'
-                },
-                {
-                    field: 'grossWeightKgs',
-                    title: '毛重(KGS)'
-                },
-                {
-                    field: 'measurementCbm',
-                    title: '体积(CBM)'
+                    field: 'sealNo',
+                    title: '封号'
                 },
                 {
                     field: 'containerWeight',
@@ -200,16 +210,32 @@
                     title: 'VGM'
                 },
                 {
-                    field: 'containerNo',
-                    title: '箱号'
+                    field: 'packageQuantity',
+                    title: '件数'
                 },
                 {
-                    field: 'sealNo',
-                    title: '封号'
+                    field: 'packageUnit',
+                    title: '单位'
                 },
                 {
-                    field: 'containerSealInfo',
-                    title: '原始描述'
+                    field: 'goodsDescription',
+                    title: '货物描述',
+                    formatter: function (value, row, index) {
+                        if (!value) return '';
+                        return value.length > 40 ? value.substring(0, 40) + '...' : value;
+                    }
+                },
+                {
+                    field: 'marks',
+                    title: '唛头'
+                },
+                {
+                    field: 'grossWeightKgs',
+                    title: '毛重(KGS)'
+                },
+                {
+                    field: 'measurementCbm',
+                    title: '体积(CBM)'
                 },
                 {
                     field: 'serviceType',
@@ -220,12 +246,45 @@
                     title: '服务模式'
                 },
                 {
+                    field: 'revenueTons',
+                    title: '计费吨'
+                },
+                {
                     field: 'freightTerm',
                     title: '费用条款'
                 },
                 {
+                    field: 'freightRate',
+                    title: '费率'
+                },
+                {
+                    field: 'prepaidAmount',
+                    title: '预付金额'
+                },
+                {
+                    field: 'collectAmount',
+                    title: '到付金额'
+                },
+                {
+                    field: 'payableAt',
+                    title: '付款地点'
+                },
+                {
+                    field: 'originalBlCount',
+                    title: '正本份数'
+                },
+                {
+                    field: 'issuePlace',
+                    title: '签发地'
+                },
+                {
+                    field: 'ladenOnBoard',
+                    title: '装船信息'
+                },
+                {
                     field: 'createdAt',
-                    title: '创建时间'
+                    title: '创建时间',
+                    sortable: true
                 },
                 {
                     title: '操作',

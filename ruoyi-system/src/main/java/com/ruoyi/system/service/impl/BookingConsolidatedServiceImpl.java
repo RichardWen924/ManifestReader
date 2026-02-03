@@ -674,8 +674,8 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
                     Object value = dataJson.get(candidate);
                     if (value != null) {
                         // 特殊处理数值类字段
-                        String[] numericFields = { "gross_weight_kgs", "measurement_cbm", "revenue_tons",
-                                "container_weight", "vgm_weight" };
+                        String[] numericFields = { "gross_weight_kgs", "measurement_cbm", "container_weight",
+                                "vgm_weight" };
                         boolean isNumeric = false;
                         for (String nf : numericFields)
                             if (nf.equals(dbField))
@@ -948,7 +948,7 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
         bl.setPrepaidAmount((String) getVal(map, "prepaid_amount", "prepaidAmount"));
         bl.setCollectAmount((String) getVal(map, "collect_amount", "collectAmount"));
         bl.setFreightRate((String) getVal(map, "freight_rate", "freightRate", "rate"));
-        bl.setRevenueTons(extractBigDecimal(getVal(map, "revenue_tons", "revenueTons")));
+        bl.setRevenueTons((String) getVal(map, "revenue_tons", "revenueTons"));
         bl.setFilePath((String) getVal(map, "file_path", "filePath"));
 
         // V5 字段

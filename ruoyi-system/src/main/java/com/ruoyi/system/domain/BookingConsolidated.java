@@ -142,7 +142,7 @@ public class BookingConsolidated extends BaseEntity {
 
     /** 计费吨 */
     @Excel(name = "计费吨")
-    private BigDecimal revenueTons;
+    private String revenueTons;
 
     /** 费用条款 */
     @Excel(name = "费用条款")
@@ -434,11 +434,11 @@ public class BookingConsolidated extends BaseEntity {
         this.serviceMode = serviceMode;
     }
 
-    public BigDecimal getRevenueTons() {
+    public String getRevenueTons() {
         return revenueTons;
     }
 
-    public void setRevenueTons(BigDecimal revenueTons) {
+    public void setRevenueTons(String revenueTons) {
         this.revenueTons = revenueTons;
     }
 
