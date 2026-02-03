@@ -119,6 +119,14 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
         Map<String, Object> dbData = convertCamelToUnderscore(editedData);
         log.info("转换后的数据（数据库格式）: {}", dbData);
 
+        // 自动生成 doc_no (V5)
+        if (StringUtils.isEmpty((String) dbData.get("doc_no"))) {
+            String docNo = com.ruoyi.common.utils.DocNoGenerator.nextDocNo("DOCX");
+            dbData.put("doc_no", docNo);
+            editedData.put("docNo", docNo); // 同步回编辑数据
+            log.info("生成的 doc_no: {}", docNo);
+        }
+
         // 确保 booking_no 存在
         if (StringUtils.isEmpty((String) dbData.get("booking_no"))) {
             String generatedBookingNo = "BK" + System.currentTimeMillis();
@@ -239,6 +247,14 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
         Map<String, Object> dbData = convertCamelToUnderscore(mergedData);
         log.info("转换后的数据（数据库格式）: {}", dbData);
 
+        // 自动生成 doc_no (V5)
+        if (StringUtils.isEmpty((String) dbData.get("doc_no"))) {
+            String docNo = com.ruoyi.common.utils.DocNoGenerator.nextDocNo("DOCX");
+            dbData.put("doc_no", docNo);
+            mergedData.put("docNo", docNo); // 同步回合并数据，确保 PDF 中有该单号
+            log.info("生成的 doc_no: {}", docNo);
+        }
+
         // 确保 booking_no 存在，如果不存在则生成一个
         if (StringUtils.isEmpty((String) dbData.get("booking_no"))) {
             String generatedBookingNo = "BK" + System.currentTimeMillis();
@@ -320,6 +336,13 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
         // 应用业务规则
         com.ruoyi.system.utils.BillOfLadingValidator.applyBusinessRules(mergedData);
 
+        // 自动生成 doc_no (V5) - 确保导出的 PDF 中也有单号
+        if (StringUtils.isEmpty((String) mergedData.get("docNo"))) {
+            String docNo = com.ruoyi.common.utils.DocNoGenerator.nextDocNo("DOCX");
+            mergedData.put("docNo", docNo);
+            log.info("仅导出 PDF 环节生成的临时 doc_no: {}", docNo);
+        }
+
         // 添加全面的字段别名，确保 Dify 模板能识别
         addComprehensiveAliases(mergedData);
 
@@ -380,6 +403,14 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
         // 转换字段名：驼峰 -> 下划线（用于数据库保存）
         Map<String, Object> dbData = convertCamelToUnderscore(mergedData);
         log.info("转换后的数据（数据库格式）: {}", dbData);
+
+        // 自动生成 doc_no (V5)
+        if (StringUtils.isEmpty((String) dbData.get("doc_no"))) {
+            String docNo = com.ruoyi.common.utils.DocNoGenerator.nextDocNo("DOCX");
+            dbData.put("doc_no", docNo);
+            mergedData.put("docNo", docNo);
+            log.info("生成的 doc_no: {}", docNo);
+        }
 
         // 确保 booking_no 存在
         if (StringUtils.isEmpty((String) dbData.get("booking_no"))) {
