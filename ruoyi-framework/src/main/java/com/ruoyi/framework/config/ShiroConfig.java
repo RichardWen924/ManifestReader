@@ -306,6 +306,11 @@ public class ShiroConfig {
         filterChainDefinitionMap.put("/login", "anon,captchaValidate");
         // 注册相关
         filterChainDefinitionMap.put("/register", "anon,captchaValidate");
+        // 客户端 API (由控制器内部逻辑处理 Session)
+        filterChainDefinitionMap.put("/client-api/**", "anon");
+        // 公共上传与资源访问 (允许客户端系统使用)
+        filterChainDefinitionMap.put("/common/upload", "anon");
+        filterChainDefinitionMap.put("/profile/**", "anon");
         // 系统权限列表
         // filterChainDefinitionMap.putAll(SpringUtils.getBean(IMenuService.class).selectPermsAll());
 

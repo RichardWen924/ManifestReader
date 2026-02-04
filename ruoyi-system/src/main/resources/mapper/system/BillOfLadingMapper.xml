@@ -40,6 +40,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="marks"    column="marks"    />
         <result property="serialNo"    column="serial_no"    />
         <result property="filePath"    column="file_path"    />
+        <result property="createBy"    column="create_by"    />
         <result property="createTime"    column="created_at"    />
         <result property="containerNo"    column="container_no"    />
         <result property="sealNo"    column="seal_no"    />
@@ -53,7 +54,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                place_of_delivery, container_seal_info, package_quantity, package_unit, goods_description, 
                gross_weight_kgs, measurement_cbm, freight_term, service_type, service_mode, revenue_tons, freight_rate, 
                prepaid_amount, collect_amount, payable_at, laden_on_board, marks, original_bl_count, issue_place, 
-               file_path, created_at, container_no, seal_no, container_weight, vgm_weight
+               file_path, created_at, create_by, container_no, seal_no, container_weight, vgm_weight
         from bill_of_lading_v5
     </sql>
 
@@ -122,6 +123,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="sealNo != null">seal_no,</if>
             <if test="containerWeight != null">container_weight,</if>
             <if test="vgmWeight != null">vgm_weight,</if>
+            <if test="createBy != null">create_by,</if>
         </trim>
          <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="blNo != null and blNo != ''">#{blNo},</if>
@@ -162,6 +164,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="sealNo != null">#{sealNo},</if>
             <if test="containerWeight != null">#{containerWeight},</if>
             <if test="vgmWeight != null">#{vgmWeight},</if>
+            <if test="createBy != null">#{createBy},</if>
         </trim>
     </insert>
 
@@ -206,6 +209,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="sealNo != null">seal_no = #{sealNo},</if>
             <if test="containerWeight != null">container_weight = #{containerWeight},</if>
             <if test="vgmWeight != null">vgm_weight = #{vgmWeight},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
         </trim>
         where id = #{id}
     </update>

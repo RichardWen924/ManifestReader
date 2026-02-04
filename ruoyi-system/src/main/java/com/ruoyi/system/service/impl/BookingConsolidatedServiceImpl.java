@@ -705,9 +705,11 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
                 new String[] { "goodsDescription", "goods_description", "description", "cargo_description" });
         mappingMatrix.put("marks", new String[] { "marks", "MARKS", "shipping_marks" });
         mappingMatrix.put("gross_weight_kgs",
-                new String[] { "grossWeightKgs", "gross_weight_kgs", "gross_weight", "grossWeight", "total_weight" });
+                new String[] { "grossWeightKgs", "gross_weight_kgs", "gross_weight", "grossWeight", "total_weight",
+                        "gw", "gross_wt", "weight", "G.W.", "G.W" });
         mappingMatrix.put("measurement_cbm",
-                new String[] { "measurementCbm", "measurement_cbm", "measurement", "MEASUREMENT", "total_volume" });
+                new String[] { "measurementCbm", "measurement_cbm", "measurement", "MEASUREMENT", "total_volume",
+                        "volume", "cbm", "CBM", "MEAS" });
         mappingMatrix.put("service_type", new String[] { "serviceType", "service_type", "type" });
         mappingMatrix.put("service_mode", new String[] { "serviceMode", "service_mode", "mode" });
         mappingMatrix.put("revenue_tons", new String[] { "revenueTons", "revenue_tons" });
@@ -859,6 +861,7 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
         fieldMapping.put("vgmWeight", "vgm_weight");
         fieldMapping.put("vgm", "vgm_weight");
         fieldMapping.put("filePath", "file_path");
+        fieldMapping.put("createBy", "create_by");
 
         // 执行常规映射（来自前端确认表单的数据应拥有最高优先级）
         for (Map.Entry<String, String> entry : fieldMapping.entrySet()) {
@@ -997,6 +1000,7 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
         bl.setContainerWeight(extractBigDecimal(getVal(map, "container_weight", "containerWeight")));
         bl.setVgmWeight(extractBigDecimal(getVal(map, "vgm_weight", "vgmWeight")));
         bl.setMarks((String) getVal(map, "marks", "MARKS"));
+        bl.setCreateBy((String) getVal(map, "create_by", "createBy"));
 
         return bl;
     }
@@ -1007,14 +1011,22 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
             return null;
         if (val instanceof BigDecimal)
             return (BigDecimal) val;
+        if (val instanceof Number) {
+            return new BigDecimal(val.toString());
+        }
         if (val instanceof String) {
             String s = (String) val;
             if (StringUtils.isEmpty(s))
                 return null;
             try {
-                String num = s.replaceAll("[^0-9.]", "");
+                // 移除所有非数字和非小数点的字符（如 "KGS", "CBM" 等）
+                String num = s.replaceAll("[^0-9.]", "").trim();
                 if (StringUtils.isEmpty(num))
                     return null;
+                // 防止多点情况 ". . ."
+                if (num.indexOf(".") != num.lastIndexOf(".")) {
+                    num = num.substring(0, num.indexOf(".", num.indexOf(".") + 1));
+                }
                 return new BigDecimal(num);
             } catch (Exception e) {
                 log.warn("无法从字符串 '{}' 解析BigDecimal: {}", s, e.getMessage());
@@ -1118,6 +1130,7 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
         fieldMapping.put("shipping_marks", "marks");
         fieldMapping.put("file_path", "filePath");
         fieldMapping.put("originalFilePath", "originalFilePath");
+        fieldMapping.put("create_by", "createBy");
         fieldMapping.put("templateFilePath", "templateFilePath");
 
         for (Map.Entry<String, Object> entry : snakeMap.entrySet()) {
