@@ -85,6 +85,22 @@
               <input v-model="form.portOfDischarge">
             </div>
             <div class="form-group">
+              <label>Package Quantity</label>
+              <input v-model="form.packageQuantity" type="number">
+            </div>
+            <div class="form-group">
+              <label>Package Unit</label>
+              <input v-model="form.packageUnit">
+            </div>
+            <div class="form-group">
+              <label>Gross Weight (KGS)</label>
+              <input v-model="form.grossWeightKgs" type="number" step="0.01">
+            </div>
+            <div class="form-group">
+              <label>Measurement (CBM)</label>
+              <input v-model="form.measurementCbm" type="number" step="0.01">
+            </div>
+            <div class="form-group">
               <label>Place of Delivery</label>
               <input v-model="form.placeOfDelivery">
             </div>

@@ -112,6 +112,14 @@
                 <span class="value">{{ result.data.portOfLoading }} / {{ result.data.portOfDischarge }}</span>
               </div>
               <div class="data-item">
+                <span class="label">Package Info</span>
+                <span class="value">{{ result.data.packageQuantity || '0' }} {{ result.data.packageUnit || '' }}</span>
+              </div>
+              <div class="data-item">
+                <span class="label">Weight / Volume</span>
+                <span class="value">{{ result.data.grossWeightKgs || '0' }} KGS / {{ result.data.measurementCbm || '0' }} CBM</span>
+              </div>
+              <div class="data-item">
                 <span class="label">Created By</span>
                 <span class="value">{{ currentUser }}</span>
               </div>
