@@ -17,11 +17,11 @@ public class DocNoGenerator {
     private static final java.util.concurrent.locks.ReentrantLock LOCK = new java.util.concurrent.locks.ReentrantLock();
 
     /**
-     * 生成下一个业务单号 (V6 更新规则)
-     * 14位 = EVHL(4) + 年月(6: yyyyMM) + 序列号(4: 0001开始)
+     * 生成下一个业务单号
+     * 14位 = 前缀(4) + 年月(6: yyyyMM) + 序列号(4: 0001开始)
      * 数字位共10位 (6位年月 + 4位序列)
      * 
-     * @param prefix 原始逻辑传参（新规则下强制使用 EVHL）
+     * @param prefix 航司四字码
      * @return 14位单号
      */
     public static String nextDocNo(String prefix) {
@@ -31,8 +31,11 @@ public class DocNoGenerator {
         // 2. 获取序列号 (支持按月重置)
         long seq = getNextSequence(currentMonth);
 
-        // 3. 拼接结果: EVLH + yyyyMM + 4位序列 (4 + 6 + 4 = 14)
-        return String.format("EVHL%s%04d", currentMonth, seq);
+        // 3. 处理前缀 (强制4位，不足或超出则使用默认)
+        String finalPrefix = (prefix != null && prefix.length() == 4) ? prefix.toUpperCase() : "EVHL";
+
+        // 4. 拼接结果: 前缀 + yyyyMM + 4位序列 (4 + 6 + 4 = 14)
+        return String.format("%s%s%04d", finalPrefix, currentMonth, seq);
     }
 
     /**

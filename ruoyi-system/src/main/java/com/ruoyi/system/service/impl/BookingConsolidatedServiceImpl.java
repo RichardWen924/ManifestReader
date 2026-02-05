@@ -66,6 +66,9 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
     @Autowired
     private com.ruoyi.system.mapper.SysPdfTemplateMapper sysPdfTemplateMapper;
 
+    @Autowired
+    private com.ruoyi.system.service.ISysCompanyUserService sysCompanyUserService;
+
     public BookingConsolidated selectBookingConsolidatedByBookingNo(String bookingNo) {
         return bookingConsolidatedMapper.selectBookingConsolidatedByBookingNo(bookingNo);
     }
@@ -133,8 +136,9 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
 
         // 自动生成 doc_no (V5)
         if (StringUtils.isEmpty((String) dbData.get("doc_no"))) {
-            String deliveryAgent = (String) dbData.get("delivery_agent");
-            String docNo = com.ruoyi.common.utils.DocNoGenerator.nextDocNo(deliveryAgent);
+            String createBy = (String) dbData.get("create_by");
+            String abbr = getCompanyAbbr(createBy);
+            String docNo = com.ruoyi.common.utils.DocNoGenerator.nextDocNo(abbr);
             dbData.put("doc_no", docNo);
             editedData.put("docNo", docNo); // 同步回编辑数据
             log.info("生成的 doc_no: {}", docNo);
@@ -268,8 +272,9 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
 
         // 自动生成 doc_no (V5)
         if (StringUtils.isEmpty((String) dbData.get("doc_no"))) {
-            String deliveryAgent = (String) dbData.get("delivery_agent");
-            String docNo = com.ruoyi.common.utils.DocNoGenerator.nextDocNo(deliveryAgent);
+            String createBy = (String) dbData.get("create_by");
+            String abbr = getCompanyAbbr(createBy);
+            String docNo = com.ruoyi.common.utils.DocNoGenerator.nextDocNo(abbr);
             dbData.put("doc_no", docNo);
             mergedData.put("docNo", docNo); // 同步回合并数据，确保 PDF 中有该单号
             log.info("生成的 doc_no: {}", docNo);
@@ -365,8 +370,9 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
 
         // 自动生成 doc_no (V5) - 确保导出的 PDF 中也有单号
         if (StringUtils.isEmpty((String) mergedData.get("docNo"))) {
-            String deliveryAgent = (String) mergedData.get("deliveryAgent");
-            String docNo = com.ruoyi.common.utils.DocNoGenerator.nextDocNo(deliveryAgent);
+            String createBy = (String) mergedData.get("createBy");
+            String abbr = getCompanyAbbr(createBy);
+            String docNo = com.ruoyi.common.utils.DocNoGenerator.nextDocNo(abbr);
             mergedData.put("docNo", docNo);
             log.info("仅导出 PDF 环节生成的临时 doc_no: {}", docNo);
         }
@@ -434,8 +440,9 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
 
         // 自动生成 doc_no (V5)
         if (StringUtils.isEmpty((String) dbData.get("doc_no"))) {
-            String deliveryAgent = (String) dbData.get("delivery_agent");
-            String docNo = com.ruoyi.common.utils.DocNoGenerator.nextDocNo(deliveryAgent);
+            String createBy = (String) dbData.get("create_by");
+            String abbr = getCompanyAbbr(createBy);
+            String docNo = com.ruoyi.common.utils.DocNoGenerator.nextDocNo(abbr);
             dbData.put("doc_no", docNo);
             mergedData.put("docNo", docNo);
             log.info("生成的 doc_no: {}", docNo);
@@ -790,6 +797,19 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
 
         log.info("映射完成，共提取 {} 个字段", map.size());
         return map;
+    }
+
+    private String getCompanyAbbr(String createBy) {
+        if (StringUtils.isEmpty(createBy)) {
+            return "EVHL";
+        }
+        com.ruoyi.system.domain.SysCompanyUser query = new com.ruoyi.system.domain.SysCompanyUser();
+        query.setCompanyCode(createBy);
+        List<com.ruoyi.system.domain.SysCompanyUser> list = sysCompanyUserService.selectSysCompanyUserList(query);
+        if (list != null && !list.isEmpty()) {
+            return list.get(0).getCompanyAbbr();
+        }
+        return "EVHL";
     }
 
     /**

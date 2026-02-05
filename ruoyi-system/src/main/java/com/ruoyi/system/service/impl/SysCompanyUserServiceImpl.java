@@ -16,8 +16,7 @@ import com.ruoyi.common.core.text.Convert;
  * @date 2026-02-05
  */
 @Service
-public class SysCompanyUserServiceImpl implements ISysCompanyUserService 
-{
+public class SysCompanyUserServiceImpl implements ISysCompanyUserService {
     @Autowired
     private SysCompanyUserMapper sysCompanyUserMapper;
 
@@ -28,8 +27,7 @@ public class SysCompanyUserServiceImpl implements ISysCompanyUserService
      * @return 公司用户
      */
     @Override
-    public SysCompanyUser selectSysCompanyUserByUserId(Long userId)
-    {
+    public SysCompanyUser selectSysCompanyUserByUserId(Long userId) {
         return sysCompanyUserMapper.selectSysCompanyUserByUserId(userId);
     }
 
@@ -40,8 +38,7 @@ public class SysCompanyUserServiceImpl implements ISysCompanyUserService
      * @return 公司用户
      */
     @Override
-    public List<SysCompanyUser> selectSysCompanyUserList(SysCompanyUser sysCompanyUser)
-    {
+    public List<SysCompanyUser> selectSysCompanyUserList(SysCompanyUser sysCompanyUser) {
         return sysCompanyUserMapper.selectSysCompanyUserList(sysCompanyUser);
     }
 
@@ -52,8 +49,7 @@ public class SysCompanyUserServiceImpl implements ISysCompanyUserService
      * @return 结果
      */
     @Override
-    public int insertSysCompanyUser(SysCompanyUser sysCompanyUser)
-    {
+    public int insertSysCompanyUser(SysCompanyUser sysCompanyUser) {
         sysCompanyUser.setCreateTime(DateUtils.getNowDate());
         return sysCompanyUserMapper.insertSysCompanyUser(sysCompanyUser);
     }
@@ -65,8 +61,7 @@ public class SysCompanyUserServiceImpl implements ISysCompanyUserService
      * @return 结果
      */
     @Override
-    public int updateSysCompanyUser(SysCompanyUser sysCompanyUser)
-    {
+    public int updateSysCompanyUser(SysCompanyUser sysCompanyUser) {
         sysCompanyUser.setUpdateTime(DateUtils.getNowDate());
         return sysCompanyUserMapper.updateSysCompanyUser(sysCompanyUser);
     }
@@ -78,8 +73,7 @@ public class SysCompanyUserServiceImpl implements ISysCompanyUserService
      * @return 结果
      */
     @Override
-    public int deleteSysCompanyUserByUserIds(String userIds)
-    {
+    public int deleteSysCompanyUserByUserIds(String userIds) {
         return sysCompanyUserMapper.deleteSysCompanyUserByUserIds(Convert.toStrArray(userIds));
     }
 
@@ -90,8 +84,15 @@ public class SysCompanyUserServiceImpl implements ISysCompanyUserService
      * @return 结果
      */
     @Override
-    public int deleteSysCompanyUserByUserId(Long userId)
-    {
+    public int deleteSysCompanyUserByUserId(Long userId) {
         return sysCompanyUserMapper.deleteSysCompanyUserByUserId(userId);
+    }
+
+    /**
+     * 获取指定前缀的最大公司编号
+     */
+    @Override
+    public String getLatestCompanyCode(String prefix) {
+        return sysCompanyUserMapper.getLatestCompanyCode(prefix);
     }
 }

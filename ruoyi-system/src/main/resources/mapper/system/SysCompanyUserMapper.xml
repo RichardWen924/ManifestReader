@@ -87,4 +87,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </foreach>
     </delete>
 
+    <select id="getLatestCompanyCode" parameterType="String" resultType="String">
+        select max(company_code) from sys_company_user where company_code like concat(#{prefix}, '%')
+    </select>
+
 </mapper>

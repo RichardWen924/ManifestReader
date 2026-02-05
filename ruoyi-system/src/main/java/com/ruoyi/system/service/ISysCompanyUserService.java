@@ -9,8 +9,7 @@ import com.ruoyi.system.domain.SysCompanyUser;
  * @author ruoyi
  * @date 2026-02-05
  */
-public interface ISysCompanyUserService 
-{
+public interface ISysCompanyUserService {
     /**
      * 查询公司用户
      * 
@@ -58,4 +57,9 @@ public interface ISysCompanyUserService
      * @return 结果
      */
     public int deleteSysCompanyUserByUserId(Long userId);
+
+    /**
+     * 获取指定前缀的最大公司编号
+     */
+    public String getLatestCompanyCode(String prefix);
 }

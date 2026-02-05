@@ -7,11 +7,18 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.system.domain.BookingConsolidated;
+import com.ruoyi.system.domain.SysCompanyUser;
 import com.ruoyi.system.service.IBookingConsolidatedService;
+import com.ruoyi.system.service.ISysCompanyUserService;
+import com.ruoyi.common.utils.StringUtils;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 // import com.ruoyi.system.domain.BillOfLadingDto;
 
 /**
@@ -23,11 +30,18 @@ import com.ruoyi.system.service.IBookingConsolidatedService;
 @RequestMapping("/client-api")
 public class ClientApiController extends BaseController {
 
+    private static final Logger log = LoggerFactory.getLogger(ClientApiController.class);
+
     @Autowired
     private IBookingConsolidatedService bookingConsolidatedService;
 
     @Autowired
+    private ISysCompanyUserService sysCompanyUserService;
+
+    @Autowired
     private javax.sql.DataSource dataSource;
+
+    private static final String CLIENT_SESSION_KEY = "CLIENT_USER_ID";
 
     /**
      * 初始化数据库（添加缺失的字段）
@@ -39,33 +53,112 @@ public class ClientApiController extends BaseController {
             try {
                 stmt.execute(
                         "ALTER TABLE bill_of_lading_v5 ADD COLUMN create_by VARCHAR(64) DEFAULT NULL COMMENT '创建者'");
-                return AjaxResult.success("字段 create_by 添加成功");
             } catch (java.sql.SQLException e) {
-                if (e.getMessage().contains("Duplicate column name")) {
-                    return AjaxResult.success("字段 create_by 已存在");
-                }
-                throw e;
+                log.warn("字段 create_by 可能已存在: {}", e.getMessage());
+            }
+
+            try {
+                stmt.execute("CREATE TABLE IF NOT EXISTS sys_company_user (" +
+                        "user_id BIGINT AUTO_INCREMENT PRIMARY KEY," +
+                        "company_name VARCHAR(255) NOT NULL," +
+                        "company_code VARCHAR(50) UNIQUE NOT NULL," +
+                        "company_abbr VARCHAR(10) NOT NULL," +
+                        "password VARCHAR(255) NOT NULL," +
+                        "data_count BIGINT DEFAULT 0," +
+                        "status CHAR(1) DEFAULT '0'," +
+                        "create_time DATETIME," +
+                        "update_time DATETIME" +
+                        ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+                return AjaxResult.success("数据库初始化成功");
+            } catch (java.sql.SQLException e) {
+                return AjaxResult.error("创建表失败: " + e.getMessage());
             }
         } catch (Exception e) {
             return AjaxResult.error("数据库初始化失败: " + e.getMessage());
         }
     }
 
-    private static final String CLIENT_SESSION_KEY = "CLIENT_USER_ID";
+    /**
+     * 客户注册
+     */
+    @PostMapping("/register")
+    public AjaxResult register(@RequestBody SysCompanyUser companyUser) {
+        if (StringUtils.isEmpty(companyUser.getCompanyName()) || StringUtils.isEmpty(companyUser.getCompanyAbbr())
+                || StringUtils.isEmpty(companyUser.getPassword())) {
+            return AjaxResult.error("公司名称、航司缩写及密码不能为空");
+        }
+
+        // 1. 验证航司缩写是否为4位字母
+        String abbr = companyUser.getCompanyAbbr().toUpperCase();
+        if (abbr.length() != 4 || !abbr.matches("[A-Z]{4}")) {
+            return AjaxResult.error("航司缩写必须为4位大写字母");
+        }
+        companyUser.setCompanyAbbr(abbr);
+
+        // 2. 生成8位公司编号 YYMMDDNN
+        String datePrefix = new SimpleDateFormat("yyMMdd").format(new Date());
+        String latestCode = sysCompanyUserService.getLatestCompanyCode(datePrefix);
+
+        String newCode;
+        if (StringUtils.isEmpty(latestCode)) {
+            newCode = datePrefix + "01";
+        } else {
+            int seq = Integer.parseInt(latestCode.substring(6)) + 1;
+            if (seq > 99) {
+                return AjaxResult.error("今日注册公司数量已达上限");
+            }
+            newCode = datePrefix + String.format("%02d", seq);
+        }
+        companyUser.setCompanyCode(newCode);
+        companyUser.setStatus("0"); // 正常
+
+        int result = sysCompanyUserService.insertSysCompanyUser(companyUser);
+        if (result > 0) {
+            return AjaxResult.success("注册成功，您的公司编号为：" + newCode, newCode);
+        }
+        return AjaxResult.error("注册失败");
+    }
 
     /**
-     * 客户登录 (简化版)
+     * 客户登录
      */
     @PostMapping("/login")
     public AjaxResult login(@RequestBody Map<String, String> loginData, HttpSession session) {
-        String username = loginData.get("username");
+        String username = loginData.get("username"); // 这里的 username 对应公司名或公司编号
         String password = loginData.get("password");
 
-        // 简化验证逻辑：允许任何非空用户名，密码固定为 12345 (或者由您指定)
-        if ("admin".equals(username) || (username != null && !username.isEmpty() && "12345".equals(password))) {
+        if (StringUtils.isEmpty(username) || StringUtils.isEmpty(password)) {
+            return AjaxResult.error("用户名或密码不能为空");
+        }
+
+        // 先按公司编号查，再按公司名查
+        SysCompanyUser query = new SysCompanyUser();
+        query.setCompanyCode(username);
+        List<SysCompanyUser> list = sysCompanyUserService.selectSysCompanyUserList(query);
+
+        if (list.isEmpty()) {
+            query = new SysCompanyUser();
+            query.setCompanyName(username);
+            list = sysCompanyUserService.selectSysCompanyUserList(query);
+        }
+
+        if (!list.isEmpty()) {
+            SysCompanyUser user = list.get(0);
+            if (password.equals(user.getPassword())) {
+                if ("1".equals(user.getStatus())) {
+                    return AjaxResult.error("帐号已停用");
+                }
+                session.setAttribute(CLIENT_SESSION_KEY, user.getCompanyCode());
+                return AjaxResult.success("登录成功", user.getCompanyCode());
+            }
+        }
+
+        // 兼容原有的 admin/12345 登录 (方便预览)
+        if ("admin".equals(username) && "12345".equals(password)) {
             session.setAttribute(CLIENT_SESSION_KEY, username);
             return AjaxResult.success("登录成功", username);
         }
+
         return AjaxResult.error("用户名或密码错误");
     }
 

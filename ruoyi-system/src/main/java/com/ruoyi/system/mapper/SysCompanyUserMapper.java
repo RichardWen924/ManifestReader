@@ -9,8 +9,7 @@ import com.ruoyi.system.domain.SysCompanyUser;
  * @author ruoyi
  * @date 2026-02-05
  */
-public interface SysCompanyUserMapper 
-{
+public interface SysCompanyUserMapper {
     /**
      * 查询公司用户
      * 
@@ -42,6 +41,11 @@ public interface SysCompanyUserMapper
      * @return 结果
      */
     public int updateSysCompanyUser(SysCompanyUser sysCompanyUser);
+
+    /**
+     * 获取指定前缀的最大公司编号
+     */
+    public String getLatestCompanyCode(String prefix);
 
     /**
      * 删除公司用户

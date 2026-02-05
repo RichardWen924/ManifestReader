@@ -1,11 +1,13 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Login from '../views/Login.vue'
+import Register from '../views/Register.vue'
 import Dashboard from '../views/Dashboard.vue'
 import History from '../views/History.vue'
 import Edit from '../views/Edit.vue'
 
 const routes = [
     { path: '/login', component: Login },
+    { path: '/register', component: Register },
     { path: '/', component: Dashboard, meta: { requiresAuth: true } },
     { path: '/history', component: History, meta: { requiresAuth: true } },
     { path: '/edit/:blNo', component: Edit, meta: { requiresAuth: true } }

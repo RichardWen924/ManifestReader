@@ -1,5 +1,5 @@
 <template>
-  <div class="login-page">
+  <div class="register-page">
     <div class="background-blobs">
       <div class="blob blob-1"></div>
       <div class="blob blob-2"></div>
@@ -9,33 +9,49 @@
     <div class="login-card">
       <div class="login-header">
         <div class="logo">
-          <i class="fas fa-file-pdf"></i>
+          <i class="fas fa-building"></i>
         </div>
-        <h1>提单导出系统</h1>
-        <p>Premium Document Management</p>
+        <h1>加入提单导出系统</h1>
+        <p>Start your premium document journey</p>
       </div>
       
-      <form @submit.prevent="handleLogin" class="login-form">
+      <form @submit.prevent="handleRegister" class="login-form">
         <div class="form-group">
-          <label for="username">Username</label>
+          <label for="companyName">Company Name (公司名称)</label>
           <div class="input-wrapper">
-            <i class="fas fa-user"></i>
+            <i class="fas fa-industry"></i>
             <input 
-              v-model="username" 
+              v-model="form.companyName" 
               type="text" 
-              id="username" 
-              placeholder="Enter your username" 
+              id="companyName" 
+              placeholder="e.g. Global Logistics Co." 
               required
             >
           </div>
         </div>
+
+        <div class="form-group">
+          <label for="companyAbbr">Airline Code (航司四字码)</label>
+          <div class="input-wrapper">
+            <i class="fas fa-plane"></i>
+            <input 
+              v-model="form.companyAbbr" 
+              type="text" 
+              id="companyAbbr" 
+              placeholder="e.g. MSKU (4 Letters)" 
+              maxlength="4"
+              required
+            >
+          </div>
+          <small class="hint">用于生成提单编号的前四个字母</small>
+        </div>
         
         <div class="form-group">
-          <label for="password">Password</label>
+          <label for="password">Password (密码)</label>
           <div class="input-wrapper">
             <i class="fas fa-lock"></i>
             <input 
-              v-model="password" 
+              v-model="form.password" 
               type="password" 
               id="password" 
               placeholder="Enter your password" 
@@ -44,23 +60,24 @@
           </div>
         </div>
         
-        <div class="forgot-password">
-          <a href="#">Forgot password?</a>
-        </div>
-        
         <button type="submit" :disabled="loading" class="login-btn">
-          <span v-if="!loading">Login</span>
+          <span v-if="!loading">Create Account</span>
           <span v-else class="loader"></span>
         </button>
       </form>
       
+      <div v-if="successMsg" class="success-msg">
+        <i class="fas fa-check-circle"></i>
+        {{ successMsg }}
+      </div>
+
       <div v-if="error" class="error-msg">
         <i class="fas fa-exclamation-circle"></i>
         {{ error }}
       </div>
       
       <div class="login-footer">
-        <p>Don't have an account? <router-link to="/register">Register Now</router-link></p>
+        <p>Already have an account? <router-link to="/login">Login Now</router-link></p>
       </div>
     </div>
   </div>
@@ -71,26 +88,35 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../api/request'
 
-const username = ref('')
-const password = ref('')
+const router = useRouter()
 const loading = ref(false)
 const error = ref('')
-const router = useRouter()
+const successMsg = ref('')
 
-const handleLogin = async () => {
+const form = ref({
+  companyName: '',
+  companyAbbr: '',
+  password: ''
+})
+
+const handleRegister = async () => {
   loading.value = true
   error.value = ''
+  successMsg.value = ''
+  
   try {
-    const res = await api.post('/client-api/login', {
-      username: username.value,
-      password: password.value
-    })
+    const res = await api.post('/client-api/register', form.value)
     if (res.code === 200 || res.code === 0) {
-      localStorage.setItem('client_user', res.data)
-      router.push('/')
+      successMsg.value = res.msg || 'Registration successful!'
+      // Redirect to login after a short delay
+      setTimeout(() => {
+        router.push('/login')
+      }, 3000)
+    } else {
+      error.value = res.msg || 'Registration failed'
     }
   } catch (err) {
-    error.value = err.message || 'Login failed'
+    error.value = err.message || 'Network error'
   } finally {
     loading.value = false
   }
@@ -98,7 +124,7 @@ const handleLogin = async () => {
 </script>
 
 <style scoped>
-.login-page {
+.register-page {
   min-height: 100vh;
   display: flex;
   align-items: center;
@@ -121,7 +147,7 @@ const handleLogin = async () => {
   position: absolute;
   width: 500px;
   height: 500px;
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(139, 92, 246, 0.3));
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(99, 102, 241, 0.2));
   filter: blur(80px);
   border-radius: 50%;
   animation: move 20s infinite alternate;
@@ -140,7 +166,7 @@ const handleLogin = async () => {
   position: relative;
   z-index: 1;
   width: 100%;
-  max-width: 420px;
+  max-width: 480px;
   padding: 40px;
   background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(20px);
@@ -163,13 +189,13 @@ const handleLogin = async () => {
 .logo {
   width: 64px;
   height: 64px;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: linear-gradient(135deg, #10b981, #6366f1);
   border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 16px;
-  box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.4);
 }
 
 .logo i {
@@ -231,30 +257,21 @@ input {
 input:focus {
   outline: none;
   background: rgba(255, 255, 255, 0.08);
-  border-color: #6366f1;
-  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+  border-color: #10b981;
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
 }
 
-.forgot-password {
-  text-align: right;
-  margin-bottom: 24px;
-}
-
-.forgot-password a {
-  font-size: 13px;
-  color: #6366f1;
-  text-decoration: none;
-  transition: color 0.3s;
-}
-
-.forgot-password a:hover {
-  color: #8b5cf6;
+.hint {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: #64748b;
 }
 
 .login-btn {
   width: 100%;
   padding: 14px;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: linear-gradient(135deg, #10b981, #6366f1);
   border: none;
   border-radius: 12px;
   color: white;
@@ -265,11 +282,12 @@ input:focus {
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-top: 24px;
 }
 
 .login-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.4);
 }
 
 .login-btn:disabled {
@@ -291,6 +309,19 @@ input:focus {
   gap: 8px;
 }
 
+.success-msg {
+  margin-top: 16px;
+  padding: 12px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: 8px;
+  color: #34d399;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .login-footer {
   margin-top: 32px;
   text-align: center;
@@ -299,7 +330,7 @@ input:focus {
 }
 
 .login-footer a {
-  color: #6366f1;
+  color: #10b981;
   text-decoration: none;
   font-weight: 500;
 }
