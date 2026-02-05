@@ -47,12 +47,12 @@
         <form @submit.prevent="handleSave" class="edit-form">
           <div class="form-grid">
             <div class="form-group">
-              <label>Booking NO.</label>
-              <input v-model="form.bookingNo" disabled class="disabled">
-            </div>
-            <div class="form-group">
               <label>B/L NO.</label>
               <input v-model="form.blNo">
+            </div>
+            <div class="form-group">
+              <label>Booking NO.</label>
+              <input v-model="form.bookingNo">
             </div>
              <div class="form-group">
               <label>DOC NO.</label>
@@ -109,6 +109,22 @@
               <label>Place of Delivery</label>
               <input v-model="form.placeOfDelivery">
             </div>
+            <div class="form-group">
+              <label>Container No</label>
+              <input v-model="form.containerNo">
+            </div>
+            <div class="form-group">
+              <label>Seal No</label>
+              <input v-model="form.sealNo">
+            </div>
+            <div class="form-group">
+              <label>Container Weight</label>
+              <input v-model="form.containerWeight" type="number" step="0.01">
+            </div>
+            <div class="form-group">
+              <label>VGM Weight</label>
+              <input v-model="form.vgmWeight" type="number" step="0.01">
+            </div>
           </div>
           
           <div class="form-actions">
@@ -151,9 +167,9 @@ const handleLogout = async () => {
 const fetchRecord = async () => {
   loading.value = true
   try {
-    const bookingNo = route.params.bookingNo
+    const blNo = route.params.blNo
     const res = await api.get('/client-api/list', {
-      params: { bookingNo }
+      params: { blNo }
     })
     if (res.rows && res.rows.length > 0) {
       form.value = res.rows[0]
@@ -194,7 +210,7 @@ const handleExport = async () => {
     const url = window.URL.createObjectURL(new Blob([response]))
     const link = document.createElement('a')
     link.href = url
-    link.setAttribute('download', `BL_${form.value.bookingNo}.pdf`)
+    link.setAttribute('download', `BL_${form.value.blNo}.pdf`)
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)

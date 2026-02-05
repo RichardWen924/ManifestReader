@@ -37,10 +37,7 @@
       
       <section class="table-section card">
         <div class="table-filters">
-          <div class="search-box">
-             <i class="fas fa-search"></i>
-             <input v-model="searchQuery" @input="fetchRecords" placeholder="Search by Booking No or BL No...">
-          </div>
+              <input v-model="searchQuery" @input="fetchRecords" placeholder="Search by Booking No. or B/L No...">
         </div>
         
         <div class="table-container">
@@ -61,7 +58,7 @@
             </thead>
             <tbody>
               <tr v-for="record in records" :key="record.id">
-                <td class="bold">{{ record.bookingNo }}</td>
+                <td>{{ record.bookingNo }}</td>
                 <td>{{ record.blNo }}</td>
                 <td>{{ record.docNo }}</td>
                 <td>{{ record.vesselVoyage }}</td>
@@ -120,7 +117,7 @@ const fetchRecords = async () => {
   try {
     const res = await api.get('/client-api/list', {
       params: { 
-        bookingNo: searchQuery.value,
+        blNo: searchQuery.value,
         pageSize: 100 
       }
     })
@@ -131,7 +128,7 @@ const fetchRecords = async () => {
 }
 
 const editRecord = (record) => {
-  router.push(`/edit/${record.bookingNo}`)
+  router.push(`/edit/${record.blNo}`)
 }
 
 const exportPdf = async (record) => {

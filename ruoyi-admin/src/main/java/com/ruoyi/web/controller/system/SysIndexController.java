@@ -51,9 +51,12 @@ public class SysIndexController extends BaseController {
         SysUser user = getSysUser();
         // 根据用户id取出菜单
         List<SysMenu> menus = menuService.selectMenusByUser(user);
-        // 过滤掉 "若依官网" 菜单
+        // 过滤掉已废弃或不需要显示的菜单
         menus = menus.stream()
-                .filter(m -> !"若依官网".equals(m.getMenuName()))
+                .filter(m -> !"若依官网".equals(m.getMenuName())
+                        && !"订舱信息".equals(m.getMenuName())
+                        && !"集装箱信息".equals(m.getMenuName())
+                        && !"订舱与集装箱合并信息".equals(m.getMenuName()))
                 .collect(Collectors.toList());
         mmap.put("menus", menus);
         mmap.put("user", user);
