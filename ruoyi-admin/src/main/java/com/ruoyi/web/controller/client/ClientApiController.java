@@ -93,6 +93,13 @@ public class ClientApiController extends BaseController {
         if (abbr.length() != 4 || !abbr.matches("[A-Z]{4}")) {
             return AjaxResult.error("航司缩写必须为4位大写字母");
         }
+
+        // 验证缩写唯一性
+        SysCompanyUser abbrQuery = new SysCompanyUser();
+        abbrQuery.setCompanyAbbr(abbr);
+        if (!sysCompanyUserService.selectSysCompanyUserList(abbrQuery).isEmpty()) {
+            return AjaxResult.error("该航司缩写已存在");
+        }
         companyUser.setCompanyAbbr(abbr);
 
         // 2. 生成8位公司编号 YYMMDDNN
@@ -207,6 +214,21 @@ public class ClientApiController extends BaseController {
         SysCompanyUser dbUser = list.get(0);
         if (StringUtils.isNotEmpty(companyUser.getCompanyName())) {
             dbUser.setCompanyName(companyUser.getCompanyName());
+        }
+        if (StringUtils.isNotEmpty(companyUser.getCompanyAbbr())) {
+            String abbr = companyUser.getCompanyAbbr().toUpperCase();
+            if (abbr.length() != 4 || !abbr.matches("[A-Z]{4}")) {
+                return AjaxResult.error("航司缩写必须为4位大写字母");
+            }
+            // 验证缩写唯一性（排除自己）
+            if (!abbr.equals(dbUser.getCompanyAbbr())) {
+                SysCompanyUser abbrQuery = new SysCompanyUser();
+                abbrQuery.setCompanyAbbr(abbr);
+                if (!sysCompanyUserService.selectSysCompanyUserList(abbrQuery).isEmpty()) {
+                    return AjaxResult.error("该航司缩写已存在");
+                }
+            }
+            dbUser.setCompanyAbbr(abbr);
         }
         if (StringUtils.isNotEmpty(companyUser.getPassword())) {
             dbUser.setPassword(companyUser.getPassword());

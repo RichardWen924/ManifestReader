@@ -47,6 +47,12 @@
               <label>Company Name (公司名称)</label>
               <input v-model="profileForm.companyName" placeholder="Enter new company name">
             </div>
+
+            <div class="form-group-custom">
+              <label>Shipline Code (航司四字码)</label>
+              <input v-model="profileForm.companyAbbr" placeholder="e.g. MSKU" maxlength="4">
+              <small class="hint">Must be 4 uppercase letters</small>
+            </div>
             
             <div class="form-group-custom">
               <label>New Password (新密码)</label>
@@ -401,6 +407,7 @@ const profileError = ref('')
 const profileSuccess = ref('')
 const profileForm = ref({
   companyName: '',
+  companyAbbr: '',
   password: '',
   confirmPassword: ''
 })
@@ -411,6 +418,7 @@ const fetchUserData = async () => {
     if (res.code === 200 || res.code === 0) {
       userAbbr.value = res.data.companyAbbr
       profileForm.value.companyName = res.data.companyName
+      profileForm.value.companyAbbr = res.data.companyAbbr
     }
   } catch (err) {
     console.error('Failed to fetch user data:', err)
@@ -423,6 +431,8 @@ const openProfileModal = () => {
   profileSuccess.value = ''
   profileForm.value.password = ''
   profileForm.value.confirmPassword = ''
+  // Re-fetch to ensure we have latest data
+  fetchUserData()
 }
 
 const closeProfileModal = () => {
@@ -435,6 +445,11 @@ const handleUpdateProfile = async () => {
     return
   }
 
+  if (profileForm.value.companyAbbr && !/^[A-Z]{4}$/.test(profileForm.value.companyAbbr.toUpperCase())) {
+    profileError.value = 'Shipline Code must be 4 uppercase letters'
+    return
+  }
+
   profileLoading.value = true
   profileError.value = ''
   profileSuccess.value = ''
@@ -442,10 +457,12 @@ const handleUpdateProfile = async () => {
   try {
     const res = await api.post('/client-api/update-profile', {
       companyName: profileForm.value.companyName,
+      companyAbbr: profileForm.value.companyAbbr,
       password: profileForm.value.password
     })
     if (res.code === 200 || res.code === 0) {
       profileSuccess.value = 'Profile updated successfully!'
+      fetchUserData() // Update sidebar
       setTimeout(() => {
         closeProfileModal()
       }, 1500)
