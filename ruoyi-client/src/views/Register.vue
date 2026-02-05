@@ -31,7 +31,7 @@
         </div>
 
         <div class="form-group">
-          <label for="companyAbbr">Airline Code (航司四字码)</label>
+          <label for="companyAbbr">Shipline Code (航司四字码)</label>
           <div class="input-wrapper">
             <i class="fas fa-plane"></i>
             <input 
@@ -55,6 +55,20 @@
               type="password" 
               id="password" 
               placeholder="Enter your password" 
+              required
+            >
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="confirmPassword">Confirm Password (重复密码)</label>
+          <div class="input-wrapper">
+            <i class="fas fa-check-double"></i>
+            <input 
+              v-model="form.confirmPassword" 
+              type="password" 
+              id="confirmPassword" 
+              placeholder="Repeat your password" 
               required
             >
           </div>
@@ -96,10 +110,16 @@ const successMsg = ref('')
 const form = ref({
   companyName: '',
   companyAbbr: '',
-  password: ''
+  password: '',
+  confirmPassword: ''
 })
 
 const handleRegister = async () => {
+  if (form.value.password !== form.value.confirmPassword) {
+    error.value = 'Passwords do not match (两次输入的密码不一致)'
+    return
+  }
+
   loading.value = true
   error.value = ''
   successMsg.value = ''

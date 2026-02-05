@@ -19,15 +19,59 @@
         </li>
       </ul>
       <div class="sidebar-footer">
-        <div class="user-info">
+        <div class="user-info" @click="openProfileModal" title="Click to edit profile">
           <i class="fas fa-user-circle"></i>
-          <span>{{ currentUser }}</span>
+          <span class="user-abbr">{{ userAbbr }}</span>
+          <span class="user-code">{{ currentUser }}</span>
         </div>
         <button @click="handleLogout" class="logout-btn">
           <i class="fas fa-sign-out-alt"></i> Logout
         </button>
       </div>
     </nav>
+    
+    <!-- Profile Edit Modal -->
+    <div v-if="isProfileModalOpen" class="modal-overlay" @click.self="closeProfileModal">
+      <div class="modal-content profile-modal card">
+        <header class="modal-header">
+          <div class="header-left">
+            <h2>Edit Profile (修改个人信息)</h2>
+            <p>Update your company name and password</p>
+          </div>
+          <button @click="closeProfileModal" class="close-btn"><i class="fas fa-times"></i></button>
+        </header>
+
+        <div class="modal-body">
+          <form @submit.prevent="handleUpdateProfile" class="profile-form">
+            <div class="form-group-custom">
+              <label>Company Name (公司名称)</label>
+              <input v-model="profileForm.companyName" placeholder="Enter new company name">
+            </div>
+            
+            <div class="form-group-custom">
+              <label>New Password (新密码)</label>
+              <input v-model="profileForm.password" type="password" placeholder="Leave blank to keep current password">
+            </div>
+
+            <div class="form-group-custom">
+              <label>Confirm Password (确认密码)</label>
+              <input v-model="profileForm.confirmPassword" type="password" placeholder="Repeat new password">
+            </div>
+            
+            <div v-if="profileError" class="error-msg">{{ profileError }}</div>
+            <div v-if="profileSuccess" class="success-msg">{{ profileSuccess }}</div>
+          </form>
+        </div>
+
+        <footer class="modal-footer">
+          <button @click="closeProfileModal" class="outline-btn">Cancel</button>
+          <button @click="handleUpdateProfile" :disabled="profileLoading" class="primary-btn">
+            <span v-if="!profileLoading">Save Changes</span>
+            <span v-else class="loader"></span>
+          </button>
+        </footer>
+      </div>
+    </div>
     
     <main class="main-content">
       <header class="content-header">
@@ -343,11 +387,77 @@ import api from '../api/request'
 
 const router = useRouter()
 const currentUser = ref(localStorage.getItem('client_user') || 'Guest')
+const userAbbr = ref('Loading...')
 const isDragging = ref(false)
 const fileInput = ref(null)
 const files = ref([])
 const isAnalyzing = ref(false)
 const results = ref([])
+
+// Profile Modal States
+const isProfileModalOpen = ref(false)
+const profileLoading = ref(false)
+const profileError = ref('')
+const profileSuccess = ref('')
+const profileForm = ref({
+  companyName: '',
+  password: '',
+  confirmPassword: ''
+})
+
+const fetchUserData = async () => {
+  try {
+    const res = await api.get('/client-api/current-user')
+    if (res.code === 200 || res.code === 0) {
+      userAbbr.value = res.data.companyAbbr
+      profileForm.value.companyName = res.data.companyName
+    }
+  } catch (err) {
+    console.error('Failed to fetch user data:', err)
+  }
+}
+
+const openProfileModal = () => {
+  isProfileModalOpen.value = true
+  profileError.value = ''
+  profileSuccess.value = ''
+  profileForm.value.password = ''
+  profileForm.value.confirmPassword = ''
+}
+
+const closeProfileModal = () => {
+  isProfileModalOpen.value = false
+}
+
+const handleUpdateProfile = async () => {
+  if (profileForm.value.password && profileForm.value.password !== profileForm.value.confirmPassword) {
+    profileError.value = 'Passwords do not match'
+    return
+  }
+
+  profileLoading.value = true
+  profileError.value = ''
+  profileSuccess.value = ''
+
+  try {
+    const res = await api.post('/client-api/update-profile', {
+      companyName: profileForm.value.companyName,
+      password: profileForm.value.password
+    })
+    if (res.code === 200 || res.code === 0) {
+      profileSuccess.value = 'Profile updated successfully!'
+      setTimeout(() => {
+        closeProfileModal()
+      }, 1500)
+    } else {
+      profileError.value = res.msg || 'Update failed'
+    }
+  } catch (err) {
+    profileError.value = err.message || 'Network error'
+  } finally {
+    profileLoading.value = false
+  }
+}
 
 // Modal States
 const isModalOpen = ref(false)
@@ -506,6 +616,7 @@ onMounted(async () => {
   // 检查 Session
   try {
     await api.get('/client-api/check-auth')
+    await fetchUserData()
   } catch (err) {
     router.push('/login')
   }
@@ -806,11 +917,56 @@ onMounted(async () => {
 
 .user-info {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  color: #cbd5e1;
-  margin-bottom: 16px;
-  font-size: 14px;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid transparent;
+}
+
+.user-info:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.user-abbr {
+  font-size: 16px;
+  font-weight: 700;
+  color: #10b981;
+  letter-spacing: 1px;
+}
+
+.user-code {
+  font-size: 12px;
+  color: #64748b;
+  font-family: monospace;
+}
+
+.profile-modal {
+  max-width: 500px !important;
+}
+
+.profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.loader {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .logout-btn {

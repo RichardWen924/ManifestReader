@@ -163,6 +163,61 @@ public class ClientApiController extends BaseController {
     }
 
     /**
+     * 获取当前登录用户信息
+     */
+    @GetMapping("/current-user")
+    public AjaxResult getCurrentUser(HttpSession session) {
+        String companyCode = (String) session.getAttribute(CLIENT_SESSION_KEY);
+        if (StringUtils.isEmpty(companyCode)) {
+            return AjaxResult.error("未登录");
+        }
+        if ("admin".equals(companyCode)) {
+            SysCompanyUser admin = new SysCompanyUser();
+            admin.setCompanyCode("admin");
+            admin.setCompanyName("Administrator");
+            admin.setCompanyAbbr("ADMN");
+            return AjaxResult.success(admin);
+        }
+        SysCompanyUser query = new SysCompanyUser();
+        query.setCompanyCode(companyCode);
+        List<SysCompanyUser> list = sysCompanyUserService.selectSysCompanyUserList(query);
+        if (list.isEmpty()) {
+            return AjaxResult.error("用户不存在");
+        }
+        return AjaxResult.success(list.get(0));
+    }
+
+    /**
+     * 修改个人信息
+     */
+    @PostMapping("/update-profile")
+    public AjaxResult updateProfile(@RequestBody SysCompanyUser companyUser, HttpSession session) {
+        String companyCode = (String) session.getAttribute(CLIENT_SESSION_KEY);
+        if (StringUtils.isEmpty(companyCode) || "admin".equals(companyCode)) {
+            return AjaxResult.error("该账号无法修改个人信息");
+        }
+
+        SysCompanyUser query = new SysCompanyUser();
+        query.setCompanyCode(companyCode);
+        List<SysCompanyUser> list = sysCompanyUserService.selectSysCompanyUserList(query);
+        if (list.isEmpty()) {
+            return AjaxResult.error("用户不存在");
+        }
+
+        SysCompanyUser dbUser = list.get(0);
+        if (StringUtils.isNotEmpty(companyUser.getCompanyName())) {
+            dbUser.setCompanyName(companyUser.getCompanyName());
+        }
+        if (StringUtils.isNotEmpty(companyUser.getPassword())) {
+            dbUser.setPassword(companyUser.getPassword());
+        }
+        dbUser.setUpdateTime(new Date());
+
+        int result = sysCompanyUserService.updateSysCompanyUser(dbUser);
+        return result > 0 ? AjaxResult.success("修改成功") : AjaxResult.error("修改失败");
+    }
+
+    /**
      * 检查登录状态
      */
     @GetMapping("/check-auth")
