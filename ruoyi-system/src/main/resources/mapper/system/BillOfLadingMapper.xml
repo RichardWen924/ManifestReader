@@ -229,4 +229,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where doc_no = #{docNo}
         <if test="id != null"> and id != #{id}</if>
     </select>
+
+    <update id="updateDocNoPrefix">
+        update bill_of_lading_v5 
+        set doc_no = concat(#{newPrefix}, substr(doc_no, 5))
+        where create_by = #{createBy}
+    </update>
 </mapper>

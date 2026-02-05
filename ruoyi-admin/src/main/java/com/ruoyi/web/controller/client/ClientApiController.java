@@ -16,6 +16,7 @@ import com.ruoyi.system.domain.BookingConsolidated;
 import com.ruoyi.system.domain.SysCompanyUser;
 import com.ruoyi.system.service.IBookingConsolidatedService;
 import com.ruoyi.system.service.ISysCompanyUserService;
+import com.ruoyi.system.mapper.BillOfLadingMapper;
 import com.ruoyi.common.utils.StringUtils;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -40,6 +41,9 @@ public class ClientApiController extends BaseController {
 
     @Autowired
     private javax.sql.DataSource dataSource;
+
+    @Autowired
+    private BillOfLadingMapper billOfLadingMapper;
 
     private static final String CLIENT_SESSION_KEY = "CLIENT_USER_ID";
 
@@ -227,6 +231,11 @@ public class ClientApiController extends BaseController {
                 if (!sysCompanyUserService.selectSysCompanyUserList(abbrQuery).isEmpty()) {
                     return AjaxResult.error("该航司缩写已存在");
                 }
+
+                // 航司缩写变动，同步更新业务单号的前缀
+                log.info("用户 {} 更改航司缩写: {} -> {}", dbUser.getCompanyCode(), dbUser.getCompanyAbbr(), abbr);
+                billOfLadingMapper.updateDocNoPrefix(abbr, dbUser.getCompanyCode());
+                log.info("同步更新业务单号前缀完成");
             }
             dbUser.setCompanyAbbr(abbr);
         }
