@@ -1,52 +1,46 @@
 package com.ruoyi.common.utils;
 
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantLock;
+
 /**
- * 高并发业务单号生成器
- * 14位格式：前缀(4位) + 年月(6位yyyyMM) + 序列号(4位)
- * 数字位共10位 (6位年月 + 4位序列)
- * 
- * @author ruoyi
+ * 提单号生成器
+ * 14位格式：前缀(4位字母) + 10位数字
+ * 10位数字组成：公司编号前四位(4位) + 自增序列(6位)
  */
 public class DocNoGenerator {
 
-    private static final java.time.format.DateTimeFormatter MONTH_FORMATTER = java.time.format.DateTimeFormatter
-            .ofPattern("yyyyMM");
-    private static final java.util.concurrent.atomic.AtomicLong SEQUENCE = new java.util.concurrent.atomic.AtomicLong(
-            0);
-    private static volatile String lastMonth = "";
-    private static final java.util.concurrent.locks.ReentrantLock LOCK = new java.util.concurrent.locks.ReentrantLock();
+    private static final AtomicLong SEQUENCE = new AtomicLong(0);
+    private static volatile String lastKey = "";
+    private static final ReentrantLock LOCK = new ReentrantLock();
 
     /**
-     * 生成下一个业务单号
-     * 14位 = 前缀(4) + 年月(6: yyyyMM) + 序列号(4: 0001开始)
-     * 数字位共10位 (6位年月 + 4位序列)
+     * 生成下一个提单号
      * 
-     * @param prefix 航司四字码
-     * @return 14位单号
+     * @param abbr        4位字母缩写
+     * @param companyCode 公司编号 (YYMMDDNN)
+     * @return 14位提单号
      */
-    public static String nextDocNo(String prefix) {
-        // 1. 获取当前年月 (6位)
-        String currentMonth = java.time.LocalDateTime.now().format(MONTH_FORMATTER);
+    public static String nextDocNo(String abbr, String companyCode) {
+        String prefix = (abbr != null && abbr.length() == 4) ? abbr.toUpperCase() : "EVHL";
 
-        // 2. 获取序列号 (支持按月重置)
-        long seq = getNextSequence(currentMonth);
+        // 获取公司编号前四位 (通常是注册年月 YYMM)
+        String yymm = (companyCode != null && companyCode.length() >= 4) ? companyCode.substring(0, 4) : "2601";
 
-        // 3. 处理前缀 (强制4位，不足或超出则使用默认)
-        String finalPrefix = (prefix != null && prefix.length() == 4) ? prefix.toUpperCase() : "EVHL";
+        String currentKey = prefix + "_" + yymm;
 
-        // 4. 拼接结果: 前缀 + yyyyMM + 4位序列 (4 + 6 + 4 = 14)
-        return String.format("%s%s%04d", finalPrefix, currentMonth, seq);
+        long seq = getNextSequence(currentKey);
+
+        // 格式: PREFIX(4) + YYMM(4) + SEQ(6) = 14位
+        return String.format("%s%s%06d", prefix, yymm, seq);
     }
 
-    /**
-     * 获取序列号，若月份变更则重置
-     */
-    private static long getNextSequence(String currentMonth) {
-        if (!currentMonth.equals(lastMonth)) {
+    private static long getNextSequence(String key) {
+        if (!key.equals(lastKey)) {
             LOCK.lock();
             try {
-                if (!currentMonth.equals(lastMonth)) {
-                    lastMonth = currentMonth;
+                if (!key.equals(lastKey)) {
+                    lastKey = key;
                     SEQUENCE.set(0);
                 }
             } finally {

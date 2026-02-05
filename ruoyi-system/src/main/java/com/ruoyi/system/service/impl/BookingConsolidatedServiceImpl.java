@@ -138,7 +138,7 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
         if (StringUtils.isEmpty((String) dbData.get("doc_no"))) {
             String createBy = (String) dbData.get("create_by");
             String abbr = getCompanyAbbr(createBy);
-            String docNo = com.ruoyi.common.utils.DocNoGenerator.nextDocNo(abbr);
+            String docNo = com.ruoyi.common.utils.DocNoGenerator.nextDocNo(abbr, createBy);
             dbData.put("doc_no", docNo);
             editedData.put("docNo", docNo); // 同步回编辑数据
             log.info("生成的 doc_no: {}", docNo);
@@ -274,7 +274,7 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
         if (StringUtils.isEmpty((String) dbData.get("doc_no"))) {
             String createBy = (String) dbData.get("create_by");
             String abbr = getCompanyAbbr(createBy);
-            String docNo = com.ruoyi.common.utils.DocNoGenerator.nextDocNo(abbr);
+            String docNo = com.ruoyi.common.utils.DocNoGenerator.nextDocNo(abbr, createBy);
             dbData.put("doc_no", docNo);
             mergedData.put("docNo", docNo); // 同步回合并数据，确保 PDF 中有该单号
             log.info("生成的 doc_no: {}", docNo);
@@ -372,7 +372,7 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
         if (StringUtils.isEmpty((String) mergedData.get("docNo"))) {
             String createBy = (String) mergedData.get("createBy");
             String abbr = getCompanyAbbr(createBy);
-            String docNo = com.ruoyi.common.utils.DocNoGenerator.nextDocNo(abbr);
+            String docNo = com.ruoyi.common.utils.DocNoGenerator.nextDocNo(abbr, createBy);
             mergedData.put("docNo", docNo);
             log.info("仅导出 PDF 环节生成的临时 doc_no: {}", docNo);
         }
@@ -442,7 +442,7 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
         if (StringUtils.isEmpty((String) dbData.get("doc_no"))) {
             String createBy = (String) dbData.get("create_by");
             String abbr = getCompanyAbbr(createBy);
-            String docNo = com.ruoyi.common.utils.DocNoGenerator.nextDocNo(abbr);
+            String docNo = com.ruoyi.common.utils.DocNoGenerator.nextDocNo(abbr, createBy);
             dbData.put("doc_no", docNo);
             mergedData.put("docNo", docNo);
             log.info("生成的 doc_no: {}", docNo);
