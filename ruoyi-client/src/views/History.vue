@@ -37,7 +37,10 @@
       
       <section class="table-section card">
         <div class="table-filters">
-              <input v-model="searchQuery" @input="fetchRecords" placeholder="Search by Booking No. or B/L No...">
+          <div class="search-box">
+            <i class="fas fa-search search-icon"></i>
+            <input v-model="searchQuery" @input="fetchRecords" placeholder="Search by Booking No. or B/L No...">
+          </div>
         </div>
         
         <div class="table-container">
@@ -326,22 +329,36 @@ h1 {
   max-width: 400px;
 }
 
-.search-box i {
+.search-box i.search-icon {
   position: absolute;
   left: 16px;
   top: 50%;
   transform: translateY(-50%);
   color: #64748b;
+  transition: color 0.3s;
 }
 
 .search-box input {
   width: 100%;
-  padding: 12px 16px 12px 44px;
-  background: rgba(255, 255, 255, 0.05);
+  padding: 14px 16px 14px 48px;
+  background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
+  border-radius: 14px;
   color: white;
   font-family: inherit;
+  font-size: 14px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.search-box input:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.07);
+  border-color: #6366f1;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15), 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.search-box input:focus + i.search-icon {
+  color: #6366f1;
 }
 
 .table-container {

@@ -375,6 +375,7 @@ const saveFromModal = async () => {
     })
     results.value.splice(editingIndex.value, 1)
     closeModal()
+    alert('Record saved successfully!')
   } catch (err) {
     alert('Save failed: ' + err.message)
   }
@@ -471,6 +472,7 @@ const saveSingle = async (result, index) => {
       editedData: result.data
     })
     results.value.splice(index, 1)
+    alert('Record saved successfully!')
     // 如果文件列表里也有这个文件，标记为已保存或删除
   } catch (err) {
     alert('Save failed: ' + err.message)

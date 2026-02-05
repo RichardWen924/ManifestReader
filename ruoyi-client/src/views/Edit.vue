@@ -189,6 +189,7 @@ const handleSave = async () => {
   try {
     await api.post('/client-api/update', form.value)
     alert('Record updated successfully')
+    router.push('/history')
   } catch (err) {
     alert('Update failed: ' + err.message)
   } finally {
