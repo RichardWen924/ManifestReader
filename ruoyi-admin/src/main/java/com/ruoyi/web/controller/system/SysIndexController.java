@@ -2,7 +2,6 @@ package com.ruoyi.web.controller.system;
 
 import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -51,13 +50,8 @@ public class SysIndexController extends BaseController {
         SysUser user = getSysUser();
         // 根据用户id取出菜单
         List<SysMenu> menus = menuService.selectMenusByUser(user);
-        // 过滤掉已废弃或不需要显示的菜单
-        menus = menus.stream()
-                .filter(m -> !"若依官网".equals(m.getMenuName())
-                        && !"订舱信息".equals(m.getMenuName())
-                        && !"集装箱信息".equals(m.getMenuName())
-                        && !"订舱与集装箱合并信息".equals(m.getMenuName()))
-                .collect(Collectors.toList());
+        // 递归过滤掉已废弃或不需要显示的菜单
+        filterMenus(menus);
         mmap.put("menus", menus);
         mmap.put("user", user);
         mmap.put("sideTheme", configService.selectConfigByKey("sys.index.sideTheme"));
@@ -91,6 +85,31 @@ public class SysIndexController extends BaseController {
         // CSRF Token
         request.getSession().setAttribute(ShiroConstants.CSRF_TOKEN, ServletUtils.generateToken());
         return webIndex;
+    }
+
+    /**
+     * 递归合并过滤菜单
+     */
+    private void filterMenus(List<SysMenu> menus) {
+        if (menus == null || menus.isEmpty()) {
+            return;
+        }
+        java.util.Iterator<SysMenu> it = menus.iterator();
+        while (it.hasNext()) {
+            SysMenu m = it.next();
+            if ("若依官网".equals(m.getMenuName())
+                    || "订舱信息".equals(m.getMenuName())
+                    || "集装箱信息".equals(m.getMenuName())
+                    || "用户管理".equals(m.getMenuName())
+                    || "部门管理".equals(m.getMenuName())) {
+                it.remove();
+            } else {
+                if ("订舱与集装箱合并信息".equals(m.getMenuName())) {
+                    m.setMenuName("提单提取");
+                }
+                filterMenus(m.getChildren());
+            }
+        }
     }
 
     // 锁定屏幕
