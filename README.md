@@ -77,4 +77,4 @@ npm run dev
 
 ---
 
-© 2026 提单导出系统开发团队。
+© 2026 RichardWen
