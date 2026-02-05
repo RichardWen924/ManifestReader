@@ -20,6 +20,14 @@ public interface IBookingConsolidatedService {
     public BookingConsolidated selectBookingConsolidatedByBookingNo(String bookingNo);
 
     /**
+     * 查询订舱与集装箱合并信息
+     * 
+     * @param id 订舱与集装箱合并信息ID
+     * @return 订舱与集装箱合并信息
+     */
+    public BookingConsolidated selectBookingConsolidatedById(Long id);
+
+    /**
      * 查询订舱与集装箱合并信息列表
      * 
      * @param bookingConsolidated 订舱与集装箱合并信息
@@ -58,6 +66,14 @@ public interface IBookingConsolidatedService {
      * @return 结果
      */
     public int deleteBookingConsolidatedByBookingNo(Long id);
+
+    /**
+     * 删除订舱与集装箱合并信息信息
+     * 
+     * @param id 订舱与集装箱合并信息ID
+     * @return 结果
+     */
+    public int deleteBookingConsolidatedById(Long id);
 
     /**
      * 直接保存模式：接受编辑后的数据直接保存（不调用Dify）

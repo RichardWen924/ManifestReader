@@ -66,9 +66,16 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
     @Autowired
     private com.ruoyi.system.mapper.SysPdfTemplateMapper sysPdfTemplateMapper;
 
-    @Override
     public BookingConsolidated selectBookingConsolidatedByBookingNo(String bookingNo) {
         return bookingConsolidatedMapper.selectBookingConsolidatedByBookingNo(bookingNo);
+    }
+
+    @Override
+    public BookingConsolidated selectBookingConsolidatedById(Long id) {
+        BookingConsolidated query = new BookingConsolidated();
+        query.setId(id);
+        List<BookingConsolidated> list = bookingConsolidatedMapper.selectBookingConsolidatedList(query);
+        return (list != null && !list.isEmpty()) ? list.get(0) : null;
     }
 
     @Override
@@ -99,6 +106,11 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
 
     @Override
     public int deleteBookingConsolidatedByBookingNo(Long id) {
+        return bookingConsolidatedMapper.deleteBookingConsolidatedByBookingNo(id);
+    }
+
+    @Override
+    public int deleteBookingConsolidatedById(Long id) {
         return bookingConsolidatedMapper.deleteBookingConsolidatedByBookingNo(id);
     }
 
@@ -835,7 +847,7 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
         fieldMapping.put("portOfLoading", "port_of_loading");
         fieldMapping.put("portOfDischarge", "port_of_discharge");
         fieldMapping.put("placeOfDelivery", "place_of_delivery");
-        fieldMapping.put("containerSealInfo", "container_seal_info");
+        fieldMapping.put("packageQuantity", "package_quantity");
         fieldMapping.put("packageUnit", "package_unit");
         fieldMapping.put("goodsDescription", "goods_description");
         fieldMapping.put("marks", "marks");

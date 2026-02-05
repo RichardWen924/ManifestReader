@@ -61,6 +61,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <select id="selectBookingConsolidatedList" parameterType="BookingConsolidated" resultMap="BookingConsolidatedResult">
         <include refid="selectBookingConsolidatedVo"/>
         <where>  
+            <if test="id != null"> and id = #{id}</if>
             <if test="blNo != null  and blNo != ''"> and bl_no like concat('%', #{blNo}, '%')</if>
             <if test="bookingNo != null  and bookingNo != ''"> and booking_no like concat('%', #{bookingNo}, '%')</if>
             <if test="containerNo != null  and containerNo != ''"> and container_no like concat('%', #{containerNo}, '%')</if>
@@ -71,6 +72,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="placeOfDelivery != null  and placeOfDelivery != ''"> and place_of_delivery like concat('%', #{placeOfDelivery}, '%')</if>
             <if test="serviceType != null  and serviceType != ''"> and service_type like concat('%', #{serviceType}, '%')</if>
             <if test="freightTerm != null  and freightTerm != ''"> and freight_term like concat('%', #{freightTerm}, '%')</if>
+            <if test="createBy != null and createBy != ''"> and create_by = #{createBy}</if>
         </where>
         order by created_at desc
     </select>

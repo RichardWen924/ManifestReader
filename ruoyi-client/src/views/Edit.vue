@@ -2,8 +2,13 @@
   <div class="edit-page">
     <nav class="sidebar">
       <div class="sidebar-header">
-        <i class="fas fa-file-pdf"></i>
-        <span>PDF System</span>
+        <div class="logo-icon">
+          <i class="fas fa-ship"></i>
+        </div>
+        <div class="logo-text">
+          <h1>提单导出系统</h1>
+          <span>Shipping Document System</span>
+        </div>
       </div>
       <ul class="nav-links">
         <li>
@@ -227,7 +232,10 @@ onMounted(() => {
 }
 
 .sidebar-header i { font-size: 24px; color: #6366f1; }
-.sidebar-header span { font-size: 20px; font-weight: 700; }
+.logo-text h1 { font-size: 20px; font-weight: 700; background: linear-gradient(to right, #f8fafc, #cbd5e1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.logo-text span { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; }
+.logo-icon { width: 40px; height: 40px; background: rgba(99, 102, 241, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+.logo-icon i { color: #6366f1; font-size: 20px; }
 
 .nav-links { list-style: none; flex-grow: 1; }
 .nav-links li { margin-bottom: 8px; }

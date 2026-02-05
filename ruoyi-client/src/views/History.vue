@@ -2,8 +2,13 @@
   <div class="history-page">
     <nav class="sidebar">
       <div class="sidebar-header">
-        <i class="fas fa-file-pdf"></i>
-        <span>PDF System</span>
+        <div class="logo-icon">
+          <i class="fas fa-ship"></i>
+        </div>
+        <div class="logo-text">
+          <h1>提单导出系统</h1>
+          <span>Shipping Document System</span>
+        </div>
       </div>
       <ul class="nav-links">
         <li :class="{ active: $route.path === '/' }">
@@ -46,6 +51,9 @@
                 <th>B/L No.</th>
                 <th>Doc No.</th>
                 <th>Vessel / Voyage</th>
+                <th>Weight (KG)</th>
+                <th>Volume (CBM)</th>
+                <th>Package Info</th>
                 <th>Created By</th>
                 <th>Created At</th>
                 <th>Actions</th>
@@ -57,6 +65,9 @@
                 <td>{{ record.blNo }}</td>
                 <td>{{ record.docNo }}</td>
                 <td>{{ record.vesselVoyage }}</td>
+                <td>{{ record.grossWeightKgs }}</td>
+                <td>{{ record.measurementCbm }}</td>
+                <td>{{ record.packageQuantity }} {{ record.packageUnit }}</td>
                 <td>{{ record.createBy }}</td>
                 <td class="dim">{{ record.createdAt }}</td>
                 <td>
@@ -67,11 +78,14 @@
                     <button @click="exportPdf(record)" class="icon-btn export-btn" title="Export PDF">
                       <i class="fas fa-file-export"></i>
                     </button>
+                    <button @click="handleDelete(record)" class="icon-btn delete-btn" title="Delete">
+                      <i class="fas fa-trash-alt"></i>
+                    </button>
                   </div>
                 </td>
               </tr>
               <tr v-if="records.length === 0">
-                <td colspan="7" class="empty-state">No records found.</td>
+                <td colspan="11" class="empty-state">No records found.</td>
               </tr>
             </tbody>
           </table>
@@ -145,6 +159,20 @@ const exportPdf = async (record) => {
   }
 }
 
+const handleDelete = async (record) => {
+  if (!confirm(`Are you sure you want to delete record ${record.bookingNo}?`)) {
+    return
+  }
+  
+  try {
+    await api.post(`/client-api/remove/${record.id}`)
+    alert('Record deleted successfully')
+    fetchRecords()
+  } catch (err) {
+    alert('Delete failed: ' + err.message)
+  }
+}
+
 onMounted(() => {
   fetchRecords()
 })
@@ -173,15 +201,34 @@ onMounted(() => {
   margin-bottom: 40px;
 }
 
-.sidebar-header i {
-  font-size: 24px;
-  color: #6366f1;
+.logo-icon {
+  width: 40px;
+  height: 40px;
+  background: rgba(99, 102, 241, 0.1);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.sidebar-header span {
+.logo-icon i {
+  color: #6366f1;
+  font-size: 20px;
+}
+
+.logo-text h1 {
   font-size: 20px;
   font-weight: 700;
-  letter-spacing: -0.5px;
+  background: linear-gradient(to right, #f8fafc, #cbd5e1);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.logo-text span {
+  font-size: 10px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 .nav-links {

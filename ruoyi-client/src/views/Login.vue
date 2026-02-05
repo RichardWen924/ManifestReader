@@ -11,7 +11,7 @@
         <div class="logo">
           <i class="fas fa-file-pdf"></i>
         </div>
-        <h1>PDF System</h1>
+        <h1>提单导出系统</h1>
         <p>Premium Document Management</p>
       </div>
       

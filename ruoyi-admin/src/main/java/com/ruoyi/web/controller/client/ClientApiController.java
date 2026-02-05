@@ -167,6 +167,25 @@ public class ClientApiController extends BaseController {
     }
 
     /**
+     * 删除报单数据
+     */
+    @PostMapping("/remove/{id}")
+    public AjaxResult remove(@PathVariable("id") Long id, HttpSession session) {
+        String clientId = (String) session.getAttribute(CLIENT_SESSION_KEY);
+        if (clientId == null) {
+            return AjaxResult.error("未登录");
+        }
+
+        // 权限检查：只能删除自己的数据
+        BookingConsolidated original = bookingConsolidatedService.selectBookingConsolidatedById(id);
+        if (original == null || !clientId.equals(original.getCreateBy())) {
+            return AjaxResult.error("无权删除此数据");
+        }
+
+        return toAjax(bookingConsolidatedService.deleteBookingConsolidatedById(id));
+    }
+
+    /**
      * 仅导出 PDF
      */
     @PostMapping("/export-pdf")

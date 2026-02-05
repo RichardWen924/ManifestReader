@@ -2,8 +2,13 @@
   <div class="dashboard-page">
     <nav class="sidebar">
       <div class="sidebar-header">
-        <i class="fas fa-file-pdf"></i>
-        <span>PDF System</span>
+        <div class="logo-icon">
+          <i class="fas fa-ship"></i>
+        </div>
+        <div class="logo-text">
+          <h1>提单导出系统</h1>
+          <span>Shipping Document System</span>
+        </div>
       </div>
       <ul class="nav-links">
         <li :class="{ active: $route.path === '/' }">
@@ -94,38 +99,76 @@
               <h3>{{ result.fileName }}</h3>
               <span class="badge">Analyzed</span>
             </div>
-            <div class="result-body">
-              <div class="data-item">
-                <span class="label">B/L NO.</span>
-                <span class="value">{{ result.data.blNo || '-' }}</span>
+            <div class="result-body editable-form">
+              <div class="form-row">
+                <div class="form-group-custom">
+                  <label>B/L NO.</label>
+                  <input v-model="result.data.blNo" placeholder="B/L NO.">
+                </div>
+                <div class="form-group-custom">
+                  <label>Booking NO.</label>
+                  <input v-model="result.data.bookingNo" placeholder="Booking NO.">
+                </div>
               </div>
-              <div class="data-item">
-                <span class="label">Booking NO.</span>
-                <span class="value">{{ result.data.bookingNo || '-' }}</span>
+              
+              <div class="form-row">
+                <div class="form-group-custom">
+                  <label>Vessel/Voyage</label>
+                  <input v-model="result.data.vesselVoyage" placeholder="Vessel/Voyage">
+                </div>
+                <div class="form-group-custom">
+                  <label>Port of Loading</label>
+                  <input v-model="result.data.portOfLoading" placeholder="POL">
+                </div>
+                <div class="form-group-custom">
+                  <label>Port of Discharge</label>
+                  <input v-model="result.data.portOfDischarge" placeholder="POD">
+                </div>
               </div>
-               <div class="data-item">
-                <span class="label">Vessel/Voyage</span>
-                <span class="value">{{ result.data.vesselVoyage || '-' }}</span>
+
+              <div class="form-row">
+                <div class="form-group-custom">
+                  <label>Gross Weight (KGS)</label>
+                  <input v-model="result.data.grossWeightKgs" type="number" step="0.01">
+                </div>
+                <div class="form-group-custom">
+                  <label>Measurement (CBM)</label>
+                  <input v-model="result.data.measurementCbm" type="number" step="0.01">
+                </div>
               </div>
-              <div class="data-item">
-                <span class="label">POL / POD</span>
-                <span class="value">{{ result.data.portOfLoading }} / {{ result.data.portOfDischarge }}</span>
+
+              <div class="form-row">
+                <div class="form-group-custom">
+                  <label>Package Quantity</label>
+                  <input v-model="result.data.packageQuantity" type="number">
+                </div>
+                <div class="form-group-custom">
+                  <label>Package Unit</label>
+                  <input v-model="result.data.packageUnit" placeholder="Unit">
+                </div>
               </div>
-              <div class="data-item">
-                <span class="label">Package Info</span>
-                <span class="value">{{ result.data.packageQuantity || '0' }} {{ result.data.packageUnit || '' }}</span>
+
+              <div class="form-group-custom full-width">
+                <label>Shipper</label>
+                <textarea v-model="result.data.shipper" rows="2" placeholder="Shipper info"></textarea>
               </div>
-              <div class="data-item">
-                <span class="label">Weight / Volume</span>
-                <span class="value">{{ result.data.grossWeightKgs || '0' }} KGS / {{ result.data.measurementCbm || '0' }} CBM</span>
+
+              <div class="form-group-custom full-width">
+                <label>Consignee</label>
+                <textarea v-model="result.data.consignee" rows="2" placeholder="Consignee info"></textarea>
               </div>
-              <div class="data-item">
-                <span class="label">Created By</span>
+
+              <div class="form-group-custom full-width">
+                <label>Goods Description</label>
+                <textarea v-model="result.data.goodsDescription" rows="2" placeholder="Goods description"></textarea>
+              </div>
+
+              <div class="data-item creator-info">
+                <span class="label">Created By:</span>
                 <span class="value">{{ currentUser }}</span>
               </div>
             </div>
             <div class="result-actions">
-              <button @click="editResult(result)" class="outline-btn">Edit</button>
               <button @click="saveSingle(result, index)" class="primary-btn">Save</button>
             </div>
           </div>
@@ -280,6 +323,89 @@ onMounted(async () => {
   min-height: 100vh;
 }
 
+/* Results */
+.results-section {
+  margin-top: 40px;
+}
+
+.section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.result-body.editable-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 20px;
+}
+
+.form-row {
+  display: flex;
+  gap: 15px;
+  width: 100%;
+}
+
+.form-group-custom {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.form-group-custom.full-width {
+  width: 100%;
+}
+
+.form-group-custom label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.form-group-custom input,
+.form-group-custom textarea {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: white;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.form-group-custom input:focus,
+.form-group-custom textarea:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.creator-info {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 10px;
+  margin-top: 5px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.creator-info .label {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.creator-info .value {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--secondary-color);
+}
+
 /* Sidebar */
 .sidebar {
   width: 260px;
@@ -297,9 +423,34 @@ onMounted(async () => {
   margin-bottom: 40px;
 }
 
-.sidebar-header i {
-  font-size: 24px;
+.logo-icon {
+  width: 40px;
+  height: 40px;
+  background: rgba(99, 102, 241, 0.1);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-icon i {
   color: #6366f1;
+  font-size: 20px;
+}
+
+.logo-text h1 {
+  font-size: 20px;
+  font-weight: 700;
+  background: linear-gradient(to right, #f8fafc, #cbd5e1);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.logo-text span {
+  font-size: 10px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 .sidebar-header span {
