@@ -17,6 +17,9 @@
         <li :class="{ active: $route.path === '/history' }">
           <router-link to="/history"><i class="fas fa-history"></i> My Records</router-link>
         </li>
+        <li :class="{ active: $route.path === '/lab' }">
+          <router-link to="/lab"><i class="fas fa-flask"></i> Template Lab</router-link>
+        </li>
       </ul>
       <div class="sidebar-footer">
         <div class="user-info" @click="openProfileModal" title="Click to edit profile">
