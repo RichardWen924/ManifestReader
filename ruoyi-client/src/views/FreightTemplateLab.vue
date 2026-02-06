@@ -339,6 +339,8 @@ export default defineComponent({
   justify-content: space-between;
   align-items: flex-end;
   margin-bottom: 30px;
+  position: relative;
+  z-index: 50;
 }
 
 .title-area h2 {
@@ -362,8 +364,9 @@ export default defineComponent({
 .lab-workspace {
   display: flex;
   gap: 25px;
-  flex: 1;
-  overflow: hidden;
+  flex: 1; /* Occupy remaining vertical space */
+  min-height: 0; /* Critical for nested flex scrolling */
+  overflow: hidden; /* Prevent workspace itself from scrolling */
 }
 
 .glass-card {
@@ -373,26 +376,76 @@ export default defineComponent({
   padding: 25px;
   display: flex;
   flex-direction: column;
+  height: 100%; /* Force full height of parent */
+  overflow: hidden; /* Contain children */
 }
 
-.mapping-pane { flex: 4.5; min-width: 500px; }
-.preview-pane { flex: 5.5; position: relative; }
+.mapping-pane { 
+  flex: 5.5; 
+  min-width: 0; /* Allow shrinking below content size */
+  display: flex; 
+  flex-direction: column; 
+}
+.preview-pane { 
+  flex: 4.5; 
+  min-width: 0; /* Allow shrinking below content size */
+  position: relative; 
+  display: flex; 
+  flex-direction: column; 
+}
 
 .pane-header {
   margin-bottom: 20px;
   border-bottom: 1px solid var(--glass-border);
   padding-bottom: 15px;
+  flex-shrink: 0;
 }
 
 .pane-header h3 { font-size: 18px; display: flex; align-items: center; gap: 10px; }
 
-.table-container { flex: 1; overflow-y: auto; }
+.table-container { 
+  flex: 1; 
+  overflow-x: auto; /* Allow horizontal scroll if table is still too wide */
+  overflow-y: auto; 
+  min-height: 0;
+}
 
-.lab-table { width: 100%; border-collapse: collapse; }
-.lab-table th { text-align: left; padding: 12px; font-size: 13px; color: var(--text-dim); border-bottom: 1px solid var(--glass-border); }
+.lab-table { 
+  width: 100%; 
+  border-collapse: collapse; 
+  table-layout: fixed; /* Force fixed layout to prevent content-based expansion */
+}
+
+.lab-table th { 
+  text-align: left; 
+  padding: 12px; 
+  font-size: 13px; 
+  color: var(--text-dim); 
+  border-bottom: 1px solid var(--glass-border); 
+  position: sticky; 
+  top: 0; 
+  background: #0f172a; 
+  z-index: 10; 
+}
+
+/* Specific column widths for 5.5 flex mapping pane */
+.lab-table th:nth-child(1), .lab-table td:nth-child(1) { width: 35%; } /* 原文 */
+.lab-table th:nth-child(2), .lab-table td:nth-child(2) { width: 25%; } /* 变量名 */
+.lab-table th:nth-child(3), .lab-table td:nth-child(3) { width: 15%; } /* 类型 */
+.lab-table th:nth-child(4), .lab-table td:nth-child(4) { width: 20%; } /* 说明 */
+.lab-table th:nth-child(5), .lab-table td:nth-child(5) { width: 40px; } /* 删除按钮 */
+
 .lab-table td { padding: 12px; border-bottom: 1px solid var(--glass-border); }
 
-.original-text-cell { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+.original-text-cell { 
+  max-width: 100%; 
+  overflow: hidden; 
+  text-overflow: ellipsis; 
+  white-space: nowrap; 
+  font-size: 13px; 
+}
+
+/* ... type badges ... */
 
 .type-badge {
   font-size: 11px;
@@ -418,6 +471,7 @@ export default defineComponent({
 
 .lab-input:focus { outline: none; border-color: var(--primary-color); background: rgba(255,255,255,0.06); }
 
+/* Buttons */
 .btn-primary, .btn-success, .btn-warning {
   padding: 12px 24px; border-radius: 12px; font-weight: 600; cursor: pointer;
   display: flex; align-items: center; gap: 8px; transition: all 0.3s;
@@ -434,17 +488,80 @@ export default defineComponent({
 .btn-icon-delete:hover { opacity: 1; }
 
 #preview-container {
-  flex: 1; background: white; border-radius: 16px; overflow-y: auto; color: #334155; padding: 30px;
+  flex: 1;
+  background: #f1f5f9; /* 浅灰色背景，模拟桌面 */
+  border-radius: 16px;
+  overflow: auto; /* Internal scrolling */
+  padding: 20px; /* Comfortable padding */
+  display: flex; /* Flex again for better centering control if width is fixed */
+  flex-direction: column;
+  align-items: center;
+  box-shadow: inset 0 2px 10px rgba(0,0,0,0.2);
+  min-height: 0; /* Allow shrinking */
+  position: relative;
+}
+
+/* 针对 docx-preview 生成内容的深度美化 */
+:deep(.docx-wrapper) {
+  background: transparent !important;
+  padding: 0 !important; /* Let container handle padding */
+  display: block !important;
+  /* Use Zoom instead of Scale to avoid layout space issues when possible, typical for docx-preview */
+  /* Fallback to scale if zoom not supported, but scale affects layout flow differently */
+  /* For now, keep scale but ensure container clips it properly */
+  transform: scale(0.65);
+  transform-origin: top center;
+  /* Hack to reduce effective height taken by scaled element */
+  margin-bottom: -35% !important; 
+}
+
+:deep(.docx) {
+  background: white !important;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
+  border-radius: 4px !important;
+  margin-bottom: 20px !important;
+  transition: transform 0.3s ease;
+}
+
+/* 滚动条美化 */
+.table-container::-webkit-scrollbar,
+#preview-container::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.table-container::-webkit-scrollbar-thumb,
+#preview-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+#preview-container::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1); /* Darker thumb for light preview bg */
+}
+
+.table-container::-webkit-scrollbar-thumb:hover,
+#preview-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+#preview-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
 }
 
 .empty-preview {
-  height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8;
+  height: 100%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8;
 }
 .empty-preview i { font-size: 64px; margin-bottom: 20px; }
 
-.preview-loader {
+.preview-loader, .analyze-loader {
   position: absolute; inset: 0; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(4px);
   display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; border-radius: 24px;
+}
+
+.analyze-loader {
+   background: rgba(255,255,255,0.02); /* More subtle for table */
+   color: var(--text-dim);
 }
 
 .spinner {
@@ -452,21 +569,14 @@ export default defineComponent({
   border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px;
 }
 
-.analyze-loader {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-dim);
-  background: rgba(255,255,255,0.02);
-  border-radius: 12px;
-}
-
 @keyframes spin { to { transform: rotate(360deg); } }
 
 :deep(.lab-highlight) {
-  background-color: #fef08a !important; color: #854d0e !important; box-shadow: 0 0 0 2px #fef08a; border-radius: 2px;
+  background-color: rgba(99, 102, 241, 0.15) !important;
+  color: var(--primary-color) !important;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
+  border-radius: 2px;
+  font-weight: 600;
 }
 
 .sidebar-footer { padding: 25px 20px; border-top: 1px solid var(--glass-border); }
