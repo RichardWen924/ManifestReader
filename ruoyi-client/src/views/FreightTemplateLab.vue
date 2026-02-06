@@ -217,6 +217,13 @@ export default defineComponent({
     }
 
     const handleSave = async () => {
+      // 校验变量名是否完整
+      const incomplete = mappings.value.some(m => !m.placeholderKey || !m.placeholderKey.trim())
+      if (incomplete) {
+        alert('请确保所有识别到的字段都已填写“占位符变量名”再保存')
+        return
+      }
+
       const name = prompt('请输入模版名称:', '新模版')
       if (!name) return
       

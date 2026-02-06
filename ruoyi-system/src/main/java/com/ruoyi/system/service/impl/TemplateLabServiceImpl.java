@@ -45,7 +45,7 @@ public class TemplateLabServiceImpl implements ITemplateLabService {
         // 1. 保存临时文件供 Dify 读取
         String tempPath = "";
         try {
-            tempPath = FileUploadUtils.upload(RuoYiConfig.getUploadPath(), file);
+            tempPath = FileUploadUtils.upload(RuoYiConfig.getProfile(), file);
             String fullPath = RuoYiConfig.getProfile() + tempPath.replaceFirst(Constants.RESOURCE_PREFIX, "");
 
             // 2. 调用 Dify 工作流
@@ -125,7 +125,7 @@ public class TemplateLabServiceImpl implements ITemplateLabService {
             // 命名规则: LAB_yyyyMMdd_templateName.docx
             String fileName = "LAB_" + new SimpleDateFormat("yyyyMMdd").format(new Date()) + "_" + templateName
                     + ".docx";
-            String uploadPath = RuoYiConfig.getUploadPath() + "/templates/";
+            String uploadPath = RuoYiConfig.getProfile() + "/templates/";
             File dir = new File(uploadPath);
             if (!dir.exists())
                 dir.mkdirs();
@@ -209,7 +209,14 @@ public class TemplateLabServiceImpl implements ITemplateLabService {
     private void replaceText(XWPFDocument doc, List<SysTemplateMapping> mappings) {
         for (SysTemplateMapping m : mappings) {
             String target = m.getOriginalText();
-            String replacement = "{{" + m.getPlaceholderKey() + "}}";
+            String placeholder = m.getPlaceholderKey();
+
+            if (target == null || placeholder == null || target.isEmpty()) {
+                log.warn("跳过无效映射项: 原文={}, 变量={}", target, placeholder);
+                continue;
+            }
+
+            String replacement = "{{" + placeholder + "}}";
 
             // 遍历段落
             for (XWPFParagraph p : doc.getParagraphs()) {
