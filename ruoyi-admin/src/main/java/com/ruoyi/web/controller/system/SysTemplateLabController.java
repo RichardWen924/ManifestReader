@@ -16,7 +16,7 @@ import com.ruoyi.system.service.ITemplateLabService;
  * 智能模版实验室Controller
  */
 @RestController
-@RequestMapping("/system/template-lab")
+@RequestMapping("/client-api/template-lab")
 public class SysTemplateLabController extends BaseController {
 
     @Autowired

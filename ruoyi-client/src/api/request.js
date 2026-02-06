@@ -2,7 +2,7 @@ import axios from 'axios'
 
 const api = axios.create({
     baseURL: '',
-    timeout: 60000,
+    timeout: 180000,
     withCredentials: true // 务必开启，以便在跨域请求中发送 Session Cookie
 })
 
