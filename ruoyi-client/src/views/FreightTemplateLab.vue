@@ -81,12 +81,12 @@
                   <tr v-for="(item, index) in mappings" :key="index" 
                       @mouseenter="handleMouseEnter(item)" 
                       @mouseleave="handleMouseLeave">
-                    <td class="original-text-cell" :title="item.originalText">{{ item.originalText }}</td>
+                    <td class="original-text-cell" :title="item.original_text">{{ item.original_text }}</td>
                     <td>
-                      <input v-model="item.placeholderKey" class="lab-input" placeholder="变量名..." spellcheck="false">
+                      <input v-model="item.placeholder_key" class="lab-input" placeholder="变量名..." spellcheck="false">
                     </td>
                     <td>
-                      <span class="type-badge" :class="item.dataType">{{ item.dataType || 'string' }}</span>
+                      <span class="type-badge" :class="item.data_type">{{ item.data_type || 'string' }}</span>
                     </td>
                     <td>
                       <input v-model="item.description" class="lab-input" placeholder="字段说明..." spellcheck="false">
@@ -218,7 +218,7 @@ export default defineComponent({
 
     const handleSave = async () => {
       // 校验变量名是否完整
-      const incomplete = mappings.value.some(m => !m.placeholderKey || !m.placeholderKey.trim())
+      const incomplete = mappings.value.some(m => !m.placeholder_key || !m.placeholder_key.trim())
       if (incomplete) {
         alert('请确保所有识别到的字段都已填写“占位符变量名”再保存')
         return
@@ -261,7 +261,7 @@ export default defineComponent({
       if (!container) return
       const spans = container.querySelectorAll('span')
       spans.forEach(s => {
-        if (s.innerText.includes(row.originalText)) s.classList.add('lab-highlight')
+        if (s.innerText.includes(row.original_text)) s.classList.add('lab-highlight')
       })
     }
 

@@ -218,28 +218,93 @@ public class TemplateLabServiceImpl implements ITemplateLabService {
 
             String replacement = "{{" + placeholder + "}}";
 
-            // 遍历段落
+            // 遍历所有段落（包括正文和表格单元格中的段落）
             for (XWPFParagraph p : doc.getParagraphs()) {
-                for (XWPFRun r : p.getRuns()) {
-                    String text = r.getText(0);
-                    if (text != null && text.contains(target)) {
-                        r.setText(text.replace(target, replacement), 0);
-                    }
-                }
+                replaceInParagraph(p, target, replacement);
             }
 
-            // 遍历表格
+            // 遍历所有表格
             for (XWPFTable tbl : doc.getTables()) {
                 for (XWPFTableRow row : tbl.getRows()) {
                     for (XWPFTableCell cell : row.getTableCells()) {
                         for (XWPFParagraph p : cell.getParagraphs()) {
-                            for (XWPFRun r : p.getRuns()) {
-                                String text = r.getText(0);
-                                if (text != null && text.contains(target)) {
-                                    r.setText(text.replace(target, replacement), 0);
+                            replaceInParagraph(p, target, replacement);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * 在段落中执行替换，支持跳过带图片的 Run，并尝试处理简单的跨 Run 文本
+     */
+    private void replaceInParagraph(XWPFParagraph p, String target, String replacement) {
+        List<XWPFRun> runs = p.getRuns();
+        if (runs == null || runs.isEmpty())
+            return;
+
+        // 1. 优先尝试在单个 Run 中直接替换（保留原有详细格式）
+        boolean substituted = false;
+        for (XWPFRun r : runs) {
+            // 跳过包含图片的 Run
+            if (r.getEmbeddedPictures() != null && !r.getEmbeddedPictures().isEmpty()) {
+                continue;
+            }
+
+            String text = r.getText(0);
+            if (text != null && text.contains(target)) {
+                r.setText(text.replace(target, replacement), 0);
+                substituted = true;
+            }
+        }
+
+        // 2. 补偿逻辑：处理被 Word 拆分到多个 Run 中的情况
+        // 如果单个 Run 没替换成功，但段落整体文本包含该字符串
+        if (!substituted) {
+            String pText = p.getText();
+            if (pText != null && pText.contains(target)) {
+                // 查找第一个不含图片的 Run 作为合并基准
+                XWPFRun firstTextRun = null;
+                for (XWPFRun r : runs) {
+                    if (r.getEmbeddedPictures() == null || r.getEmbeddedPictures().isEmpty()) {
+                        firstTextRun = r;
+                        break;
+                    }
+                }
+
+                if (firstTextRun != null) {
+                    // 获取完整文本并执行替换
+                    StringBuilder fullText = new StringBuilder();
+                    for (XWPFRun r : runs) {
+                        // 只累加文本 Run，忽略图片 Run 的文本（通常为空）
+                        if (r.getEmbeddedPictures() == null || r.getEmbeddedPictures().isEmpty()) {
+                            String t = r.getText(0);
+                            fullText.append(t != null ? t : "");
+                        }
+                    }
+
+                    String combined = fullText.toString();
+                    if (combined.contains(target)) {
+                        String newFullText = combined.replace(target, replacement);
+
+                        // 执行“强制合并”策略：
+                        // 将新文本设回第一个文本 Run，并清空段落中其他的文本 Run
+                        firstTextRun.setText(newFullText, 0);
+
+                        // 清除除了第一个文本 Run 之外的所有其他文本 Run 的文字
+                        // 注意：为了不破坏图片，我们只清空不含图片的 Run
+                        boolean firstFound = false;
+                        for (XWPFRun r : runs) {
+                            if (r.getEmbeddedPictures() == null || r.getEmbeddedPictures().isEmpty()) {
+                                if (!firstFound) {
+                                    firstFound = true; // 这是我们的 firstTextRun，保留
+                                } else {
+                                    r.setText("", 0); // 清空后续分段
                                 }
                             }
                         }
+                        log.info("已通过合并策略处理分段文本: '{}' -> '{}'", target, replacement);
                     }
                 }
             }
