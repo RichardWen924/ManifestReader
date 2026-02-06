@@ -21,6 +21,7 @@ public class SysTemplateMapping {
 
     private String description;
 
+    @JsonProperty("original_text")
     public String getOriginalText() {
         return originalText;
     }
@@ -29,6 +30,7 @@ public class SysTemplateMapping {
         this.originalText = originalText;
     }
 
+    @JsonProperty("placeholder_key")
     public String getPlaceholderKey() {
         return placeholderKey;
     }
@@ -37,6 +39,7 @@ public class SysTemplateMapping {
         this.placeholderKey = placeholderKey;
     }
 
+    @JsonProperty("data_type")
     public String getDataType() {
         return dataType;
     }
@@ -45,6 +48,7 @@ public class SysTemplateMapping {
         this.dataType = dataType;
     }
 
+    @JsonProperty("description")
     public String getDescription() {
         return description;
     }
