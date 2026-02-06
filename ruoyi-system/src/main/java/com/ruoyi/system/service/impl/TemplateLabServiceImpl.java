@@ -206,80 +206,30 @@ public class TemplateLabServiceImpl implements ITemplateLabService {
         return null;
     }
 
-    /**
-     * v7：优化后的替换逻辑
-     * 1. 分离 Dify 返回的"标题\n值"格式，只替换值部分
-     * 2. 按长度倒序排列，防止短字串误伤长字串
-     * 3. 单元格级聚合匹配，解决文本分片问题
-     */
     private void replaceText(XWPFDocument doc, List<SysTemplateMapping> mappings) {
-        if (mappings == null || mappings.isEmpty())
-            return;
-
-        // 按原文长度倒序排列
-        mappings.sort((a, b) -> {
-            int lenA = a.getOriginalText() == null ? 0 : a.getOriginalText().length();
-            int lenB = b.getOriginalText() == null ? 0 : b.getOriginalText().length();
-            return Integer.compare(lenB, lenA);
-        });
-
         for (SysTemplateMapping m : mappings) {
-            String rawTarget = m.getOriginalText();
+            String target = m.getOriginalText();
             String placeholder = m.getPlaceholderKey();
 
-            if (rawTarget == null || placeholder == null || rawTarget.trim().isEmpty()) {
-                log.warn("跳过无效映射项: 原文={}, 变量={}", rawTarget, placeholder);
+            if (target == null || placeholder == null || target.isEmpty()) {
+                log.warn("跳过无效映射项: 原文={}, 变量={}", target, placeholder);
                 continue;
             }
 
-            // 修复四括号问题
-            String replacement;
-            if (placeholder.startsWith("{{") && placeholder.endsWith("}}")) {
-                replacement = placeholder;
-            } else {
-                replacement = "{{" + placeholder + "}}";
+            String replacement = "{{" + placeholder + "}}";
+
+            // 遍历所有段落（包括正文和表格单元格中的段落）
+            for (XWPFParagraph p : doc.getParagraphs()) {
+                replaceInParagraph(p, target, replacement);
             }
 
-            // 生成候选目标列表（分离标题与值）
-            java.util.List<String> targets = new java.util.ArrayList<>();
-            if (rawTarget.contains("\n")) {
-                String[] parts = rawTarget.split("\n", 2);
-                if (parts.length == 2 && parts[1].trim().length() > 0) {
-                    targets.add(parts[1].trim());
-                }
-            }
-            targets.add(rawTarget.replaceAll("\\s+", " ").trim());
-            targets.add(rawTarget);
-
-            for (String target : targets) {
-                if (target == null || target.trim().isEmpty())
-                    continue;
-
-                // 优先处理表格（单元格级聚合）
-                for (XWPFTable tbl : doc.getTables()) {
-                    replaceInTable(tbl, target, replacement);
-                }
-
-                // 段落级替换
-                for (XWPFParagraph p : doc.getParagraphs()) {
-                    replaceInParagraph(p, target, replacement);
-                }
-
-                // 页眉页脚
-                for (XWPFHeader header : doc.getHeaderList()) {
-                    for (XWPFParagraph p : header.getParagraphs()) {
-                        replaceInParagraph(p, target, replacement);
-                    }
-                    for (XWPFTable tbl : header.getTables()) {
-                        replaceInTable(tbl, target, replacement);
-                    }
-                }
-                for (XWPFFooter footer : doc.getFooterList()) {
-                    for (XWPFParagraph p : footer.getParagraphs()) {
-                        replaceInParagraph(p, target, replacement);
-                    }
-                    for (XWPFTable tbl : footer.getTables()) {
-                        replaceInTable(tbl, target, replacement);
+            // 遍历所有表格
+            for (XWPFTable tbl : doc.getTables()) {
+                for (XWPFTableRow row : tbl.getRows()) {
+                    for (XWPFTableCell cell : row.getTableCells()) {
+                        for (XWPFParagraph p : cell.getParagraphs()) {
+                            replaceInParagraph(p, target, replacement);
+                        }
                     }
                 }
             }
@@ -287,163 +237,77 @@ public class TemplateLabServiceImpl implements ITemplateLabService {
     }
 
     /**
-     * v6 重写：单元格级「聚合-匹配-重写」策略
-     * Word 会将文本碎片化存储在多个 Run 中，当前逻辑无法处理。
-     * 新策略：聚合整个单元格文本，进行归一化匹配，匹配成功后重写整个单元格。
-     */
-    private void replaceInTable(XWPFTable tbl, String target, String replacement) {
-        String normalizedTarget = target.replaceAll("\\s+", " ").trim();
-        if (normalizedTarget.isEmpty())
-            return;
-
-        for (XWPFTableRow row : tbl.getRows()) {
-            for (XWPFTableCell cell : row.getTableCells()) {
-                String cellText = cell.getText();
-                if (cellText == null || cellText.trim().isEmpty())
-                    continue;
-
-                String normalizedCellText = cellText.replaceAll("\\s+", " ").trim();
-
-                // 核心逻辑：只要单元格文本包含目标文本，就执行替换
-                if (normalizedCellText.contains(normalizedTarget)) {
-                    // 执行替换：将目标文本替换为占位符，保留其余内容
-                    String newCellText = normalizedCellText.replace(normalizedTarget, replacement);
-                    clearCellAndSetText(cell, newCellText);
-                    log.info("【单元格聚合替换】: '{}' -> '{}'", truncate(target, 40), replacement);
-                }
-            }
-        }
-    }
-
-    private String truncate(String s, int max) {
-        if (s == null)
-            return "";
-        return s.length() > max ? s.substring(0, max) + "..." : s;
-    }
-
-    private void clearCellAndSetText(XWPFTableCell cell, String text) {
-        while (cell.getParagraphs().size() > 1) {
-            cell.removeParagraph(0);
-        }
-        XWPFParagraph p = cell.getParagraphs().get(0);
-        while (p.getRuns().size() > 0) {
-            p.removeRun(0);
-        }
-        p.createRun().setText(text);
-    }
-
-    /**
-     * 在段落中执行替换，支持跳过带图片的 Run，增加边界保护防止误杀
+     * 在段落中执行替换，支持跳过带图片的 Run，并尝试处理简单的跨 Run 文本
      */
     private void replaceInParagraph(XWPFParagraph p, String target, String replacement) {
         List<XWPFRun> runs = p.getRuns();
         if (runs == null || runs.isEmpty())
             return;
 
-        String normalizedTarget = target.replaceAll("\\s+", " ").trim();
-        if (normalizedTarget.isEmpty())
-            return;
-
-        // 1. 优先尝试在单个 Run 中直接替换（带边界保护）
+        // 1. 优先尝试在单个 Run 中直接替换（保留原有详细格式）
         boolean substituted = false;
         for (XWPFRun r : runs) {
+            // 跳过包含图片的 Run
             if (r.getEmbeddedPictures() != null && !r.getEmbeddedPictures().isEmpty()) {
                 continue;
             }
 
             String text = r.getText(0);
-            if (text != null) {
-                if (safeContains(text, target)) {
-                    r.setText(safeReplace(text, target, replacement), 0);
-                    substituted = true;
-                } else {
-                    String normalizedText = text.replaceAll("\\s+", " ");
-                    if (safeContains(normalizedText, normalizedTarget)) {
-                        r.setText(safeReplace(text, text.trim(), replacement), 0);
-                        substituted = true;
-                    }
-                }
+            if (text != null && text.contains(target)) {
+                r.setText(text.replace(target, replacement), 0);
+                substituted = true;
             }
         }
 
         // 2. 补偿逻辑：处理被 Word 拆分到多个 Run 中的情况
+        // 如果单个 Run 没替换成功，但段落整体文本包含该字符串
         if (!substituted) {
             String pText = p.getText();
-            if (pText != null) {
-                String normalizedPText = pText.replaceAll("\\s+", " ").trim();
-                if (normalizedPText.contains(normalizedTarget)) {
-                    XWPFRun firstTextRun = null;
+            if (pText != null && pText.contains(target)) {
+                // 查找第一个不含图片的 Run 作为合并基准
+                XWPFRun firstTextRun = null;
+                for (XWPFRun r : runs) {
+                    if (r.getEmbeddedPictures() == null || r.getEmbeddedPictures().isEmpty()) {
+                        firstTextRun = r;
+                        break;
+                    }
+                }
+
+                if (firstTextRun != null) {
+                    // 获取完整文本并执行替换
+                    StringBuilder fullText = new StringBuilder();
                     for (XWPFRun r : runs) {
+                        // 只累加文本 Run，忽略图片 Run 的文本（通常为空）
                         if (r.getEmbeddedPictures() == null || r.getEmbeddedPictures().isEmpty()) {
-                            firstTextRun = r;
-                            break;
+                            String t = r.getText(0);
+                            fullText.append(t != null ? t : "");
                         }
                     }
 
-                    if (firstTextRun != null) {
-                        StringBuilder fullText = new StringBuilder();
+                    String combined = fullText.toString();
+                    if (combined.contains(target)) {
+                        String newFullText = combined.replace(target, replacement);
+
+                        // 执行“强制合并”策略：
+                        // 将新文本设回第一个文本 Run，并清空段落中其他的文本 Run
+                        firstTextRun.setText(newFullText, 0);
+
+                        // 清除除了第一个文本 Run 之外的所有其他文本 Run 的文字
+                        // 注意：为了不破坏图片，我们只清空不含图片的 Run
+                        boolean firstFound = false;
                         for (XWPFRun r : runs) {
                             if (r.getEmbeddedPictures() == null || r.getEmbeddedPictures().isEmpty()) {
-                                String t = r.getText(0);
-                                fullText.append(t != null ? t : "");
-                            }
-                        }
-
-                        String combined = fullText.toString();
-                        String normalizedCombined = combined.replaceAll("\\s+", " ").trim();
-                        if (normalizedCombined.contains(normalizedTarget)) {
-                            // 使用归一化合并策略
-                            String newFullText = normalizedCombined.replace(normalizedTarget, replacement);
-                            firstTextRun.setText(newFullText, 0);
-
-                            boolean firstFound = false;
-                            for (XWPFRun r : runs) {
-                                if (r.getEmbeddedPictures() == null || r.getEmbeddedPictures().isEmpty()) {
-                                    if (!firstFound) {
-                                        firstFound = true;
-                                    } else {
-                                        r.setText("", 0);
-                                    }
+                                if (!firstFound) {
+                                    firstFound = true; // 这是我们的 firstTextRun，保留
+                                } else {
+                                    r.setText("", 0); // 清空后续分段
                                 }
                             }
-                            log.info("已通过合并策略处理分段文本: '{}' -> '{}'", target, replacement);
                         }
+                        log.info("已通过合并策略处理分段文本: '{}' -> '{}'", target, replacement);
                     }
                 }
             }
         }
-    }
-
-    /**
-     * 安全检查：如果目标是短词，检查其前后是否为字母数字，防止 mis-match (如 ZONE 中的 ONE)
-     */
-    private boolean safeContains(String text, String target) {
-        if (!text.contains(target))
-            return false;
-        // 如果 target 包含非字母数字（如空格、逗号），通常认为是安全的短语匹配
-        if (!target.matches("^[a-zA-Z0-9]+$"))
-            return true;
-
-        // 词边界检查逻辑
-        int index = text.indexOf(target);
-        while (index != -1) {
-            boolean startOk = (index == 0) || !Character.isLetterOrDigit(text.charAt(index - 1));
-            boolean endOk = (index + target.length() == text.length())
-                    || !Character.isLetterOrDigit(text.charAt(index + target.length()));
-
-            if (startOk && endOk)
-                return true;
-            index = text.indexOf(target, index + 1);
-        }
-        return false;
-    }
-
-    private String safeReplace(String text, String target, String replacement) {
-        if (!target.matches("^[a-zA-Z0-9]+$"))
-            return text.replace(target, replacement);
-
-        // 使用正则词边界进行精确替换
-        String patternString = "(?<![a-zA-Z0-9])" + java.util.regex.Pattern.quote(target) + "(?![a-zA-Z0-9])";
-        return text.replaceAll(patternString, replacement);
     }
 }
