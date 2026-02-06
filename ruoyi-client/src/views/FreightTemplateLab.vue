@@ -28,6 +28,9 @@
           <span class="user-abbr">{{ userAbbr }}</span>
           <span class="user-code">{{ currentUser }}</span>
         </div>
+        <button @click="handleLogout" class="logout-btn">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
       </div>
     </nav>
 
@@ -126,23 +129,42 @@
 
 <script>
 import { defineComponent, ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { renderAsync } from 'docx-preview'
 import { analyzeTemplate, previewTemplate, saveTemplate } from '../api/lab'
+import api from '../api/request'
 
 export default defineComponent({
   name: 'FreightTemplateLab',
   setup() {
+    const router = useRouter()
     const file = ref(null)
     const mappings = ref([])
     const previewLoading = ref(false)
     const analyzeLoading = ref(false)
     const currentUser = ref('')
-    const userAbbr = ref('')
+    const userAbbr = ref('...')
 
-    onMounted(() => {
-      const userData = JSON.parse(localStorage.getItem('client_user') || '{}')
-      currentUser.value = userData.companyCode || 'Unknown'
-      userAbbr.value = userData.companyAbbr || 'SYS'
+    const fetchUserData = async () => {
+      try {
+        const res = await api.get('/client-api/current-user')
+        if (res.code === 200 || res.code === 0) {
+          userAbbr.value = res.data.companyAbbr
+          currentUser.value = res.data.companyCode
+        }
+      } catch (err) {
+        console.error('Failed to fetch user data:', err)
+      }
+    }
+
+    onMounted(async () => {
+      // 检查 Session
+      try {
+        await api.get('/client-api/check-auth')
+        await fetchUserData()
+      } catch (err) {
+        router.push('/login')
+      }
     })
 
     const handleFileChange = (e) => {
@@ -212,6 +234,17 @@ export default defineComponent({
       }
     }
 
+    const handleLogout = async () => {
+      try {
+        await api.post('/client-api/logout')
+        localStorage.removeItem('client_user')
+        router.push('/login')
+      } catch (err) {
+        localStorage.removeItem('client_user')
+        router.push('/login')
+      }
+    }
+
     const removeMapping = (idx) => {
       mappings.value.splice(idx, 1)
     }
@@ -233,7 +266,8 @@ export default defineComponent({
 
     return {
       file, mappings, previewLoading, analyzeLoading, currentUser, userAbbr,
-      handleFileChange, syncPreview, handleSave, removeMapping, handleMouseEnter, handleMouseLeave
+      handleFileChange, syncPreview, handleSave, removeMapping, handleMouseEnter, handleMouseLeave,
+      handleLogout
     }
   }
 })
@@ -579,8 +613,63 @@ export default defineComponent({
   font-weight: 600;
 }
 
-.sidebar-footer { padding: 25px 20px; border-top: 1px solid var(--glass-border); }
-.user-info { display: flex; align-items: center; gap: 10px; color: var(--text-dim); }
-.user-abbr { font-weight: 700; color: white; }
-.user-code { font-size: 12px; }
+.sidebar-footer { 
+  margin-top: auto;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05); 
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid transparent;
+}
+
+.user-info:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.user-abbr {
+  font-size: 16px;
+  font-weight: 700;
+  color: #10b981;
+  letter-spacing: 1px;
+}
+
+.user-code {
+  font-size: 12px;
+  color: #64748b;
+  font-family: monospace;
+}
+
+.logout-btn {
+  width: 100%;
+  padding: 10px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 8px;
+  color: #f87171;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+  font-family: inherit;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.logout-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  transform: none !important;
+}
 </style>
