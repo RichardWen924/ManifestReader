@@ -9,7 +9,9 @@ import org.springframework.web.multipart.MultipartFile;
 import com.alibaba.fastjson.JSON;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
+import com.ruoyi.system.domain.SysPdfTemplate;
 import com.ruoyi.system.domain.SysTemplateMapping;
+import com.ruoyi.system.service.ISysPdfTemplateService;
 import com.ruoyi.system.service.ITemplateLabService;
 
 /**
@@ -21,6 +23,9 @@ public class SysTemplateLabController extends BaseController {
 
     @Autowired
     private ITemplateLabService templateLabService;
+
+    @Autowired
+    private ISysPdfTemplateService pdfTemplateService;
 
     /**
      * 第一步：上传并解析文档
@@ -63,6 +68,53 @@ public class SysTemplateLabController extends BaseController {
             @RequestParam("templateName") String templateName) {
         List<SysTemplateMapping> mappings = JSON.parseArray(mappingsJson, SysTemplateMapping.class);
         String path = templateLabService.saveTemplate(file, mappings, templateName);
+
+        // 获取当前登录用户
+        String loginName = getLoginName();
+
+        // 同时保存到 sys_pdf_template 表中，供管理页面使用
+        SysPdfTemplate template = new SysPdfTemplate();
+        template.setTemplateName(templateName);
+        template.setTemplateCode("LAB_" + System.currentTimeMillis());
+        template.setTemplateFilePath(path);
+        template.setFieldConfig(mappingsJson);
+        template.setCreateBy(loginName); // 关联用户
+        pdfTemplateService.insertSysPdfTemplate(template);
+
         return AjaxResult.success("保存成功", path);
+    }
+
+    /**
+     * 查询模版列表 (仅限当前用户)
+     */
+    @GetMapping("/list")
+    public AjaxResult list(SysPdfTemplate sysPdfTemplate) {
+        sysPdfTemplate.setCreateBy(getLoginName());
+        List<SysPdfTemplate> list = pdfTemplateService.selectSysPdfTemplateList(sysPdfTemplate);
+        return AjaxResult.success(list);
+    }
+
+    /**
+     * 获取模版详细信息
+     */
+    @GetMapping(value = "/{templateId}")
+    public AjaxResult getInfo(@PathVariable("templateId") Long templateId) {
+        return AjaxResult.success(pdfTemplateService.selectSysPdfTemplateById(templateId));
+    }
+
+    /**
+     * 修改模版
+     */
+    @PutMapping
+    public AjaxResult edit(@RequestBody SysPdfTemplate sysPdfTemplate) {
+        return toAjax(pdfTemplateService.updateSysPdfTemplate(sysPdfTemplate));
+    }
+
+    /**
+     * 删除模版
+     */
+    @DeleteMapping("/{templateIds}")
+    public AjaxResult remove(@PathVariable Long[] templateIds) {
+        return toAjax(pdfTemplateService.deleteSysPdfTemplateByIds(templateIds));
     }
 }
