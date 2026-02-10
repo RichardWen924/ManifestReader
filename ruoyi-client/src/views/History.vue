@@ -22,15 +22,65 @@
         </li>
       </ul>
       <div class="sidebar-footer">
-        <div class="user-info">
+        <div class="user-info" @click="openProfileModal" title="Click to edit profile">
           <i class="fas fa-user-circle"></i>
-          <span>{{ currentUser }}</span>
+          <span class="user-abbr">{{ userAbbr }}</span>
+          <span class="user-code">{{ currentUser }}</span>
         </div>
         <button @click="handleLogout" class="logout-btn">
           <i class="fas fa-sign-out-alt"></i> Logout
         </button>
       </div>
     </nav>
+    
+    <!-- Profile Edit Modal -->
+    <div v-if="isProfileModalOpen" class="modal-overlay" @click.self="closeProfileModal">
+      <div class="modal-content profile-modal card">
+        <header class="modal-header">
+          <div class="header-left">
+            <h2>Edit Profile (修改个人信息)</h2>
+            <p>Update your company name and password</p>
+          </div>
+          <button @click="closeProfileModal" class="close-btn"><i class="fas fa-times"></i></button>
+        </header>
+
+        <div class="modal-body">
+          <form @submit.prevent="handleUpdateProfile" class="profile-form">
+            <div class="form-group-custom">
+              <label>Company Name (公司名称)</label>
+              <input v-model="profileForm.companyName" placeholder="Enter new company name">
+            </div>
+
+            <div class="form-group-custom">
+              <label>Shipline Code (航司四字码)</label>
+              <input v-model="profileForm.companyAbbr" placeholder="e.g. MSKU" maxlength="4">
+              <small class="hint">Must be 4 uppercase letters</small>
+            </div>
+            
+            <div class="form-group-custom">
+              <label>New Password (新密码)</label>
+              <input v-model="profileForm.password" type="password" placeholder="Leave blank to keep current password">
+            </div>
+
+            <div class="form-group-custom">
+              <label>Confirm Password (确认密码)</label>
+              <input v-model="profileForm.confirmPassword" type="password" placeholder="Repeat new password">
+            </div>
+            
+            <div v-if="profileError" class="error-msg">{{ profileError }}</div>
+            <div v-if="profileSuccess" class="success-msg">{{ profileSuccess }}</div>
+          </form>
+        </div>
+
+        <footer class="modal-footer">
+          <button @click="closeProfileModal" class="outline-btn">Cancel</button>
+          <button @click="handleUpdateProfile" :disabled="profileLoading" class="primary-btn">
+            <span v-if="!profileLoading">Save Changes</span>
+            <span v-else class="loader"></span>
+          </button>
+        </footer>
+      </div>
+    </div>
     
     <main class="main-content">
       <header class="content-header">
@@ -105,8 +155,81 @@ import api from '../api/request'
 
 const router = useRouter()
 const currentUser = ref(localStorage.getItem('client_user') || 'Guest')
+const userAbbr = ref('Loading...')
 const records = ref([])
 const searchQuery = ref('')
+
+// Profile Modal States
+const isProfileModalOpen = ref(false)
+const profileLoading = ref(false)
+const profileError = ref('')
+const profileSuccess = ref('')
+const profileForm = ref({
+  companyName: '',
+  companyAbbr: '',
+  password: '',
+  confirmPassword: ''
+})
+
+const fetchUserData = async () => {
+  try {
+    const res = await api.get('/client-api/current-user')
+    if (res.code === 200 || res.code === 0) {
+      userAbbr.value = res.data.companyAbbr
+      profileForm.value.companyName = res.data.companyName
+      profileForm.value.companyAbbr = res.data.companyAbbr
+    }
+  } catch (err) {
+    console.error('Failed to fetch user data:', err)
+  }
+}
+
+const openProfileModal = () => {
+  isProfileModalOpen.value = true
+  profileError.value = ''
+  profileSuccess.value = ''
+  profileForm.value.password = ''
+  profileForm.value.confirmPassword = ''
+  fetchUserData()
+}
+
+const closeProfileModal = () => {
+  isProfileModalOpen.value = false
+}
+
+const handleUpdateProfile = async () => {
+  if (profileForm.value.password && profileForm.value.password !== profileForm.value.confirmPassword) {
+    profileError.value = 'Passwords do not match'
+    return
+  }
+  if (profileForm.value.companyAbbr && !/^[A-Z]{4}$/.test(profileForm.value.companyAbbr.toUpperCase())) {
+    profileError.value = 'Shipline Code must be 4 uppercase letters'
+    return
+  }
+
+  profileLoading.value = true
+  profileError.value = ''
+  profileSuccess.value = ''
+
+  try {
+    const res = await api.post('/client-api/update-profile', {
+      companyName: profileForm.value.companyName,
+      companyAbbr: profileForm.value.companyAbbr,
+      password: profileForm.value.password
+    })
+    if (res.code === 200 || res.code === 0) {
+      profileSuccess.value = 'Profile updated successfully!'
+      fetchUserData()
+      setTimeout(() => closeProfileModal(), 1500)
+    } else {
+      profileError.value = res.msg || 'Update failed'
+    }
+  } catch (err) {
+    profileError.value = err.message || 'Network error'
+  } finally {
+    profileLoading.value = false
+  }
+}
 
 const handleLogout = async () => {
   try {
@@ -176,8 +299,9 @@ const handleDelete = async (record) => {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   fetchRecords()
+  await fetchUserData()
 })
 </script>
 
@@ -191,52 +315,52 @@ onMounted(() => {
 .sidebar {
   width: 260px;
   background: rgba(15, 23, 42, 0.95);
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-right: 1px solid var(--glass-border);
   display: flex;
   flex-direction: column;
-  padding: 24px;
+  position: fixed;
+  height: 100vh;
+  z-index: 100;
 }
 
 .sidebar-header {
+  padding: 30px 20px;
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 40px;
 }
 
 .logo-icon {
   width: 40px;
   height: 40px;
-  background: rgba(99, 102, 241, 0.1);
-  border-radius: 10px;
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.logo-icon i {
-  color: #6366f1;
   font-size: 20px;
+  color: white;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
 
 .logo-text h1 {
-  font-size: 20px;
-  font-weight: 700;
-  background: linear-gradient(to right, #f8fafc, #cbd5e1);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  font-size: 18px;
+  color: white;
+  margin: 0;
 }
 
 .logo-text span {
-  font-size: 10px;
-  color: #64748b;
+  font-size: 11px;
+  color: var(--text-dim);
   text-transform: uppercase;
   letter-spacing: 1px;
 }
 
 .nav-links {
   list-style: none;
-  flex-grow: 1;
+  padding: 20px 15px;
+  flex: 1;
 }
 
 .nav-links li {
@@ -248,35 +372,189 @@ onMounted(() => {
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  color: #94a3b8;
+  color: var(--text-dim);
   text-decoration: none;
   border-radius: 12px;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .nav-links li.active a, .nav-links a:hover {
-  background: rgba(99, 102, 241, 0.1);
+  background: var(--glass-bg);
   color: white;
+  box-shadow: inset 0 0 0 1px var(--glass-border);
 }
 
 .nav-links li.active i, .nav-links a:hover i {
-  color: #6366f1;
+  color: white;
 }
+
+.nav-links i { width: 20px; text-align: center; }
 
 .sidebar-footer {
   margin-top: auto;
-  padding-top: 24px;
+  padding: 20px;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .user-info {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  color: #cbd5e1;
-  margin-bottom: 16px;
-  font-size: 14px;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid transparent;
 }
+
+.user-info:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.user-abbr {
+  font-size: 16px;
+  font-weight: 700;
+  color: #10b981;
+  letter-spacing: 1px;
+}
+
+.user-code {
+  font-size: 12px;
+  color: #64748b;
+  font-family: monospace;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 40px;
+}
+
+.modal-content {
+  width: 100%;
+  max-width: 1200px;
+  max-height: 90vh;
+  background: #0f172a;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.modal-header {
+  padding: 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-left h2 { font-size: 24px; font-weight: 700; margin: 0; }
+.header-left p { color: #94a3b8; margin: 4px 0 0 0; font-size: 14px; }
+
+.close-btn {
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 20px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.close-btn:hover { color: white; }
+
+.modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 32px;
+}
+
+.modal-footer {
+  padding: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+}
+
+.profile-modal {
+  max-width: 500px !important;
+}
+
+.profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-group-custom {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.form-group-custom label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.form-group-custom input {
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: white;
+}
+
+.hint { font-size: 11px; color: var(--text-dim); }
+.error-msg { color: #f87171; font-size: 13px; margin-top: 10px; }
+.success-msg { color: #10b981; font-size: 13px; margin-top: 10px; }
+
+.primary-btn {
+  padding: 12px 24px;
+  background: var(--primary-color);
+  border: none;
+  border-radius: 10px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.outline-btn {
+  padding: 12px 24px;
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.loader {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
 
 .logout-btn {
   width: 100%;
@@ -287,6 +565,13 @@ onMounted(() => {
   color: #f87171;
   cursor: pointer;
   transition: all 0.2s;
+  font-size: 14px;
+  font-family: inherit;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .logout-btn:hover {
@@ -295,10 +580,11 @@ onMounted(() => {
 
 /* Main Content */
 .main-content {
-  flex-grow: 1;
+  flex: 1;
+  margin-left: 260px;
   padding: 40px;
   background: #0f172a;
-  overflow-y: auto;
+  min-height: 100vh;
 }
 
 .content-header {

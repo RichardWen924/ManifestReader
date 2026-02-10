@@ -23,7 +23,7 @@
         </li>
       </ul>
       <div class="sidebar-footer">
-        <div class="user-info" title="Current User">
+        <div class="user-info" @click="openProfileModal" title="Click to edit profile">
           <i class="fas fa-user-circle"></i>
           <span class="user-abbr">{{ userAbbr }}</span>
           <span class="user-code">{{ currentUser }}</span>
@@ -33,6 +33,55 @@
         </button>
       </div>
     </nav>
+    
+    <!-- Profile Edit Modal -->
+    <div v-if="isProfileModalOpen" class="modal-overlay" @click.self="closeProfileModal">
+      <div class="modal-content profile-modal card">
+        <header class="modal-header-custom">
+          <div class="header-left">
+            <h2>Edit Profile (修改个人信息)</h2>
+            <p>Update your company name and password</p>
+          </div>
+          <button @click="closeProfileModal" class="close-btn-custom"><i class="fas fa-times"></i></button>
+        </header>
+
+        <div class="modal-body-custom">
+          <form @submit.prevent="handleUpdateProfile" class="profile-form">
+            <div class="form-group-custom">
+              <label>Company Name (公司名称)</label>
+              <input v-model="profileForm.companyName" placeholder="Enter new company name">
+            </div>
+
+            <div class="form-group-custom">
+              <label>Shipline Code (航司四字码)</label>
+              <input v-model="profileForm.companyAbbr" placeholder="e.g. MSKU" maxlength="4">
+              <small class="hint">Must be 4 uppercase letters</small>
+            </div>
+            
+            <div class="form-group-custom">
+              <label>New Password (新密码)</label>
+              <input v-model="profileForm.password" type="password" placeholder="Leave blank to keep current password">
+            </div>
+
+            <div class="form-group-custom">
+              <label>Confirm Password (确认密码)</label>
+              <input v-model="profileForm.confirmPassword" type="password" placeholder="Repeat new password">
+            </div>
+            
+            <div v-if="profileError" class="error-msg">{{ profileError }}</div>
+            <div v-if="profileSuccess" class="success-msg">{{ profileSuccess }}</div>
+          </form>
+        </div>
+
+        <footer class="modal-footer-custom">
+          <button @click="closeProfileModal" class="outline-btn-custom">Cancel</button>
+          <button @click="handleUpdateProfile" :disabled="profileLoading" class="primary-btn-custom">
+            <span v-if="!profileLoading">Save Changes</span>
+            <span v-else class="loader"></span>
+          </button>
+        </footer>
+      </div>
+    </div>
 
     <!-- Main Content Area -->
     <main class="main-content">
@@ -143,7 +192,19 @@ export default defineComponent({
     const previewLoading = ref(false)
     const analyzeLoading = ref(false)
     const currentUser = ref('')
-    const userAbbr = ref('...')
+    const userAbbr = ref('Loading...')
+
+    // Profile Modal States
+    const isProfileModalOpen = ref(false)
+    const profileLoading = ref(false)
+    const profileError = ref('')
+    const profileSuccess = ref('')
+    const profileForm = ref({
+      companyName: '',
+      companyAbbr: '',
+      password: '',
+      confirmPassword: ''
+    })
 
     const fetchUserData = async () => {
       try {
@@ -151,9 +212,58 @@ export default defineComponent({
         if (res.code === 200 || res.code === 0) {
           userAbbr.value = res.data.companyAbbr
           currentUser.value = res.data.companyCode
+          profileForm.value.companyName = res.data.companyName
+          profileForm.value.companyAbbr = res.data.companyAbbr
         }
       } catch (err) {
         console.error('Failed to fetch user data:', err)
+      }
+    }
+
+    const openProfileModal = () => {
+      isProfileModalOpen.value = true
+      profileError.value = ''
+      profileSuccess.value = ''
+      profileForm.value.password = ''
+      profileForm.value.confirmPassword = ''
+      fetchUserData()
+    }
+
+    const closeProfileModal = () => {
+      isProfileModalOpen.value = false
+    }
+
+    const handleUpdateProfile = async () => {
+      if (profileForm.value.password && profileForm.value.password !== profileForm.value.confirmPassword) {
+        profileError.value = 'Passwords do not match'
+        return
+      }
+      if (profileForm.value.companyAbbr && !/^[A-Z]{4}$/.test(profileForm.value.companyAbbr.toUpperCase())) {
+        profileError.value = 'Shipline Code must be 4 uppercase letters'
+        return
+      }
+
+      profileLoading.value = true
+      profileError.value = ''
+      profileSuccess.value = ''
+
+      try {
+        const res = await api.post('/client-api/update-profile', {
+          companyName: profileForm.value.companyName,
+          companyAbbr: profileForm.value.companyAbbr,
+          password: profileForm.value.password
+        })
+        if (res.code === 200 || res.code === 0) {
+          profileSuccess.value = 'Profile updated successfully!'
+          fetchUserData()
+          setTimeout(() => closeProfileModal(), 1500)
+        } else {
+          profileError.value = res.msg || 'Update failed'
+        }
+      } catch (err) {
+        profileError.value = err.message || 'Network error'
+      } finally {
+        profileLoading.value = false
       }
     }
 
@@ -273,8 +383,9 @@ export default defineComponent({
 
     return {
       file, mappings, previewLoading, analyzeLoading, currentUser, userAbbr,
+      isProfileModalOpen, profileLoading, profileError, profileSuccess, profileForm,
       handleFileChange, syncPreview, handleSave, removeMapping, handleMouseEnter, handleMouseLeave,
-      handleLogout
+      handleLogout, openProfileModal, closeProfileModal, handleUpdateProfile
     }
   }
 })
@@ -365,6 +476,7 @@ export default defineComponent({
   flex: 1;
   margin-left: 260px;
   padding: 40px;
+  min-height: 100vh;
 }
 
 .template-lab-content {
@@ -679,4 +791,126 @@ export default defineComponent({
   background: rgba(239, 68, 68, 0.2);
   transform: none !important;
 }
+
+/* Profile Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 40px;
+}
+
+.modal-content.profile-modal {
+  width: 100%;
+  max-width: 500px !important;
+  max-height: 90vh;
+  background: #0f172a;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  padding: 0;
+  border-radius: 20px;
+}
+
+.modal-header-custom {
+  padding: 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header-custom h2 { font-size: 20px; font-weight: 700; margin: 0; color: white; }
+.modal-header-custom p { color: #94a3b8; margin: 4px 0 0 0; font-size: 13px; }
+
+.close-btn-custom {
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.modal-body-custom {
+  padding: 24px;
+}
+
+.profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-group-custom {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.form-group-custom label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+
+.form-group-custom input {
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: white;
+  width: 100%;
+}
+
+.hint { font-size: 11px; color: #64748b; }
+.error-msg { color: #f87171; font-size: 13px; margin-top: 5px; }
+.success-msg { color: #10b981; font-size: 13px; margin-top: 5px; }
+
+.modal-footer-custom {
+  padding: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.primary-btn-custom {
+  padding: 10px 20px;
+  background: var(--primary-color);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.outline-btn-custom {
+  padding: 10px 20px;
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.loader {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>
