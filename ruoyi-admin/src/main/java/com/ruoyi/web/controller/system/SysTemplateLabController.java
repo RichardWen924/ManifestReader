@@ -2,7 +2,9 @@ package com.ruoyi.web.controller.system;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.ArrayList;
 import javax.servlet.http.HttpServletResponse;
+import com.ruoyi.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -47,7 +49,16 @@ public class SysTemplateLabController extends BaseController {
     public void preview(@RequestParam("file") MultipartFile file,
             @RequestParam("mappings") String mappingsJson,
             HttpServletResponse response) throws IOException {
-        List<SysTemplateMapping> mappings = JSON.parseArray(mappingsJson, SysTemplateMapping.class);
+        List<SysTemplateMapping> mappings = null;
+        try {
+            if (StringUtils.isNotEmpty(mappingsJson)) {
+                mappings = JSON.parseArray(mappingsJson, SysTemplateMapping.class);
+            }
+        } catch (Exception e) {
+        }
+        if (mappings == null) {
+            mappings = new ArrayList<>();
+        }
         byte[] data = templateLabService.previewTemplate(file, mappings);
 
         response.reset();
@@ -66,7 +77,16 @@ public class SysTemplateLabController extends BaseController {
     public AjaxResult save(@RequestParam("file") MultipartFile file,
             @RequestParam("mappings") String mappingsJson,
             @RequestParam("templateName") String templateName) {
-        List<SysTemplateMapping> mappings = JSON.parseArray(mappingsJson, SysTemplateMapping.class);
+        List<SysTemplateMapping> mappings = null;
+        try {
+            if (StringUtils.isNotEmpty(mappingsJson)) {
+                mappings = JSON.parseArray(mappingsJson, SysTemplateMapping.class);
+            }
+        } catch (Exception e) {
+        }
+        if (mappings == null) {
+            mappings = new ArrayList<>();
+        }
         String path = templateLabService.saveTemplate(file, mappings, templateName);
 
         // 获取当前登录用户 (兼容 Shiro 和 客户端 Session)

@@ -1,6 +1,6 @@
 package com.ruoyi.system.service.impl;
 
-import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,8 +25,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
-import java.io.File;
-import java.io.FileOutputStream;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -42,39 +41,56 @@ public class TemplateLabServiceImpl implements ITemplateLabService {
         log.info("开始智能分析模版文档: {}", file.getOriginalFilename());
         List<SysTemplateMapping> list = new ArrayList<>();
 
-        // 1. 保存临时文件供 Dify 读取
-        String tempPath = "";
-        try {
-            tempPath = FileUploadUtils.upload(RuoYiConfig.getProfile(), file);
-            String fullPath = RuoYiConfig.getProfile() + tempPath.replaceFirst(Constants.RESOURCE_PREFIX, "");
+        /*
+         * // 1. 保存临时文件供 Dify 读取
+         * String tempPath = "";
+         * try {
+         * tempPath = FileUploadUtils.upload(RuoYiConfig.getProfile(), file);
+         * String fullPath = RuoYiConfig.getProfile() +
+         * tempPath.replaceFirst(Constants.RESOURCE_PREFIX, "");
+         * 
+         * // 2. 调用 Dify 工作流
+         * JSONObject result = callDifyWorkflow(fullPath, DIFY_API_KEY_ANALYZE);
+         * 
+         * if (result != null && result.containsKey("mappings")) {
+         * // 适配新结构: { "template_info": {...}, "mappings": [...] }
+         * List<SysTemplateMapping> dfMappings = result.getJSONArray("mappings")
+         * .toJavaList(SysTemplateMapping.class);
+         * if (dfMappings != null) {
+         * list.addAll(dfMappings);
+         * log.info("智能识别完成，提取到 {} 个映射字段", dfMappings.size());
+         * }
+         * if (result.containsKey("template_info")) {
+         * log.info("检测到模板信息: {}",
+         * result.getJSONObject("template_info").toJSONString());
+         * }
+         * } else {
+         * log.warn("Dify 返回结果不含 mappings: {}", result != null ? result.toJSONString() :
+         * "null");
+         * // 回退逻辑：如果 Dify 返回不规范或失败，进行基础解析
+         * log.warn("执行基础解析回退...");
+         * list.addAll(basicAnalyze(file));
+         * }
+         * } catch (Exception e) {
+         * log.error("智能分析过程中发生异常", e);
+         * list.addAll(basicAnalyze(file));
+         * } finally {
+         * // 清理临时文件
+         * if (StringUtils.isNotEmpty(tempPath)) {
+         * // Optional: delete or keep for audit
+         * }
+         * }
+         */
 
-            // 2. 调用 Dify 工作流
-            JSONObject result = callDifyWorkflow(fullPath, DIFY_API_KEY_ANALYZE);
-
-            if (result != null && result.containsKey("mappings")) {
-                // 适配新结构: { "template_info": {...}, "mappings": [...] }
-                List<SysTemplateMapping> dfMappings = result.getJSONArray("mappings")
-                        .toJavaList(SysTemplateMapping.class);
-                if (dfMappings != null) {
-                    list.addAll(dfMappings);
-                    log.info("智能识别完成，提取到 {} 个映射字段", dfMappings.size());
-                }
-                if (result.containsKey("template_info")) {
-                    log.info("检测到模板信息: {}", result.getJSONObject("template_info").toJSONString());
-                }
-            } else {
-                log.warn("Dify 返回结果不含 mappings: {}", result != null ? result.toJSONString() : "null");
-                // 回退逻辑：如果 Dify 返回不规范或失败，进行基础解析
-                log.warn("执行基础解析回退...");
-                list.addAll(basicAnalyze(file));
-            }
-        } catch (Exception e) {
-            log.error("智能分析过程中发生异常", e);
-            list.addAll(basicAnalyze(file));
-        } finally {
-            // 清理临时文件
-            if (StringUtils.isNotEmpty(tempPath)) {
-                // Optional: delete or keep for audit
+        // TODO: 暂时停用 Dify，使用静态测试数据进行测试
+        String testData = "{\"mappings\":[{\"original_text\":\"ZIMUSHH32021612\",\"placeholder_key\":\"doc_no\",\"data_type\":\"string\",\"description\":\"文档编号\"},{\"original_text\":\"EVHL26020240\",\"placeholder_key\":\"bl_no\",\"data_type\":\"string\",\"description\":\"提单号\"},{\"original_text\":null,\"placeholder_key\":\"booking_no\",\"data_type\":\"string\",\"description\":\"预订号\"},{\"original_text\":\"CHENGDU LIYUXIN TRADING CO., LTD 1ST FLOOR, NO.16 ZHONGHE XIONGJIAQIAO ROAD, CHENGDU HIGH TECH ZONE\",\"placeholder_key\":\"shipper\",\"data_type\":\"string\",\"description\":\"托运人\"},{\"original_text\":\"NEWSTAR TECHNOLOGY INC 645 GATES AVE STE 112, BROOKLYN, NY, 11221, USA\",\"placeholder_key\":\"consignee\",\"data_type\":\"string\",\"description\":\"收货人\"},{\"original_text\":\"NEWSTAR TECHNOLOGY INC 645 GATES AVE STE 112, BROOKLYN, NY, 11221, USA SEA-US.OP@YPLOGISTICS.COM\",\"placeholder_key\":\"notify_party\",\"data_type\":\"string\",\"description\":\"通知方\"},{\"original_text\":\"EURO-AMERICA CONTAINER LINE INC 1475 S. STATE COLLEGE BLVD. #120 ANAHEIM, CA 92806 OP@EUROAMERICA-USA.COM DOC@EUROAMERICA-USA.COM TEL: 1-657-655-6228\",\"placeholder_key\":\"delivery_agent\",\"data_type\":\"string\",\"description\":\"交付代理\"},{\"original_text\":\"EVERSTAR (GUANGDONG) SUPPLY CHAIN TECHNOLOGY CO. , LTD\",\"placeholder_key\":\"carrier_agent\",\"data_type\":\"string\",\"description\":\"承运人代理\"},{\"original_text\":\"ZIM SCORPIO 8E\",\"placeholder_key\":\"vessel_voyage\",\"data_type\":\"string\",\"description\":\"船舶/航次\"},{\"original_text\":\"YANTIAN\",\"placeholder_key\":\"port_of_loading\",\"data_type\":\"string\",\"description\":\"装货港\"},{\"original_text\":\"NEW YORK,NY\",\"placeholder_key\":\"port_of_discharge\",\"data_type\":\"string\",\"description\":\"卸货港\"},{\"original_text\":\"YANTIAN\",\"placeholder_key\":\"place_of_receipt\",\"data_type\":\"string\",\"description\":\"收货地点\"},{\"original_text\":\"NEW YORK,NY\",\"placeholder_key\":\"place_of_delivery\",\"data_type\":\"string\",\"description\":\"交付地点\"},{\"original_text\":\"YANTIAN\",\"placeholder_key\":\"pre_carriage_by\",\"data_type\":\"string\",\"description\":\"预装运方式\"},{\"original_text\":\"ZCSU7894848\",\"placeholder_key\":\"container_no\",\"data_type\":\"string\",\"description\":\"集装箱号\"},{\"original_text\":null,\"placeholder_key\":\"seal_no\",\"data_type\":\"string\",\"description\":\"封条号\"},{\"original_text\":\"N/M\",\"placeholder_key\":\"marks\",\"data_type\":\"string\",\"description\":\"标记\"},{\"original_text\":\"PLASTIC PHOTO FRAME\\nPLASTIC SCREEN PROTECTOR\",\"placeholder_key\":\"goods_description\",\"data_type\":\"string\",\"description\":\"货物描述\"},{\"original_text\":\"737\",\"placeholder_key\":\"package_quantity\",\"data_type\":\"string\",\"description\":\"包装数量\"},{\"original_text\":\"CARTONS\",\"placeholder_key\":\"package_unit\",\"data_type\":\"string\",\"description\":\"包装单位\"},{\"original_text\":\"8492\",\"placeholder_key\":\"gross_weight_kgs\",\"data_type\":\"string\",\"description\":\"毛重(KGS)\"},{\"original_text\":\"68\",\"placeholder_key\":\"measurement_cbm\",\"data_type\":\"string\",\"description\":\"体积(CBM)\"},{\"original_text\":null,\"placeholder_key\":\"container_weight\",\"data_type\":\"string\",\"description\":\"集装箱重量\"},{\"original_text\":null,\"placeholder_key\":\"vgm_weight\",\"data_type\":\"string\",\"description\":\"VGM重量\"},{\"original_text\":null,\"placeholder_key\":\"serial_no\",\"data_type\":\"string\",\"description\":\"序列号\"},{\"original_text\":\"CY/CY O/O\",\"placeholder_key\":\"service_type\",\"data_type\":\"string\",\"description\":\"服务类型\"},{\"original_text\":null,\"placeholder_key\":\"service_mode\",\"data_type\":\"string\",\"description\":\"服务模式\"},{\"original_text\":\"PREPAID\",\"placeholder_key\":\"freight_term\",\"data_type\":\"string\",\"description\":\"运费条款\"},{\"original_text\":\"AS ARRANGED\",\"placeholder_key\":\"collect_amount\",\"data_type\":\"string\",\"description\":\"收款金额\"},{\"original_text\":\"PREPAID\",\"placeholder_key\":\"prepaid_amount\",\"data_type\":\"string\",\"description\":\"预付金额\"},{\"original_text\":null,\"placeholder_key\":\"revenue_tons\",\"data_type\":\"string\",\"description\":\"收入吨数\"},{\"original_text\":\"YANTIAN\",\"placeholder_key\":\"payable_at\",\"data_type\":\"string\",\"description\":\"付款地点\"},{\"original_text\":\"ONE(1)\",\"placeholder_key\":\"original_bl_count\",\"data_type\":\"string\",\"description\":\"原始提单数量\"},{\"original_text\":\"YANTIAN\",\"placeholder_key\":\"issue_place\",\"data_type\":\"string\",\"description\":\"开证地点\"},{\"original_text\":null,\"placeholder_key\":\"laden_on_board\",\"data_type\":\"string\",\"description\":\"装载日期\"}]}";
+        JSONObject resultJSON = JSON.parseObject(testData);
+        if (resultJSON != null && resultJSON.containsKey("mappings")) {
+            List<SysTemplateMapping> dfMappings = resultJSON.getJSONArray("mappings")
+                    .toJavaList(SysTemplateMapping.class);
+            if (dfMappings != null) {
+                list.addAll(dfMappings);
+                log.info("【测试模式】提取到 {} 个模拟映射字段", dfMappings.size());
             }
         }
         log.info("analyzeDocument 准备返回，字段总数: {}", list.size());
@@ -102,13 +118,28 @@ public class TemplateLabServiceImpl implements ITemplateLabService {
 
     @Override
     public byte[] previewTemplate(MultipartFile file, List<SysTemplateMapping> mappings) {
-        try (XWPFDocument doc = new XWPFDocument(file.getInputStream());
-                ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+        try {
+            // 1. 保存上传文件到临时路径
+            String tempDir = System.getProperty("java.io.tmpdir");
+            String inputPath = tempDir + "/tpl_preview_input_" + System.currentTimeMillis() + ".docx";
+            String outputPath = tempDir + "/tpl_preview_output_" + System.currentTimeMillis() + ".docx";
+            file.transferTo(new File(inputPath));
 
-            replaceText(doc, mappings);
-            doc.write(out);
-            return out.toByteArray();
-        } catch (IOException e) {
+            // 2. 调用 Python 替换引擎
+            callPythonReplace(inputPath, outputPath, mappings);
+
+            // 3. 读取结果
+            File outputFile = new File(outputPath);
+            if (outputFile.exists()) {
+                byte[] result = java.nio.file.Files.readAllBytes(outputFile.toPath());
+                // 清理临时文件
+                new File(inputPath).delete();
+                outputFile.delete();
+                return result;
+            }
+            log.error("Python 替换引擎未生成输出文件");
+            return new byte[0];
+        } catch (Exception e) {
             log.error("预览模版失败", e);
             return new byte[0];
         }
@@ -117,33 +148,88 @@ public class TemplateLabServiceImpl implements ITemplateLabService {
     @Override
     public String saveTemplate(MultipartFile file, List<SysTemplateMapping> mappings, String templateName) {
         log.info("保存正式模版: {}", templateName);
-        try (XWPFDocument doc = new XWPFDocument(file.getInputStream());
-                ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+        try {
+            // 1. 保存上传文件到临时路径
+            String tempDir = System.getProperty("java.io.tmpdir");
+            String inputPath = tempDir + "/tpl_save_input_" + System.currentTimeMillis() + ".docx";
+            file.transferTo(new File(inputPath));
 
-            replaceText(doc, mappings);
-
-            // 命名规则: LAB_yyyyMMdd_templateName.docx
+            // 2. 命名输出文件
             String fileName = "LAB_" + new SimpleDateFormat("yyyyMMdd").format(new Date()) + "_" + templateName
                     + ".docx";
             String uploadPath = RuoYiConfig.getProfile() + "/templates/";
             File dir = new File(uploadPath);
             if (!dir.exists())
                 dir.mkdirs();
+            String outputPath = uploadPath + fileName;
 
-            File targetFile = new File(uploadPath + fileName);
-            try (FileOutputStream fos = new FileOutputStream(targetFile)) {
-                doc.write(fos);
+            // 3. 调用 Python 替换引擎
+            callPythonReplace(inputPath, outputPath, mappings);
+
+            // 4. 清理临时文件
+            new File(inputPath).delete();
+
+            // 5. 验证输出
+            if (!new File(outputPath).exists()) {
+                throw new RuntimeException("Python 替换引擎未生成输出文件");
             }
 
             return Constants.RESOURCE_PREFIX + "/upload/templates/" + fileName;
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error("保存模版失败", e);
-            throw new RuntimeException("保存模版失败");
+            throw new RuntimeException("保存模版失败: " + e.getMessage());
         }
     }
 
+    /**
+     * 调用 Python 替换引擎 (python-docx)
+     */
+    private void callPythonReplace(String inputPath, String outputPath, List<SysTemplateMapping> mappings)
+            throws Exception {
+        // 1. 将 mappings 写入临时 JSON 文件
+        String tempDir = System.getProperty("java.io.tmpdir");
+        String mappingsPath = tempDir + "/tpl_mappings_" + System.currentTimeMillis() + ".json";
+        String mappingsJson = JSON.toJSONString(mappings);
+        java.nio.file.Files.write(java.nio.file.Paths.get(mappingsPath), mappingsJson.getBytes("UTF-8"));
+
+        // 2. 构建 Python 脚本路径（相对于项目根目录）
+        String scriptPath = System.getProperty("user.dir") + "/scripts/template_replace.py";
+        // 如果脚本不在默认位置，尝试其他常见位置
+        if (!new File(scriptPath).exists()) {
+            // 尝试从配置的上传路径推断项目路径
+            String altPath = RuoYiConfig.getProfile().replace("/uploadPath", "") + "/scripts/template_replace.py";
+            if (new File(altPath).exists()) {
+                scriptPath = altPath;
+            }
+        }
+
+        log.info("调用 Python 替换引擎: python3 {} {} {} {}", scriptPath, inputPath, outputPath, mappingsPath);
+
+        // 3. 执行 Python 脚本
+        ProcessBuilder pb = new ProcessBuilder("python3", scriptPath, inputPath, outputPath, mappingsPath);
+        pb.redirectErrorStream(true);
+        Process process = pb.start();
+
+        // 读取输出
+        String output = new String(process.getInputStream().readAllBytes(), "UTF-8");
+        int exitCode = process.waitFor();
+
+        // 清理 mappings 临时文件
+        new File(mappingsPath).delete();
+
+        if (exitCode != 0) {
+            log.error("Python 替换引擎执行失败 (exit={}): {}", exitCode, output);
+            throw new RuntimeException("Python 替换引擎失败: " + output);
+        }
+
+        log.info("Python 替换引擎完成: {}", output);
+    }
+
     private JSONObject callDifyWorkflow(String localPath, String apiKey) {
-        RestTemplate restTemplate = new RestTemplate();
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(300000); // 300秒连接超时
+        factory.setReadTimeout(300000); // 300秒读取超时
+        RestTemplate restTemplate = new RestTemplate(factory);
         try {
             // 1. 上传文件
             String uploadUrl = DIFY_BASE_URL + "/files/upload";
@@ -206,279 +292,4 @@ public class TemplateLabServiceImpl implements ITemplateLabService {
         return null;
     }
 
-    private void replaceText(XWPFDocument doc, List<SysTemplateMapping> mappings) {
-        if (mappings == null || mappings.isEmpty())
-            return;
-
-        // 1. 过滤无效映射，并按原文长度倒序排列
-        List<SysTemplateMapping> validMappings = new ArrayList<>();
-        for (SysTemplateMapping m : mappings) {
-            if (m != null && StringUtils.isNotEmpty(m.getOriginalText())
-                    && StringUtils.isNotEmpty(m.getPlaceholderKey())) {
-                validMappings.add(m);
-            }
-        }
-        validMappings.sort((a, b) -> b.getOriginalText().length() - a.getOriginalText().length());
-
-        // 2. 核心：以单元格 (Cell) 为单位处理表格
-        // 每个单元格内的段落列表可以视为一个有序的"上下文块"
-        // 在这个块内，同一个映射只会被应用一次（消歧）
-        java.util.Set<String> processedCellIds = new java.util.HashSet<>();
-
-        for (XWPFTable tbl : doc.getTables()) {
-            for (XWPFTableRow row : tbl.getRows()) {
-                for (XWPFTableCell cell : row.getTableCells()) {
-                    // 用 cell 的 hashCode 去重（合并单元格会产生重复引用）
-                    String cellId = String.valueOf(System.identityHashCode(cell));
-                    if (processedCellIds.contains(cellId))
-                        continue;
-                    processedCellIds.add(cellId);
-
-                    processCell(cell, validMappings);
-                }
-            }
-        }
-
-        // 3. 处理正文段落（非表格部分）
-        for (XWPFParagraph p : doc.getParagraphs()) {
-            replaceInParagraphSingle(p, validMappings);
-        }
-
-        // 4. 处理页眉/页脚/脚注/尾注
-        for (XWPFHeader header : doc.getHeaderList()) {
-            for (XWPFParagraph p : header.getParagraphs()) {
-                replaceInParagraphSingle(p, validMappings);
-            }
-        }
-        for (XWPFFooter footer : doc.getFooterList()) {
-            for (XWPFParagraph p : footer.getParagraphs()) {
-                replaceInParagraphSingle(p, validMappings);
-            }
-        }
-
-        log.info("文档全域变量替换工作完成。共处理 {} 个有效映射。", validMappings.size());
-    }
-
-    /**
-     * 以单元格为单位处理所有映射。
-     * 核心逻辑：将多行 original_text 拆分后，在单元格的段落列表中查找连续匹配。
-     * 每个段落只会被一个映射"认领"，已认领的段落不会被后续映射覆盖（歧义消解）。
-     */
-    private void processCell(XWPFTableCell cell, List<SysTemplateMapping> mappings) {
-        List<XWPFParagraph> paragraphs = cell.getParagraphs();
-        if (paragraphs == null || paragraphs.isEmpty())
-            return;
-
-        // 记录哪些段落已被认领（段落索引 -> 已认领）
-        java.util.Set<Integer> claimedParagraphs = new java.util.HashSet<>();
-
-        for (SysTemplateMapping m : mappings) {
-            String originalText = m.getOriginalText();
-            String placeholder = "{{" + m.getPlaceholderKey() + "}}";
-
-            // 将 original_text 按换行拆分为多行
-            String[] lines = originalText.split("\\n");
-            // 去掉空行
-            List<String> targetLines = new ArrayList<>();
-            for (String line : lines) {
-                String trimmed = line.trim();
-                if (!trimmed.isEmpty()) {
-                    targetLines.add(trimmed);
-                }
-            }
-            if (targetLines.isEmpty())
-                continue;
-
-            // 在段落列表中查找首行匹配
-            String firstLine = targetLines.get(0);
-
-            for (int pi = 0; pi < paragraphs.size(); pi++) {
-                if (claimedParagraphs.contains(pi))
-                    continue;
-
-                String pText = paragraphs.get(pi).getText();
-                if (StringUtils.isEmpty(pText))
-                    continue;
-
-                // 判断是否匹配首行
-                if (!pText.trim().equals(firstLine) && !pText.contains(firstLine))
-                    continue;
-
-                // 如果是多行映射，需要连续段落匹配
-                if (targetLines.size() > 1) {
-                    boolean allMatch = true;
-                    for (int offset = 1; offset < targetLines.size() && (pi + offset) < paragraphs.size(); offset++) {
-                        String nextPText = paragraphs.get(pi + offset).getText();
-                        if (nextPText == null || !nextPText.trim().equals(targetLines.get(offset))) {
-                            allMatch = false;
-                            break;
-                        }
-                    }
-                    if (!allMatch)
-                        continue;
-
-                    // 多行匹配成功：将第一行替换为占位符，后续行清空
-                    if (pText.trim().equals(firstLine)) {
-                        // 整段就是首行 -> 直接替换整段
-                        clearAndSetParagraph(paragraphs.get(pi), placeholder);
-                    } else {
-                        // 首行嵌入在段落中 -> 手术刀替换
-                        performSurgicalReplace(paragraphs.get(pi), firstLine, placeholder);
-                    }
-                    claimedParagraphs.add(pi);
-
-                    for (int offset = 1; offset < targetLines.size() && (pi + offset) < paragraphs.size(); offset++) {
-                        clearAndSetParagraph(paragraphs.get(pi + offset), "");
-                        claimedParagraphs.add(pi + offset);
-                    }
-                    log.info("多行映射替换成功: {} -> {}", m.getPlaceholderKey(), placeholder);
-                    break; // 当前映射只认领一次
-
-                } else {
-                    // 单行映射
-                    if (pText.trim().equals(firstLine)) {
-                        // 整段精确匹配
-                        clearAndSetParagraph(paragraphs.get(pi), placeholder);
-                        claimedParagraphs.add(pi);
-                        log.info("单行精确替换: {} -> {}", firstLine, placeholder);
-                        break;
-                    } else if (pText.contains(firstLine)) {
-                        // 子串匹配（如 "8492KGS 68CBM" 中匹配 "8492"）
-                        performSurgicalReplace(paragraphs.get(pi), firstLine, placeholder);
-                        // 子串替换不认领整个段落（同一段落可能包含多个字段）
-                        log.info("子串替换: {} in '{}' -> {}", firstLine, pText, placeholder);
-                        break;
-                    }
-                }
-            }
-        }
-
-        // 递归处理嵌套表格
-        for (XWPFTable nestedTable : cell.getTables()) {
-            for (XWPFTableRow row : nestedTable.getRows()) {
-                for (XWPFTableCell nestedCell : row.getTableCells()) {
-                    processCell(nestedCell, mappings);
-                }
-            }
-        }
-    }
-
-    /**
-     * 清空段落所有 Run 并设置新文本（保留第一个 Run 的样式）
-     */
-    private void clearAndSetParagraph(XWPFParagraph p, String newText) {
-        List<XWPFRun> runs = p.getRuns();
-        if (runs == null || runs.isEmpty()) {
-            if (StringUtils.isNotEmpty(newText)) {
-                XWPFRun run = p.createRun();
-                run.setText(newText, 0);
-            }
-            return;
-        }
-
-        // 保留第一个 Run 的样式，设置新文本
-        runs.get(0).setText(newText, 0);
-
-        // 移除其余所有 Run
-        for (int i = runs.size() - 1; i > 0; i--) {
-            p.removeRun(i);
-        }
-    }
-
-    /**
-     * 在正文段落中做简单的单行替换（非单元格场景）
-     */
-    private void replaceInParagraphSingle(XWPFParagraph p, List<SysTemplateMapping> mappings) {
-        String pText = p.getText();
-        if (StringUtils.isEmpty(pText))
-            return;
-
-        for (SysTemplateMapping m : mappings) {
-            String target = m.getOriginalText();
-            if (StringUtils.isEmpty(target))
-                continue;
-
-            // 只匹配非多行的情况
-            String firstLine = target.split("\\n")[0].trim();
-            if (pText.contains(firstLine)) {
-                performSurgicalReplace(p, firstLine, "{{" + m.getPlaceholderKey() + "}}");
-                pText = p.getText();
-            }
-        }
-    }
-
-    /**
-     * 对段落执行"手术刀"替换逻辑（保留格式的精准子串替换）
-     */
-    private boolean performSurgicalReplace(XWPFParagraph p, String target, String replacement) {
-        List<XWPFRun> runs = p.getRuns();
-        if (runs == null || runs.isEmpty())
-            return false;
-
-        StringBuilder fullText = new StringBuilder();
-        List<Integer> runStarts = new ArrayList<>();
-
-        // 1. 构建全文本坐标轴
-        for (XWPFRun r : runs) {
-            runStarts.add(fullText.length());
-            String t = r.getText(0);
-            fullText.append(t != null ? t : "");
-        }
-
-        String content = fullText.toString();
-        int matchIndex = content.indexOf(target);
-        if (matchIndex == -1)
-            return false;
-
-        int matchEnd = matchIndex + target.length();
-
-        // 2. 找到起始 Run 和结束 Run 的索引
-        int startRunIdx = -1;
-        int endRunIdx = -1;
-
-        for (int i = 0; i < runStarts.size(); i++) {
-            int start = runStarts.get(i);
-            int nextStart = (i + 1 < runStarts.size()) ? runStarts.get(i + 1) : content.length();
-
-            if (matchIndex >= start && matchIndex < nextStart) {
-                startRunIdx = i;
-            }
-            if (matchEnd > start && matchEnd <= nextStart) {
-                endRunIdx = i;
-            }
-        }
-
-        if (startRunIdx == -1 || endRunIdx == -1)
-            return false;
-
-        // 3. 执行"缝合"操作
-        XWPFRun startRun = runs.get(startRunIdx);
-        String startText = startRun.getText(0);
-        if (startText == null)
-            return false;
-        int offsetInStart = matchIndex - runStarts.get(startRunIdx);
-
-        // A. 在起始 Run 注入占位符
-        String prefix = startText.substring(0, offsetInStart);
-        String suffix = (startRunIdx == endRunIdx) ? startText.substring(offsetInStart + target.length()) : "";
-        startRun.setText(prefix + replacement + suffix, 0);
-
-        // B. 处理中间及末尾的 Run
-        if (startRunIdx != endRunIdx) {
-            // 清理末尾 Run 的受影响部分
-            XWPFRun endRun = runs.get(endRunIdx);
-            String endText = endRun.getText(0);
-            if (endText != null) {
-                int offsetInEnd = matchEnd - runStarts.get(endRunIdx);
-                endRun.setText(endText.substring(offsetInEnd), 0);
-            }
-
-            // 彻底移除中间的文本 Run
-            for (int i = endRunIdx - 1; i > startRunIdx; i--) {
-                p.removeRun(i);
-            }
-        }
-
-        return true;
-    }
 }
