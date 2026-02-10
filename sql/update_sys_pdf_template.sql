@@ -31,6 +31,21 @@ PREPARE stmt FROM @sql;
 EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 
+-- 2.1 检查并添加 create_by 列（如果不存在）
+SET @col_exists = 0;
+SELECT COUNT(*) INTO @col_exists 
+FROM information_schema.COLUMNS 
+WHERE TABLE_SCHEMA = DATABASE() 
+  AND TABLE_NAME = 'sys_pdf_template' 
+  AND COLUMN_NAME = 'create_by';
+
+SET @sql = IF(@col_exists = 0,
+    'ALTER TABLE sys_pdf_template ADD COLUMN create_by varchar(64) DEFAULT '''' COMMENT ''创建者'' AFTER create_time',
+    'SELECT ''Column create_by already exists'' AS Info');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
 -- 3. 确保 template_code 列有唯一索引
 SET @index_exists = 0;
 SELECT COUNT(*) INTO @index_exists 

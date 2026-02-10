@@ -69,8 +69,11 @@ public class SysTemplateLabController extends BaseController {
         List<SysTemplateMapping> mappings = JSON.parseArray(mappingsJson, SysTemplateMapping.class);
         String path = templateLabService.saveTemplate(file, mappings, templateName);
 
-        // 获取当前登录用户
-        String loginName = getLoginName();
+        // 获取当前登录用户 (兼容 Shiro 和 客户端 Session)
+        String loginName = getCurrentLoginName();
+        if (loginName == null) {
+            return AjaxResult.error("未获取到用户信息，请重新登录");
+        }
 
         // 同时保存到 sys_pdf_template 表中，供管理页面使用
         SysPdfTemplate template = new SysPdfTemplate();
@@ -89,7 +92,11 @@ public class SysTemplateLabController extends BaseController {
      */
     @GetMapping("/list")
     public AjaxResult list(SysPdfTemplate sysPdfTemplate) {
-        sysPdfTemplate.setCreateBy(getLoginName());
+        String loginName = getCurrentLoginName();
+        if (loginName == null) {
+            return AjaxResult.error("未获取到用户信息，请重新登录");
+        }
+        sysPdfTemplate.setCreateBy(loginName);
         List<SysPdfTemplate> list = pdfTemplateService.selectSysPdfTemplateList(sysPdfTemplate);
         return AjaxResult.success(list);
     }
@@ -116,5 +123,24 @@ public class SysTemplateLabController extends BaseController {
     @DeleteMapping("/{templateIds}")
     public AjaxResult remove(@PathVariable Long[] templateIds) {
         return toAjax(pdfTemplateService.deleteSysPdfTemplateByIds(templateIds));
+    }
+
+    /**
+     * 获取当前登录用户名 (兼容后台管理系统与客户端 API 系统)
+     */
+    private String getCurrentLoginName() {
+        try {
+            // 1. 尝试从 Shiro 获取 (后台管理用户)
+            com.ruoyi.common.core.domain.entity.SysUser user = getSysUser();
+            if (user != null) {
+                return user.getLoginName();
+            }
+        } catch (Exception e) {
+            // 忽略异常，继续尝试其他方式
+        }
+
+        // 2. 尝试从 Session 获取 (客户端用户，对应 ClientApiController 中的 CLIENT_USER_ID)
+        Object clientUserId = getSession().getAttribute("CLIENT_USER_ID");
+        return clientUserId != null ? clientUserId.toString() : null;
     }
 }

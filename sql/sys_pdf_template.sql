@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS `sys_pdf_template` (
   `template_file_path` varchar(500) NOT NULL COMMENT 'PDF模版文件路径',
   `field_config` text COMMENT '字段配置(JSON格式)',
   `create_time` datetime DEFAULT NULL COMMENT '创建时间',
+  `create_by` varchar(64) DEFAULT '' COMMENT '创建者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   `remark` varchar(500) DEFAULT NULL COMMENT '备注',
   PRIMARY KEY (`template_id`),

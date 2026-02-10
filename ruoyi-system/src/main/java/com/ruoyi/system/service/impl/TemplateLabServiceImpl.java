@@ -207,107 +207,278 @@ public class TemplateLabServiceImpl implements ITemplateLabService {
     }
 
     private void replaceText(XWPFDocument doc, List<SysTemplateMapping> mappings) {
+        if (mappings == null || mappings.isEmpty())
+            return;
+
+        // 1. 过滤无效映射，并按原文长度倒序排列
+        List<SysTemplateMapping> validMappings = new ArrayList<>();
         for (SysTemplateMapping m : mappings) {
-            String target = m.getOriginalText();
-            String placeholder = m.getPlaceholderKey();
+            if (m != null && StringUtils.isNotEmpty(m.getOriginalText())
+                    && StringUtils.isNotEmpty(m.getPlaceholderKey())) {
+                validMappings.add(m);
+            }
+        }
+        validMappings.sort((a, b) -> b.getOriginalText().length() - a.getOriginalText().length());
 
-            if (target == null || placeholder == null || target.isEmpty()) {
-                log.warn("跳过无效映射项: 原文={}, 变量={}", target, placeholder);
+        // 2. 核心：以单元格 (Cell) 为单位处理表格
+        // 每个单元格内的段落列表可以视为一个有序的"上下文块"
+        // 在这个块内，同一个映射只会被应用一次（消歧）
+        java.util.Set<String> processedCellIds = new java.util.HashSet<>();
+
+        for (XWPFTable tbl : doc.getTables()) {
+            for (XWPFTableRow row : tbl.getRows()) {
+                for (XWPFTableCell cell : row.getTableCells()) {
+                    // 用 cell 的 hashCode 去重（合并单元格会产生重复引用）
+                    String cellId = String.valueOf(System.identityHashCode(cell));
+                    if (processedCellIds.contains(cellId))
+                        continue;
+                    processedCellIds.add(cellId);
+
+                    processCell(cell, validMappings);
+                }
+            }
+        }
+
+        // 3. 处理正文段落（非表格部分）
+        for (XWPFParagraph p : doc.getParagraphs()) {
+            replaceInParagraphSingle(p, validMappings);
+        }
+
+        // 4. 处理页眉/页脚/脚注/尾注
+        for (XWPFHeader header : doc.getHeaderList()) {
+            for (XWPFParagraph p : header.getParagraphs()) {
+                replaceInParagraphSingle(p, validMappings);
+            }
+        }
+        for (XWPFFooter footer : doc.getFooterList()) {
+            for (XWPFParagraph p : footer.getParagraphs()) {
+                replaceInParagraphSingle(p, validMappings);
+            }
+        }
+
+        log.info("文档全域变量替换工作完成。共处理 {} 个有效映射。", validMappings.size());
+    }
+
+    /**
+     * 以单元格为单位处理所有映射。
+     * 核心逻辑：将多行 original_text 拆分后，在单元格的段落列表中查找连续匹配。
+     * 每个段落只会被一个映射"认领"，已认领的段落不会被后续映射覆盖（歧义消解）。
+     */
+    private void processCell(XWPFTableCell cell, List<SysTemplateMapping> mappings) {
+        List<XWPFParagraph> paragraphs = cell.getParagraphs();
+        if (paragraphs == null || paragraphs.isEmpty())
+            return;
+
+        // 记录哪些段落已被认领（段落索引 -> 已认领）
+        java.util.Set<Integer> claimedParagraphs = new java.util.HashSet<>();
+
+        for (SysTemplateMapping m : mappings) {
+            String originalText = m.getOriginalText();
+            String placeholder = "{{" + m.getPlaceholderKey() + "}}";
+
+            // 将 original_text 按换行拆分为多行
+            String[] lines = originalText.split("\\n");
+            // 去掉空行
+            List<String> targetLines = new ArrayList<>();
+            for (String line : lines) {
+                String trimmed = line.trim();
+                if (!trimmed.isEmpty()) {
+                    targetLines.add(trimmed);
+                }
+            }
+            if (targetLines.isEmpty())
                 continue;
-            }
 
-            String replacement = "{{" + placeholder + "}}";
+            // 在段落列表中查找首行匹配
+            String firstLine = targetLines.get(0);
 
-            // 遍历所有段落（包括正文和表格单元格中的段落）
-            for (XWPFParagraph p : doc.getParagraphs()) {
-                replaceInParagraph(p, target, replacement);
-            }
+            for (int pi = 0; pi < paragraphs.size(); pi++) {
+                if (claimedParagraphs.contains(pi))
+                    continue;
 
-            // 遍历所有表格
-            for (XWPFTable tbl : doc.getTables()) {
-                for (XWPFTableRow row : tbl.getRows()) {
-                    for (XWPFTableCell cell : row.getTableCells()) {
-                        for (XWPFParagraph p : cell.getParagraphs()) {
-                            replaceInParagraph(p, target, replacement);
+                String pText = paragraphs.get(pi).getText();
+                if (StringUtils.isEmpty(pText))
+                    continue;
+
+                // 判断是否匹配首行
+                if (!pText.trim().equals(firstLine) && !pText.contains(firstLine))
+                    continue;
+
+                // 如果是多行映射，需要连续段落匹配
+                if (targetLines.size() > 1) {
+                    boolean allMatch = true;
+                    for (int offset = 1; offset < targetLines.size() && (pi + offset) < paragraphs.size(); offset++) {
+                        String nextPText = paragraphs.get(pi + offset).getText();
+                        if (nextPText == null || !nextPText.trim().equals(targetLines.get(offset))) {
+                            allMatch = false;
+                            break;
                         }
                     }
+                    if (!allMatch)
+                        continue;
+
+                    // 多行匹配成功：将第一行替换为占位符，后续行清空
+                    if (pText.trim().equals(firstLine)) {
+                        // 整段就是首行 -> 直接替换整段
+                        clearAndSetParagraph(paragraphs.get(pi), placeholder);
+                    } else {
+                        // 首行嵌入在段落中 -> 手术刀替换
+                        performSurgicalReplace(paragraphs.get(pi), firstLine, placeholder);
+                    }
+                    claimedParagraphs.add(pi);
+
+                    for (int offset = 1; offset < targetLines.size() && (pi + offset) < paragraphs.size(); offset++) {
+                        clearAndSetParagraph(paragraphs.get(pi + offset), "");
+                        claimedParagraphs.add(pi + offset);
+                    }
+                    log.info("多行映射替换成功: {} -> {}", m.getPlaceholderKey(), placeholder);
+                    break; // 当前映射只认领一次
+
+                } else {
+                    // 单行映射
+                    if (pText.trim().equals(firstLine)) {
+                        // 整段精确匹配
+                        clearAndSetParagraph(paragraphs.get(pi), placeholder);
+                        claimedParagraphs.add(pi);
+                        log.info("单行精确替换: {} -> {}", firstLine, placeholder);
+                        break;
+                    } else if (pText.contains(firstLine)) {
+                        // 子串匹配（如 "8492KGS 68CBM" 中匹配 "8492"）
+                        performSurgicalReplace(paragraphs.get(pi), firstLine, placeholder);
+                        // 子串替换不认领整个段落（同一段落可能包含多个字段）
+                        log.info("子串替换: {} in '{}' -> {}", firstLine, pText, placeholder);
+                        break;
+                    }
+                }
+            }
+        }
+
+        // 递归处理嵌套表格
+        for (XWPFTable nestedTable : cell.getTables()) {
+            for (XWPFTableRow row : nestedTable.getRows()) {
+                for (XWPFTableCell nestedCell : row.getTableCells()) {
+                    processCell(nestedCell, mappings);
                 }
             }
         }
     }
 
     /**
-     * 在段落中执行替换，支持跳过带图片的 Run，并尝试处理简单的跨 Run 文本
+     * 清空段落所有 Run 并设置新文本（保留第一个 Run 的样式）
      */
-    private void replaceInParagraph(XWPFParagraph p, String target, String replacement) {
+    private void clearAndSetParagraph(XWPFParagraph p, String newText) {
         List<XWPFRun> runs = p.getRuns();
-        if (runs == null || runs.isEmpty())
+        if (runs == null || runs.isEmpty()) {
+            if (StringUtils.isNotEmpty(newText)) {
+                XWPFRun run = p.createRun();
+                run.setText(newText, 0);
+            }
+            return;
+        }
+
+        // 保留第一个 Run 的样式，设置新文本
+        runs.get(0).setText(newText, 0);
+
+        // 移除其余所有 Run
+        for (int i = runs.size() - 1; i > 0; i--) {
+            p.removeRun(i);
+        }
+    }
+
+    /**
+     * 在正文段落中做简单的单行替换（非单元格场景）
+     */
+    private void replaceInParagraphSingle(XWPFParagraph p, List<SysTemplateMapping> mappings) {
+        String pText = p.getText();
+        if (StringUtils.isEmpty(pText))
             return;
 
-        // 1. 优先尝试在单个 Run 中直接替换（保留原有详细格式）
-        boolean substituted = false;
-        for (XWPFRun r : runs) {
-            // 跳过包含图片的 Run
-            if (r.getEmbeddedPictures() != null && !r.getEmbeddedPictures().isEmpty()) {
+        for (SysTemplateMapping m : mappings) {
+            String target = m.getOriginalText();
+            if (StringUtils.isEmpty(target))
                 continue;
-            }
 
-            String text = r.getText(0);
-            if (text != null && text.contains(target)) {
-                r.setText(text.replace(target, replacement), 0);
-                substituted = true;
+            // 只匹配非多行的情况
+            String firstLine = target.split("\\n")[0].trim();
+            if (pText.contains(firstLine)) {
+                performSurgicalReplace(p, firstLine, "{{" + m.getPlaceholderKey() + "}}");
+                pText = p.getText();
+            }
+        }
+    }
+
+    /**
+     * 对段落执行"手术刀"替换逻辑（保留格式的精准子串替换）
+     */
+    private boolean performSurgicalReplace(XWPFParagraph p, String target, String replacement) {
+        List<XWPFRun> runs = p.getRuns();
+        if (runs == null || runs.isEmpty())
+            return false;
+
+        StringBuilder fullText = new StringBuilder();
+        List<Integer> runStarts = new ArrayList<>();
+
+        // 1. 构建全文本坐标轴
+        for (XWPFRun r : runs) {
+            runStarts.add(fullText.length());
+            String t = r.getText(0);
+            fullText.append(t != null ? t : "");
+        }
+
+        String content = fullText.toString();
+        int matchIndex = content.indexOf(target);
+        if (matchIndex == -1)
+            return false;
+
+        int matchEnd = matchIndex + target.length();
+
+        // 2. 找到起始 Run 和结束 Run 的索引
+        int startRunIdx = -1;
+        int endRunIdx = -1;
+
+        for (int i = 0; i < runStarts.size(); i++) {
+            int start = runStarts.get(i);
+            int nextStart = (i + 1 < runStarts.size()) ? runStarts.get(i + 1) : content.length();
+
+            if (matchIndex >= start && matchIndex < nextStart) {
+                startRunIdx = i;
+            }
+            if (matchEnd > start && matchEnd <= nextStart) {
+                endRunIdx = i;
             }
         }
 
-        // 2. 补偿逻辑：处理被 Word 拆分到多个 Run 中的情况
-        // 如果单个 Run 没替换成功，但段落整体文本包含该字符串
-        if (!substituted) {
-            String pText = p.getText();
-            if (pText != null && pText.contains(target)) {
-                // 查找第一个不含图片的 Run 作为合并基准
-                XWPFRun firstTextRun = null;
-                for (XWPFRun r : runs) {
-                    if (r.getEmbeddedPictures() == null || r.getEmbeddedPictures().isEmpty()) {
-                        firstTextRun = r;
-                        break;
-                    }
-                }
+        if (startRunIdx == -1 || endRunIdx == -1)
+            return false;
 
-                if (firstTextRun != null) {
-                    // 获取完整文本并执行替换
-                    StringBuilder fullText = new StringBuilder();
-                    for (XWPFRun r : runs) {
-                        // 只累加文本 Run，忽略图片 Run 的文本（通常为空）
-                        if (r.getEmbeddedPictures() == null || r.getEmbeddedPictures().isEmpty()) {
-                            String t = r.getText(0);
-                            fullText.append(t != null ? t : "");
-                        }
-                    }
+        // 3. 执行"缝合"操作
+        XWPFRun startRun = runs.get(startRunIdx);
+        String startText = startRun.getText(0);
+        if (startText == null)
+            return false;
+        int offsetInStart = matchIndex - runStarts.get(startRunIdx);
 
-                    String combined = fullText.toString();
-                    if (combined.contains(target)) {
-                        String newFullText = combined.replace(target, replacement);
+        // A. 在起始 Run 注入占位符
+        String prefix = startText.substring(0, offsetInStart);
+        String suffix = (startRunIdx == endRunIdx) ? startText.substring(offsetInStart + target.length()) : "";
+        startRun.setText(prefix + replacement + suffix, 0);
 
-                        // 执行“强制合并”策略：
-                        // 将新文本设回第一个文本 Run，并清空段落中其他的文本 Run
-                        firstTextRun.setText(newFullText, 0);
+        // B. 处理中间及末尾的 Run
+        if (startRunIdx != endRunIdx) {
+            // 清理末尾 Run 的受影响部分
+            XWPFRun endRun = runs.get(endRunIdx);
+            String endText = endRun.getText(0);
+            if (endText != null) {
+                int offsetInEnd = matchEnd - runStarts.get(endRunIdx);
+                endRun.setText(endText.substring(offsetInEnd), 0);
+            }
 
-                        // 清除除了第一个文本 Run 之外的所有其他文本 Run 的文字
-                        // 注意：为了不破坏图片，我们只清空不含图片的 Run
-                        boolean firstFound = false;
-                        for (XWPFRun r : runs) {
-                            if (r.getEmbeddedPictures() == null || r.getEmbeddedPictures().isEmpty()) {
-                                if (!firstFound) {
-                                    firstFound = true; // 这是我们的 firstTextRun，保留
-                                } else {
-                                    r.setText("", 0); // 清空后续分段
-                                }
-                            }
-                        }
-                        log.info("已通过合并策略处理分段文本: '{}' -> '{}'", target, replacement);
-                    }
-                }
+            // 彻底移除中间的文本 Run
+            for (int i = endRunIdx - 1; i > startRunIdx; i--) {
+                p.removeRun(i);
             }
         }
+
+        return true;
     }
 }
