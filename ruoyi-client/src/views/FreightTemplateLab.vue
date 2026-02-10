@@ -21,6 +21,9 @@
         <li :class="{ active: $route.path === '/lab' }">
           <router-link to="/lab"><i class="fas fa-flask"></i> Template Lab</router-link>
         </li>
+        <li :class="{ active: $route.path === '/templates' }">
+          <router-link to="/templates"><i class="fas fa-layer-group"></i> Template Management</router-link>
+        </li>
       </ul>
       <div class="sidebar-footer">
         <div class="user-info" @click="openProfileModal" title="Click to edit profile">

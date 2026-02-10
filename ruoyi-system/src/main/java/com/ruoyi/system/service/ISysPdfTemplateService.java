@@ -1,27 +1,19 @@
-package com.ruoyi.system.mapper;
+package com.ruoyi.system.service;
 
 import java.util.List;
 import com.ruoyi.system.domain.SysPdfTemplate;
 
 /**
- * PDF模版配置Mapper接口
+ * PDF模版配置Service接口
  * 
  * @author ruoyi
- * @date 2026-01-28
+ * @date 2026-02-10
  */
-public interface SysPdfTemplateMapper {
-    /**
-     * 根据模版编码查询PDF模版
-     * 
-     * @param templateCode 模版编码
-     * @return PDF模版
-     */
-    public SysPdfTemplate selectSysPdfTemplateByCode(String templateCode);
-
+public interface ISysPdfTemplateService {
     /**
      * 查询PDF模版
      * 
-     * @param templateId 模版ID
+     * @param templateId PDF模版ID
      * @return PDF模版
      */
     public SysPdfTemplate selectSysPdfTemplateById(Long templateId);
@@ -51,7 +43,15 @@ public interface SysPdfTemplateMapper {
     public int updateSysPdfTemplate(SysPdfTemplate sysPdfTemplate);
 
     /**
-     * 删除PDF模版
+     * 批量删除PDF模版
+     * 
+     * @param templateIds 需要删除的PDF模版ID
+     * @return 结果
+     */
+    public int deleteSysPdfTemplateByIds(Long[] templateIds);
+
+    /**
+     * 删除PDF模版信息
      * 
      * @param templateId PDF模版ID
      * @return 结果

@@ -30,4 +30,47 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where template_id = #{templateId}
     </select>
 
+    <select id="selectSysPdfTemplateList" parameterType="SysPdfTemplate" resultMap="SysPdfTemplateResult">
+        <include refid="selectSysPdfTemplateVo"/>
+        <where>  
+            <if test="templateCode != null  and templateCode != ''"> and template_code = #{templateCode}</if>
+            <if test="templateName != null  and templateName != ''"> and template_name like concat('%', #{templateName}, '%')</if>
+        </where>
+    </select>
+    
+    <insert id="insertSysPdfTemplate" parameterType="SysPdfTemplate" useGeneratedKeys="true" keyProperty="templateId">
+        insert into sys_pdf_template(
+            <if test="templateCode != null and templateCode != ''">template_code,</if>
+            <if test="templateName != null and templateName != ''">template_name,</if>
+            <if test="templateFilePath != null and templateFilePath != ''">template_file_path,</if>
+            <if test="fieldConfig != null and fieldConfig != ''">field_config,</if>
+            <if test="remark != null and remark != ''">remark,</if>
+            create_time
+        )values(
+            <if test="templateCode != null and templateCode != ''">#{templateCode},</if>
+            <if test="templateName != null and templateName != ''">#{templateName},</if>
+            <if test="templateFilePath != null and templateFilePath != ''">#{templateFilePath},</if>
+            <if test="fieldConfig != null and fieldConfig != ''">#{fieldConfig},</if>
+            <if test="remark != null and remark != ''">#{remark},</if>
+            sysdate()
+        )
+    </insert>
+
+    <update id="updateSysPdfTemplate" parameterType="SysPdfTemplate">
+        update sys_pdf_template
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="templateCode != null and templateCode != ''">template_code = #{templateCode},</if>
+            <if test="templateName != null and templateName != ''">template_name = #{templateName},</if>
+            <if test="templateFilePath != null and templateFilePath != ''">template_file_path = #{templateFilePath},</if>
+            <if test="fieldConfig != null and fieldConfig != ''">field_config = #{fieldConfig},</if>
+            <if test="remark != null and remark != ''">remark = #{remark},</if>
+            update_time = sysdate()
+        </trim>
+        where template_id = #{templateId}
+    </update>
+
+    <delete id="deleteSysPdfTemplateById" parameterType="Long">
+        delete from sys_pdf_template where template_id = #{templateId}
+    </delete>
+
 </mapper>

@@ -5,6 +5,7 @@ import Dashboard from '../views/Dashboard.vue'
 import History from '../views/History.vue'
 import Edit from '../views/Edit.vue'
 import FreightTemplateLab from '../views/FreightTemplateLab.vue'
+import TemplateManagement from '../views/TemplateManagement.vue'
 
 const routes = [
     { path: '/login', component: Login },
@@ -12,7 +13,8 @@ const routes = [
     { path: '/', component: Dashboard, meta: { requiresAuth: true } },
     { path: '/history', component: History, meta: { requiresAuth: true } },
     { path: '/edit/:blNo', component: Edit, meta: { requiresAuth: true } },
-    { path: '/lab', component: FreightTemplateLab, meta: { requiresAuth: true } }
+    { path: '/lab', component: FreightTemplateLab, meta: { requiresAuth: true } },
+    { path: '/templates', component: TemplateManagement, meta: { requiresAuth: true } }
 ]
 
 const router = createRouter({

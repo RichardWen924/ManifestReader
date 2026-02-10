@@ -1,5 +1,5 @@
 <template>
-  <div class="history-page">
+  <div class="template-management-page">
     <nav class="sidebar">
       <div class="sidebar-header">
         <div class="logo-icon">
@@ -84,83 +84,116 @@
         </footer>
       </div>
     </div>
-    
+
     <main class="main-content">
       <header class="content-header">
-        <h1>My Records</h1>
-        <p>View and manage your saved document declarations</p>
-      </header>
-      
-      <section class="table-section card">
-        <div class="table-filters">
+        <h1>Template Management</h1>
+        <div class="header-actions">
           <div class="search-box">
-            <i class="fas fa-search search-icon"></i>
-            <input v-model="searchQuery" @input="fetchRecords" placeholder="Search by Booking No. or B/L No...">
+            <i class="fas fa-search"></i>
+            <input v-model="queryParams.templateName" placeholder="Search templates..." @keyup.enter="handleQuery">
           </div>
         </div>
+      </header>
+
+      <div class="table-container">
+        <table class="custom-table" v-loading="loading">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Template Name</th>
+              <th>Code</th>
+              <th>Create Time</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in templateList" :key="item.templateId">
+              <td>{{ item.templateId }}</td>
+              <td>
+                <div class="template-name-cell">
+                  <i class="fas fa-file-word"></i>
+                  {{ item.templateName }}
+                </div>
+              </td>
+              <td><span class="badge">{{ item.templateCode }}</span></td>
+              <td>{{ item.createTime }}</td>
+              <td>
+                <div class="action-btns">
+                  <button class="icon-btn edit" @click="handleUpdate(item)" title="Edit">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button class="icon-btn delete" @click="handleDelete(item)" title="Delete">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
         
-        <div class="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Booking No.</th>
-                <th>B/L No.</th>
-                <th>Doc No.</th>
-                <th>Vessel / Voyage</th>
-                <th>Weight (KG)</th>
-                <th>Volume (CBM)</th>
-                <th>Package Info</th>
-                <th>Created By</th>
-                <th>Created At</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="record in records" :key="record.id">
-                <td>{{ record.bookingNo }}</td>
-                <td>{{ record.blNo }}</td>
-                <td>{{ record.docNo }}</td>
-                <td>{{ record.vesselVoyage }}</td>
-                <td>{{ record.grossWeightKgs }}</td>
-                <td>{{ record.measurementCbm }}</td>
-                <td>{{ record.packageQuantity }} {{ record.packageUnit }}</td>
-                <td>{{ record.createBy }}</td>
-                <td class="dim">{{ record.createdAt }}</td>
-                <td>
-                  <div class="row-actions">
-                    <button @click="editRecord(record)" class="icon-btn edit-btn" title="Edit">
-                      <i class="fas fa-edit"></i>
-                    </button>
-                    <button @click="exportPdf(record)" class="icon-btn export-btn" title="Export PDF">
-                      <i class="fas fa-file-export"></i>
-                    </button>
-                    <button @click="handleDelete(record)" class="icon-btn delete-btn" title="Delete">
-                      <i class="fas fa-trash-alt"></i>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-              <tr v-if="records.length === 0">
-                <td colspan="11" class="empty-state">No records found.</td>
-              </tr>
-            </tbody>
-          </table>
+        <div v-if="templateList.length === 0 && !loading" class="empty-state">
+           <i class="fas fa-folder-open"></i>
+           <p>No templates found.</p>
+           <router-link to="/lab" class="primary-btn">Go to Lab</router-link>
         </div>
-      </section>
+      </div>
     </main>
+
+    <!-- Edit Template Modal -->
+    <div v-if="open" class="modal-overlay" @click.self="open = false">
+      <div class="modal-content profile-modal card">
+        <header class="modal-header">
+          <div class="header-left">
+            <h2>Edit Template</h2>
+            <p>Modify template information</p>
+          </div>
+          <button @click="open = false" class="close-btn"><i class="fas fa-times"></i></button>
+        </header>
+
+        <div class="modal-body">
+          <form @submit.prevent="submitForm" class="profile-form">
+            <div class="form-group-custom">
+              <label>Template Name</label>
+              <input v-model="form.templateName" placeholder="Enter template name">
+            </div>
+            <div class="form-group-custom">
+              <label>Template Code</label>
+              <input v-model="form.templateCode" placeholder="Enter template code">
+            </div>
+            <div class="form-group-custom">
+              <label>Remark</label>
+              <textarea v-model="form.remark" rows="3" class="custom-textarea" placeholder="Enter remark"></textarea>
+            </div>
+          </form>
+        </div>
+
+        <footer class="modal-footer">
+          <button @click="open = false" class="outline-btn">Cancel</button>
+          <button @click="submitForm" class="primary-btn">Save</button>
+        </footer>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { listTemplate, getTemplate, delTemplate, updateTemplate } from '../api/template'
 import api from '../api/request'
 
 const router = useRouter()
+const loading = ref(true)
+const templateList = ref([])
+const open = ref(false)
+const form = ref({})
+const queryParams = ref({
+  templateName: ''
+})
+
 const currentUser = ref(localStorage.getItem('client_user') || 'Guest')
 const userAbbr = ref('Loading...')
-const records = ref([])
-const searchQuery = ref('')
 
 // Profile Modal States
 const isProfileModalOpen = ref(false)
@@ -184,6 +217,67 @@ const fetchUserData = async () => {
     }
   } catch (err) {
     console.error('Failed to fetch user data:', err)
+  }
+}
+
+const getList = async () => {
+  loading.value = true
+  try {
+    const res = await listTemplate(queryParams.value)
+    if (res.code === 200 || res.code === 0) {
+      templateList.value = res.data
+    }
+  } catch (err) {
+    console.error('Fetch templates failed', err)
+  } finally {
+    loading.value = false
+  }
+}
+
+const handleQuery = () => {
+  getList()
+}
+
+const handleUpdate = (row) => {
+  form.value = { ...row }
+  open.value = true
+}
+
+const handleDelete = async (row) => {
+  if (confirm(`Are you sure to delete template "${row.templateName}"?`)) {
+    try {
+      const res = await delTemplate(row.templateId)
+      if (res.code === 200 || res.code === 0) {
+        alert('Deleted successfully')
+        getList()
+      }
+    } catch (err) {
+      alert('Delete failed')
+    }
+  }
+}
+
+const submitForm = async () => {
+  try {
+    const res = await updateTemplate(form.value)
+    if (res.code === 200 || res.code === 0) {
+      alert('Updated successfully')
+      open.value = false
+      getList()
+    }
+  } catch (err) {
+    alert('Update failed')
+  }
+}
+
+const handleLogout = async () => {
+  try {
+    await api.post('/client-api/logout')
+    localStorage.removeItem('client_token')
+    localStorage.removeItem('client_user')
+    router.push('/login')
+  } catch (err) {
+    console.error('Logout failed:', err)
   }
 }
 
@@ -234,87 +328,22 @@ const handleUpdateProfile = async () => {
   }
 }
 
-const handleLogout = async () => {
-  try {
-    await api.post('/client-api/logout')
-    localStorage.removeItem('client_user')
-    router.push('/login')
-  } catch (err) {
-    localStorage.removeItem('client_user')
-    router.push('/login')
-  }
-}
-
-const fetchRecords = async () => {
-  try {
-    const res = await api.get('/client-api/list', {
-      params: { 
-        blNo: searchQuery.value,
-        pageSize: 100 
-      }
-    })
-    records.value = res.rows || []
-  } catch (err) {
-    console.error('Fetch failed:', err)
-  }
-}
-
-const editRecord = (record) => {
-  router.push(`/edit/${record.blNo}`)
-}
-
-const exportPdf = async (record) => {
-  try {
-    // 构造导出 DTO
-    const dto = {
-      businessData: record,
-      uuid: '' // 历史记录通常不需要 UUID，直接使用记录数据
-    }
-    
-    const response = await api.post('/client-api/export-pdf', dto, {
-      responseType: 'blob'
-    })
-    
-    // 下载文件
-    const url = window.URL.createObjectURL(new Blob([response]))
-    const link = document.createElement('a')
-    link.href = url
-    link.setAttribute('download', `BL_${record.bookingNo}.pdf`)
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  } catch (err) {
-    alert('Export failed: ' + err.message)
-  }
-}
-
-const handleDelete = async (record) => {
-  if (!confirm(`Are you sure you want to delete record ${record.bookingNo}?`)) {
-    return
-  }
-  
-  try {
-    await api.post(`/client-api/remove/${record.id}`)
-    alert('Record deleted successfully')
-    fetchRecords()
-  } catch (err) {
-    alert('Delete failed: ' + err.message)
-  }
-}
-
-onMounted(async () => {
-  fetchRecords()
-  await fetchUserData()
+onMounted(() => {
+  getList()
+  fetchUserData()
 })
 </script>
 
 <style scoped>
-.history-page {
+.template-management-page {
   display: flex;
   min-height: 100vh;
+  background: var(--bg-dark);
+  color: white;
+  font-family: 'Outfit', sans-serif;
 }
 
-/* Sidebar */
+/* Sidebar - Inherited structure */
 .sidebar {
   width: 260px;
   background: rgba(15, 23, 42, 0.95);
@@ -430,135 +459,6 @@ onMounted(async () => {
   font-family: monospace;
 }
 
-/* Modal Styles */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(5px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 40px;
-}
-
-.modal-content {
-  width: 100%;
-  max-width: 1200px;
-  max-height: 90vh;
-  background: #0f172a;
-  display: flex;
-  flex-direction: column;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-}
-
-.modal-header {
-  padding: 24px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.header-left h2 { font-size: 24px; font-weight: 700; margin: 0; }
-.header-left p { color: #94a3b8; margin: 4px 0 0 0; font-size: 14px; }
-
-.close-btn {
-  background: none;
-  border: none;
-  color: #64748b;
-  font-size: 20px;
-  cursor: pointer;
-  transition: color 0.2s;
-}
-
-.close-btn:hover { color: white; }
-
-.modal-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 32px;
-}
-
-.modal-footer {
-  padding: 24px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  display: flex;
-  justify-content: flex-end;
-  gap: 16px;
-}
-
-.profile-modal {
-  max-width: 500px !important;
-}
-
-.profile-form {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.form-group-custom {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.form-group-custom label {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-dim);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.form-group-custom input {
-  padding: 10px 12px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  color: white;
-}
-
-.hint { font-size: 11px; color: var(--text-dim); }
-.error-msg { color: #f87171; font-size: 13px; margin-top: 10px; }
-.success-msg { color: #10b981; font-size: 13px; margin-top: 10px; }
-
-.primary-btn {
-  padding: 12px 24px;
-  background: var(--primary-color);
-  border: none;
-  border-radius: 10px;
-  color: white;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.outline-btn {
-  padding: 12px 24px;
-  background: none;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
-  border-radius: 10px;
-  cursor: pointer;
-}
-
-.loader {
-  width: 18px;
-  height: 18px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-  border-top-color: white;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin { to { transform: rotate(360deg); } }
-
 .logout-btn {
   width: 100%;
   padding: 10px;
@@ -577,134 +477,248 @@ onMounted(async () => {
   gap: 8px;
 }
 
-.logout-btn:hover {
-  background: rgba(239, 68, 68, 0.2);
-}
+.logout-btn:hover { background: rgba(239, 68, 68, 0.2); }
 
 /* Main Content */
 .main-content {
   flex: 1;
   margin-left: 260px;
   padding: 40px;
-  background: #0f172a;
+  background: var(--bg-dark);
   min-height: 100vh;
 }
 
 .content-header {
-  margin-bottom: 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
 }
 
-h1 {
+.content-header h1 {
   font-size: 32px;
-  font-weight: 700;
-  margin-bottom: 8px;
-}
-
-.content-header p {
-  color: #94a3b8;
-}
-
-.card {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
-  padding: 24px;
-}
-
-.table-filters {
-  margin-bottom: 24px;
+  font-weight: 800;
+  background: linear-gradient(to right, #ffffff, #94a3b8);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .search-box {
   position: relative;
-  max-width: 400px;
+  width: 300px;
 }
 
-.search-box i.search-icon {
+.search-box i {
   position: absolute;
-  left: 16px;
+  left: 15px;
   top: 50%;
   transform: translateY(-50%);
-  color: #64748b;
-  transition: color 0.3s;
+  color: var(--text-dim);
 }
 
 .search-box input {
   width: 100%;
-  padding: 14px 16px 14px 48px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 14px;
+  padding: 12px 15px 12px 45px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 15px;
   color: white;
-  font-family: inherit;
-  font-size: 14px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s;
 }
 
 .search-box input:focus {
+  border-color: var(--primary-color);
   outline: none;
-  background: rgba(255, 255, 255, 0.07);
-  border-color: #6366f1;
-  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15), 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
-.search-box input:focus + i.search-icon {
-  color: #6366f1;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
 }
 
 .table-container {
-  overflow-x: auto;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
 }
 
-table {
+.custom-table {
   width: 100%;
   border-collapse: collapse;
+}
+
+.custom-table th {
   text-align: left;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-dim);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
-th {
-  padding: 16px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #94a3b8;
+.custom-table td {
+  padding: 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: var(--text-main);
 }
 
-td {
-  padding: 16px;
-  font-size: 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.bold { font-weight: 600; color: #f8fafc; }
-.dim { color: #64748b; }
-
-.empty-state {
-  text-align: center;
-  padding: 40px;
-  color: #64748b;
-}
-
-.row-actions {
+.template-name-cell {
   display: flex;
+  align-items: center;
   gap: 12px;
+  font-weight: 600;
+}
+
+.template-name-cell i {
+  color: #6366f1;
+}
+
+.badge {
+  padding: 4px 10px;
+  background: rgba(99, 102, 241, 0.1);
+  color: #818cf8;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: monospace;
+}
+
+.action-btns {
+  display: flex;
+  gap: 8px;
 }
 
 .icon-btn {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  color: white;
-  cursor: pointer;
-  transition: all 0.2s;
 }
 
-.edit-btn:hover { background: rgba(99, 102, 241, 0.1); color: #6366f1; border-color: #6366f1; }
-.export-btn:hover { background: rgba(16, 185, 129, 0.1); color: #10b981; border-color: #10b981; }
+.icon-btn.edit:hover {
+  background: rgba(99, 102, 241, 0.1);
+  color: #818cf8;
+  border-color: #818cf8;
+}
+
+.icon-btn.delete:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #f87171;
+  border-color: #f87171;
+}
+
+.empty-state {
+  padding: 80px 0;
+  text-align: center;
+  color: var(--text-dim);
+}
+
+.empty-state i {
+  font-size: 48px;
+  margin-bottom: 20px;
+  opacity: 0.3;
+}
+
+.empty-state .primary-btn {
+  display: inline-block;
+  margin-top: 20px;
+  text-decoration: none;
+}
+
+/* Modal Styles - Shared from History.vue */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 40px;
+}
+
+.modal-content {
+  width: 100%;
+  max-width: 500px;
+  background: #0f172a;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.modal-header {
+  padding: 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-left h2 { font-size: 20px; margin: 0; }
+.header-left p { color: var(--text-dim); margin: 4px 0 0; font-size: 13px; }
+
+.close-btn { background: none; border: none; color: var(--text-dim); font-size: 20px; cursor: pointer; }
+
+.modal-body { padding: 24px; }
+
+.modal-footer {
+  padding: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.profile-form { display: flex; flex-direction: column; gap: 16px; }
+
+.form-group-custom { display: flex; flex-direction: column; gap: 6px; }
+.form-group-custom label { font-size: 12px; color: var(--text-dim); text-transform: uppercase; }
+.form-group-custom input, .custom-textarea {
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  color: white;
+  width: 100%;
+}
+
+.primary-btn {
+  padding: 12px 24px;
+  background: var(--primary-color);
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.outline-btn {
+  padding: 12px 24px;
+  background: none;
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  color: white;
+  cursor: pointer;
+}
+
+.error-msg { color: #f87171; font-size: 13px; margin-top: 10px; }
+.success-msg { color: #10b981; font-size: 13px; margin-top: 10px; }
+
+.loader {
+  width: 18px; height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>
