@@ -45,6 +45,12 @@ public class ClientApiController extends BaseController {
     @Autowired
     private BillOfLadingMapper billOfLadingMapper;
 
+    @Autowired
+    private com.ruoyi.system.service.ISysUserService sysUserService;
+
+    @Autowired
+    private com.ruoyi.framework.shiro.service.SysPasswordService passwordService;
+
     private static final String CLIENT_SESSION_KEY = "CLIENT_USER_ID";
 
     /**
@@ -164,10 +170,13 @@ public class ClientApiController extends BaseController {
             }
         }
 
-        // 兼容原有的 admin/12345 登录 (方便预览)
-        if ("admin".equals(username) && "12345".equals(password)) {
-            session.setAttribute(CLIENT_SESSION_KEY, username);
-            return AjaxResult.success("登录成功", username);
+        // 检查是否为后台管理员 (sys_user 表)
+        if (StringUtils.isNotEmpty(username)) {
+            com.ruoyi.common.core.domain.entity.SysUser sysUser = sysUserService.selectUserByLoginName(username);
+            if (sysUser != null && passwordService.matches(sysUser, password)) {
+                // 验证通过，标记为需要跳转到管理端
+                return AjaxResult.success("REDIRECT_TO_ADMIN", "admin");
+            }
         }
 
         return AjaxResult.error("用户名或密码错误");

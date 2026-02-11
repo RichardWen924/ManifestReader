@@ -85,6 +85,14 @@ const handleLogin = async () => {
       username: username.value,
       password: password.value
     })
+    
+    if (res.msg === 'REDIRECT_TO_ADMIN') {
+        const protocol = window.location.protocol
+        const hostname = window.location.hostname
+        window.location.href = `${protocol}//${hostname}:81`
+        return
+    }
+
     if (res.code === 200 || res.code === 0) {
       localStorage.setItem('client_user', res.data)
       router.push('/')
