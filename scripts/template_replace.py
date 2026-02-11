@@ -213,18 +213,110 @@ def clear_and_set_paragraph(paragraph, new_text):
 
 
 # =========================================================================
+# 特殊处理：包含 delivery_agent + carrier_agent 的复合单元格
+# =========================================================================
+def process_complex_delivery_cell(cell, mappings_by_key, sorted_mappings):
+    """
+    处理包含多个逻辑区域的复合单元格（如提单中的交付/签署区）。
+    结构通常如下：
+      P[0]:  "FOR DELIVERY OF GOODS PLEASE APPLY TO: <delivery_agent_line1>"
+      P[1-N]: <delivery_agent 后续行>
+      P[...]: ""  (空行)
+      P[...]: "ALSO NOTIFY PARTY (COMPLETE NAME AND ADDRESS)"
+      P[...]: ""  (空行)
+      P[...]: "TELEX RELEASE"
+      P[...]: ""  (空行)
+      P[...]: "In Witness Whereof, ... on behalf of <carrier_agent> Has signed..."
+      P[...]: "ofLading stated below..."
+
+    如果不是这种模式，返回 False，由标准 process_cell 处理。
+    """
+    paragraphs = cell.paragraphs
+    if not paragraphs or len(paragraphs) < 5:
+        return False
+
+    # 检测模式：第一个非空段落以 "FOR DELIVERY" 开头
+    first_text = ''
+    for p in paragraphs:
+        if p.text and p.text.strip():
+            first_text = p.text.strip()
+            break
+    if not first_text.upper().startswith('FOR DELIVERY'):
+        return False
+
+    # ===== 处理 delivery_agent =====
+    if 'delivery_agent' in mappings_by_key:
+        placeholder = '{{delivery_agent}}'
+        # 找到 delivery_agent 值的范围：从 P[0] 的冒号后面开始，到第一个空段落或 "ALSO NOTIFY" 为止
+        delivery_start_idx = 0
+        delivery_end_idx = 0  # exclusive
+
+        for i, p in enumerate(paragraphs):
+            text = p.text.strip().upper() if p.text else ''
+            if i > 0 and (not text or text.startswith('ALSO NOTIFY')):
+                delivery_end_idx = i
+                break
+        else:
+            delivery_end_idx = len(paragraphs)
+
+        # P[0]: 保留 "FOR DELIVERY OF GOODS PLEASE APPLY TO: " 前缀，替换其后内容
+        if delivery_end_idx > 0:
+            p0 = paragraphs[delivery_start_idx]
+            p0_text = p0.text.strip()
+            if ':' in p0_text:
+                prefix = p0_text.split(':', 1)[0] + ': '
+                clear_and_set_paragraph(p0, prefix + placeholder)
+            else:
+                clear_and_set_paragraph(p0, placeholder)
+
+            # 清空 P[1] 到 P[delivery_end_idx-1]（delivery agent 的后续行）
+            for j in range(delivery_start_idx + 1, delivery_end_idx):
+                clear_and_set_paragraph(paragraphs[j], '')
+
+    # ===== 处理 carrier_agent =====
+    if 'carrier_agent' in mappings_by_key:
+        placeholder = '{{carrier_agent}}'
+        # carrier_agent 嵌在 "In Witness Whereof, ... on behalf of <NAME> Has signed..." 中
+        for i, p in enumerate(paragraphs):
+            text = p.text.strip() if p.text else ''
+            if text.startswith('In Witness'):
+                # 提取 "on behalf of <NAME> Has signed" 中的 <NAME>
+                upper = text.upper()
+                behalf_idx = upper.find('ON BEHALF OF')
+                has_idx = upper.find('HAS SIGNED')
+                if behalf_idx != -1 and has_idx != -1 and has_idx > behalf_idx:
+                    prefix_part = text[:behalf_idx + len('ON BEHALF OF')]
+                    suffix_part = text[has_idx:]
+                    new_text = prefix_part + ' ' + placeholder + ' ' + suffix_part
+                    clear_and_set_paragraph(p, new_text)
+                break
+
+    return True
+
+
+# =========================================================================
 # 核心：以单元格为单位处理
 # =========================================================================
 def process_cell(cell, mappings_by_key, sorted_mappings):
     """
     处理单个单元格：
-    1. 识别标签段落 vs 值段落
-    2. 标签直接查找占位符（消歧）
-    3. 回退到内容精确匹配
-    4. 替换值段落
+    1. 先检查是否为复合单元格（delivery_agent + carrier_agent），若是则使用专用处理器
+    2. 识别标签段落 vs 值段落
+    3. 标签直接查找占位符（消歧）
+    4. 回退到内容精确匹配
+    5. 替换值段落
     """
     paragraphs = cell.paragraphs
     if not paragraphs:
+        return
+
+    # 优先检测复合单元格
+    if process_complex_delivery_cell(cell, mappings_by_key, sorted_mappings):
+        # 仍然递归处理嵌套表格
+        for nested_table in cell.tables:
+            for row in nested_table.rows:
+                for nested_cell in row.cells:
+                    process_cell(nested_cell, mappings_by_key, sorted_mappings)
         return
 
     # --- 第一步：分离标签和值 ---
@@ -328,6 +420,25 @@ def process_cell(cell, mappings_by_key, sorted_mappings):
                              surgical_replace_in_paragraph(p, p.text, placeholder) # 整个段落换掉
                              break
                 continue  # 不消耗整个单元格
+
+    # 策略C：逐段落精确匹配（处理短文本如 N/M）
+    # 当整个单元格无法整体匹配时，尝试逐段落与映射值精确比对
+    if not matched_placeholder:
+        for m in sorted_mappings:
+            orig = m['originalText']
+            if not orig:
+                continue
+            first_line = orig.split('\n')[0].strip()
+            if not first_line:
+                continue
+            placeholder = '{{' + m['placeholderKey'] + '}}'
+            for idx in value_indexes:
+                p = paragraphs[idx]
+                p_text = p.text.strip() if p.text else ''
+                # 段落文本与映射原文精确匹配
+                if p_text and p_text == first_line:
+                    surgical_replace_in_paragraph(p, first_line, placeholder)
+                    break
 
     # --- 第四步：整体替换 ---
     if matched_placeholder:
