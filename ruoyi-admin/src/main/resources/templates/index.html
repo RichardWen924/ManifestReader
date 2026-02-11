@@ -260,7 +260,7 @@
 				</button>
 				<nav class="page-tabs menuTabs">
 					<div class="page-tabs-content">
-						<a href="javascript:;" class="menuTab" th:data-id="@{/system/main}">介绍</a>
+						<!-- Remove Introduction Tab -->
 					</div>
 				</nav>
 				<button class="roll-nav roll-right tabRight">
@@ -274,7 +274,7 @@
 
 			<div class="row mainContent" id="content-main" th:classappend="${mainClass}">
 				<iframe class="RuoYi_iframe" name="iframe0" width="100%" height="100%" th:data-id="@{/system/main}"
-					th:src="@{/system/main}" frameborder="0" seamless></iframe>
+					src="about:blank" frameborder="0" seamless></iframe>
 			</div>
 
 			<div th:if="${footer}" class="footer">
@@ -360,28 +360,26 @@
 		}
 
 		$(function () {
-			var lockPath = storage.get('lockPath');
-			if ($.common.equals("history", mode) && window.performance.navigation.type == 1) {
-				var url = storage.get('publicPath');
+			/* 强制清除旧的介绍页缓存 */
+			storage.set('publicPath', "");
+			storage.remove('lockPath');
+
+			var hash = location.hash;
+			if ($.common.isNotEmpty(hash)) {
+				var url = hash.substring(1, hash.length);
+				// If the hash is system/main, clear it
+				if (url.indexOf('system/main') !== -1) {
+					url = "";
+					location.hash = "";
+				}
 				if ($.common.isNotEmpty(url)) {
 					applyPath(url);
-				} else {
-					tabActive();
 				}
-			} else if ($.common.isNotEmpty(lockPath)) {
-				applyPath(lockPath);
-				storage.remove('lockPath');
 			} else {
-				var hash = location.hash;
-				if ($.common.isNotEmpty(hash)) {
-					var url = hash.substring(1, hash.length);
-					applyPath(url);
-				} else {
-					if ($.common.equals("history", mode)) {
-						storage.set('publicPath', "");
-					}
-					tabActive();
+				if ($.common.equals("history", mode)) {
+					storage.set('publicPath', "");
 				}
+				// Do NOT call tabActive() which defaults to system/main
 			}
 
 			/* 初始密码提示 */

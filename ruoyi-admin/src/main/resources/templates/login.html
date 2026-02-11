@@ -8,9 +8,8 @@
     <meta name="description" content="提单导出系统后台管理框架">
     <link href="../static/css/bootstrap.min.css" th:href="@{/css/bootstrap.min.css}" rel="stylesheet" />
     <link href="../static/css/font-awesome.min.css" th:href="@{/css/font-awesome.min.css}" rel="stylesheet" />
-    <link href="../static/css/style.min.css" th:href="@{/css/style.min.css}" rel="stylesheet" />
-    <link href="../static/css/login.min.css" th:href="@{/css/login.min.css}" rel="stylesheet" />
-    <link href="../static/ruoyi/css/ry-ui.css" th:href="@{/ruoyi/css/ry-ui.css?v=4.8.2}" rel="stylesheet" />
+    <!-- Removed conflicting RuoYi styles -->
+
     <!-- 360浏览器急速模式 -->
     <meta name="renderer" content="webkit">
     <!-- 避免IE使用兼容模式 -->
@@ -19,6 +18,10 @@
     <style type="text/css">
         label.error {
             position: inherit;
+            color: #ef4444;
+            font-weight: normal;
+            font-size: 12px;
+            margin-top: 4px;
         }
     </style>
     <script>
@@ -26,59 +29,317 @@
     </script>
 </head>
 
-<body class="signin">
-    <div class="signinpanel">
-        <div class="row">
-            <div class="col-sm-7">
-                <div class="signin-info">
-                    <div class="logopanel m-b">
-                        <h1><img alt="[ 提单导出系统 ]" src="../static/ruoyi.png" th:src="@{/ruoyi.png}"></h1>
-                    </div>
-                    <div class="m-b"></div>
-                    <h4>欢迎使用 <strong>提单导出系统 后台管理系统</strong></h4>
-                    <ul class="m-b">
-                        <li><i class="fa fa-arrow-circle-o-right m-r-xs"></i> SpringBoot</li>
-                        <li><i class="fa fa-arrow-circle-o-right m-r-xs"></i> Mybatis</li>
-                        <li><i class="fa fa-arrow-circle-o-right m-r-xs"></i> Shiro</li>
-                        <li><i class="fa fa-arrow-circle-o-right m-r-xs"></i> Thymeleaf</li>
-                        <li><i class="fa fa-arrow-circle-o-right m-r-xs"></i> Bootstrap</li>
-                    </ul>
-                    <strong th:if="${isAllowRegister}">还没有账号？ <a th:href="@{/register}">立即注册&raquo;</a></strong>
+<body class="login-page">
+    <div class="background-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div class="login-card">
+        <div class="login-header">
+            <div class="logo">
+                <i class="fa fa-ship"></i>
+            </div>
+            <h1>SHIPPING DOCFLOW</h1>
+            <p>Premium Document Management Admin</p>
+        </div>
+
+        <form id="signupForm" autocomplete="off" class="login-form">
+            <div class="form-group">
+                <label>Username</label>
+                <div class="input-wrapper">
+                    <i class="fa fa-user"></i>
+                    <input type="text" name="username" class="form-control" placeholder="Enter your username"
+                        value="admin" required />
                 </div>
             </div>
-            <div class="col-sm-5">
-                <form id="signupForm" autocomplete="off">
-                    <h4 class="no-margins">登录：</h4>
-                    <p class="m-t-md">你若不离不弃，我必生死相依</p>
-                    <input type="text" name="username" class="form-control uname" placeholder="用户名" value="admin" />
-                    <input type="password" name="password" class="form-control pword" placeholder="密码"
-                        value="admin123" />
-                    <div class="row m-t" th:if="${captchaEnabled==true}">
-                        <div class="col-xs-6">
-                            <input type="text" name="validateCode" class="form-control code" placeholder="验证码"
-                                maxlength="5" />
-                        </div>
-                        <div class="col-xs-6">
-                            <a href="javascript:void(0);" title="点击更换验证码">
-                                <img th:src="@{/captcha/captchaImage(type=${captchaType})}" class="imgcode"
-                                    width="85%" />
-                            </a>
-                        </div>
-                    </div>
-                    <div class="checkbox-custom" th:if="${isRemembered}"
-                        th:classappend="${captchaEnabled==false} ? 'm-t'">
-                        <input type="checkbox" id="rememberme" name="rememberme"> <label for="rememberme">记住我</label>
-                    </div>
-                    <button class="btn btn-success btn-block" id="btnSubmit" data-loading="正在验证登录，请稍候...">登录</button>
-                </form>
+
+            <div class="form-group">
+                <label>Password</label>
+                <div class="input-wrapper">
+                    <i class="fa fa-lock"></i>
+                    <input type="password" name="password" class="form-control" placeholder="Enter your password"
+                        value="admin123" required />
+                </div>
             </div>
-        </div>
-        <div class="signup-footer">
-            <div class="pull-left">
-                Copyright © 2026 All Rights Reserved. <br>
+
+            <div class="captcha-row" th:if="${captchaEnabled==true}">
+                <div class="captcha-input">
+                    <input type="text" name="validateCode" class="form-control code" placeholder="Verification Code"
+                        maxlength="5" />
+                </div>
+                <div class="captcha-image">
+                    <a href="javascript:void(0);" title="Click to refresh">
+                        <img th:src="@{/captcha/captchaImage(type=${captchaType})}" class="imgcode" />
+                    </a>
+                </div>
             </div>
+
+            <div class="checkbox-custom" th:if="${isRemembered}" th:classappend="${captchaEnabled==false} ? 'm-t'">
+                <input type="checkbox" id="rememberme" name="rememberme"> <label for="rememberme"
+                    style="display:inline;text-transform:none;font-weight:normal;cursor:pointer;">Remember me</label>
+            </div>
+
+            <button class="login-btn" id="btnSubmit" data-loading="Authenticating...">Login</button>
+        </form>
+
+        <div class="login-footer">
+            <p>Copyright © 2026 All Rights Reserved.</p>
         </div>
     </div>
+
+    <!-- Styles inlined for simplicity as requested -->
+    <style>
+        :root {
+            --primary-color: #3b82f6;
+            --primary-gradient: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+            --bg-light: #f1f5f9;
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --text-main: #1e293b;
+            --text-dim: #64748b;
+            --border-color: #e2e8f0;
+        }
+
+        body.login-page {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            background: var(--bg-light);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        .background-blobs {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .blob {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(99, 102, 241, 0.1));
+            filter: blur(80px);
+            border-radius: 50%;
+            animation: move 20s infinite alternate;
+        }
+
+        .blob-1 {
+            top: -100px;
+            left: -100px;
+        }
+
+        .blob-2 {
+            bottom: -150px;
+            right: -100px;
+            animation-duration: 25s;
+            animation-direction: reverse;
+        }
+
+        .blob-3 {
+            top: 20%;
+            right: 10%;
+            width: 300px;
+            height: 300px;
+            animation-duration: 15s;
+        }
+
+        @keyframes move {
+            from {
+                transform: translate(0, 0) scale(1);
+            }
+
+            to {
+                transform: translate(100px, 50px) scale(1.1);
+            }
+        }
+
+        .login-card {
+            position: relative;
+            z-index: 10;
+            width: 90%;
+            max-width: 420px;
+            padding: 48px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            /* Safari support */
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .logo {
+            width: 56px;
+            height: 56px;
+            background: var(--primary-gradient);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.4);
+        }
+
+        .logo i {
+            font-size: 28px;
+            color: white;
+        }
+
+        .login-header h1 {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            color: var(--text-main);
+            margin-top: 0;
+            letter-spacing: -0.5px;
+        }
+
+        .login-header p {
+            color: var(--text-dim);
+            font-size: 15px;
+            margin: 0;
+            font-weight: 500;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-wrapper i {
+            position: absolute;
+            left: 14px;
+            color: var(--text-dim);
+            font-size: 14px;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        input.form-control {
+            width: 100%;
+            padding: 12px 14px 12px 42px;
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-main);
+            font-size: 15px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            height: 48px;
+            /* Fixed height for inputs */
+            box-shadow: none;
+        }
+
+        input.form-control:focus {
+            outline: none;
+            background: white;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        }
+
+        /* Captcha Styles */
+        .captcha-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .captcha-input {
+            flex: 1;
+        }
+
+        .captcha-image {
+            width: 100px;
+            display: flex;
+            align-items: center;
+        }
+
+        .captcha-image img {
+            width: 100%;
+            height: 48px;
+            border-radius: 8px;
+            cursor: pointer;
+            object-fit: cover;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary-gradient);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: block;
+            margin-top: 24px;
+            box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.3);
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.4);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+        .login-footer {
+            margin-top: 32px;
+            text-align: center;
+            font-size: 14px;
+            color: var(--text-dim);
+            font-weight: 500;
+        }
+
+        /* Checkbox overrides */
+        .checkbox-custom {
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+        }
+
+        .checkbox-custom input {
+            margin-right: 8px;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+    </style>
+
     <script
         th:inline="javascript"> var ctx = [[@{/}]]; var captchaType = [[${ captchaType }]]; var captchaEnabled = [[${ captchaEnabled }]];</script>
     <!--[if lte IE 8]><script>window.location.href=ctx+'html/ie.html';</script><![endif]-->
