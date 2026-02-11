@@ -122,10 +122,10 @@
               <table v-else class="lab-table">
                 <thead>
                   <tr>
-                    <th>原文内容</th>
                     <th>占位符变量 (key)</th>
                     <th>类型</th>
                     <th>说明</th>
+                    <th>原文内容</th>
                     <th width="40"></th>
                   </tr>
                 </thead>
@@ -133,7 +133,6 @@
                   <tr v-for="(item, index) in mappings" :key="index" 
                       @mouseenter="handleMouseEnter(item)" 
                       @mouseleave="handleMouseLeave">
-                    <td class="original-text-cell" :title="item.original_text">{{ item.original_text }}</td>
                     <td>
                       <input v-model="item.placeholder_key" class="lab-input" placeholder="变量名..." spellcheck="false">
                     </td>
@@ -142,6 +141,10 @@
                     </td>
                     <td>
                       <input v-model="item.description" class="lab-input" placeholder="字段说明..." spellcheck="false">
+                    </td>
+                    <td class="original-text-cell" @click="showOriginalText(item)">
+                      <span class="text-preview">{{ item.original_text }}</span>
+                      <i class="fas fa-search-plus text-peek-icon"></i>
                     </td>
                     <td>
                       <button class="btn-icon-delete" @click="removeMapping(index)">
@@ -176,6 +179,30 @@
         </div>
       </div>
     </main>
+
+    <!-- Original Text Detail Modal -->
+    <div v-if="textModalOpen" class="modal-overlay" @click.self="textModalOpen = false">
+      <div class="modal-box text-modal">
+        <div class="modal-header">
+          <h3><i class="fas fa-file-alt"></i> 原文内容详情</h3>
+          <button class="modal-close" @click="textModalOpen = false"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="text-detail-field">
+            <label>占位符</label>
+            <span class="text-detail-value code" v-text="'{{' + textModalItem.placeholder_key + '}}'"></span>
+          </div>
+          <div class="text-detail-field">
+            <label>说明</label>
+            <span class="text-detail-value">{{ textModalItem.description }}</span>
+          </div>
+          <div class="text-detail-field">
+            <label>原文内容</label>
+            <pre class="text-detail-content">{{ textModalItem.original_text }}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -196,6 +223,8 @@ export default defineComponent({
     const analyzeLoading = ref(false)
     const currentUser = ref('')
     const userAbbr = ref('Loading...')
+    const textModalOpen = ref(false)
+    const textModalItem = ref({})
 
     // Profile Modal States
     const isProfileModalOpen = ref(false)
@@ -294,7 +323,15 @@ export default defineComponent({
       analyzeLoading.value = true
       try {
         const data = await analyzeTemplate(formData)
-        mappings.value = data.data || []
+        const raw = data.data || []
+        // 按 placeholder_key 去重，保留第一条
+        const seen = new Set()
+        mappings.value = raw.filter(m => {
+          if (!m.placeholder_key) return true
+          if (seen.has(m.placeholder_key)) return false
+          seen.add(m.placeholder_key)
+          return true
+        })
         renderOriginal()
       } catch (err) {
         console.error('Analysis failed:', err)
@@ -371,10 +408,13 @@ export default defineComponent({
 
     const handleMouseEnter = (row) => {
       const container = document.getElementById('preview-container')
-      if (!container) return
+      if (!container || !row.original_text) return
+      // 用原文第一行（去换行）作为搜索关键词，解决长文本/多行文本匹配问题
+      const firstLine = row.original_text.split('\n')[0].trim()
+      if (!firstLine || firstLine.length < 2) return
       const spans = container.querySelectorAll('span')
       spans.forEach(s => {
-        if (s.innerText.includes(row.original_text)) s.classList.add('lab-highlight')
+        if (s.innerText && s.innerText.includes(firstLine)) s.classList.add('lab-highlight')
       })
     }
 
@@ -384,11 +424,17 @@ export default defineComponent({
       container.querySelectorAll('.lab-highlight').forEach(el => el.classList.remove('lab-highlight'))
     }
 
+    const showOriginalText = (item) => {
+      textModalItem.value = item
+      textModalOpen.value = true
+    }
+
     return {
       file, mappings, previewLoading, analyzeLoading, currentUser, userAbbr,
       isProfileModalOpen, profileLoading, profileError, profileSuccess, profileForm,
+      textModalOpen, textModalItem,
       handleFileChange, syncPreview, handleSave, removeMapping, handleMouseEnter, handleMouseLeave,
-      handleLogout, openProfileModal, closeProfileModal, handleUpdateProfile
+      handleLogout, openProfileModal, closeProfileModal, handleUpdateProfile, showOriginalText
     }
   }
 })
@@ -585,10 +631,10 @@ export default defineComponent({
 }
 
 /* Specific column widths for 5.5 flex mapping pane */
-.lab-table th:nth-child(1), .lab-table td:nth-child(1) { width: 35%; } /* 原文 */
-.lab-table th:nth-child(2), .lab-table td:nth-child(2) { width: 25%; } /* 变量名 */
-.lab-table th:nth-child(3), .lab-table td:nth-child(3) { width: 15%; } /* 类型 */
-.lab-table th:nth-child(4), .lab-table td:nth-child(4) { width: 20%; } /* 说明 */
+.lab-table th:nth-child(1), .lab-table td:nth-child(1) { width: 20%; } /* 占位符 */
+.lab-table th:nth-child(2), .lab-table td:nth-child(2) { width: 10%; } /* 类型 */
+.lab-table th:nth-child(3), .lab-table td:nth-child(3) { width: 20%; } /* 说明 */
+.lab-table th:nth-child(4), .lab-table td:nth-child(4) { width: 35%; } /* 原文 */
 .lab-table th:nth-child(5), .lab-table td:nth-child(5) { width: 40px; } /* 删除按钮 */
 
 .lab-table td { padding: 12px; border-bottom: 1px solid var(--glass-border); }
@@ -598,7 +644,30 @@ export default defineComponent({
   overflow: hidden; 
   text-overflow: ellipsis; 
   white-space: nowrap; 
-  font-size: 13px; 
+  font-size: 13px;
+  cursor: pointer;
+  position: relative;
+}
+.original-text-cell:hover {
+  color: var(--accent-blue);
+}
+.original-text-cell .text-preview {
+  display: inline-block;
+  max-width: calc(100% - 20px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.original-text-cell .text-peek-icon {
+  font-size: 10px;
+  margin-left: 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  vertical-align: middle;
+}
+.original-text-cell:hover .text-peek-icon {
+  opacity: 0.7;
 }
 
 /* ... type badges ... */
@@ -916,4 +985,67 @@ export default defineComponent({
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* Text Detail Modal */
+.text-modal {
+  width: 100%;
+  max-width: 600px;
+  background: #0f172a;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+.text-modal .modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.text-modal .modal-header h3 { margin: 0; font-size: 16px; color: white; }
+.text-modal .modal-header h3 i { margin-right: 8px; color: var(--accent-blue); }
+.text-modal .modal-close {
+  background: none; border: none; color: #64748b; font-size: 18px; cursor: pointer;
+}
+.text-modal .modal-close:hover { color: white; }
+.text-modal .modal-body { padding: 24px; }
+.text-detail-field {
+  margin-bottom: 16px;
+}
+.text-detail-field label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.text-detail-value {
+  color: #e2e8f0;
+  font-size: 14px;
+}
+.text-detail-value.code {
+  font-family: 'Fira Code', 'Courier New', monospace;
+  color: var(--accent-blue);
+  background: rgba(56, 189, 248, 0.08);
+  padding: 4px 10px;
+  border-radius: 6px;
+  display: inline-block;
+}
+.text-detail-content {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 16px;
+  color: #e2e8f0;
+  font-size: 13px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 300px;
+  overflow-y: auto;
+  margin: 0;
+  font-family: inherit;
+}
 </style>
