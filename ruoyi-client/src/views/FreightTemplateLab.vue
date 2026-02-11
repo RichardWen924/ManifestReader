@@ -102,7 +102,7 @@
             <button class="btn-success" @click="syncPreview" :disabled="!file || previewLoading">
               <i class="fas fa-sync" :class="{ 'fa-spin': previewLoading }"></i> 同步预览
             </button>
-            <button class="btn-warning" @click="handleSave" :disabled="!file">
+            <button class="btn-warning" @click="handleSave" :disabled="!file || analyzeLoading || mappings.length === 0">
               <i class="fas fa-save"></i> 保存模版
             </button>
           </div>
