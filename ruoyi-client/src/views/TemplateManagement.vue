@@ -6,29 +6,31 @@
           <i class="fas fa-ship"></i>
         </div>
         <div class="logo-text">
-          <h1>提单导出系统</h1>
+          <h1>SHIPPING DOCFLOW</h1>
           <span>Shipping Document System</span>
         </div>
       </div>
       <ul class="nav-links">
         <li :class="{ active: $route.path === '/' }">
-          <router-link to="/"><i class="fas fa-magic"></i> AI Analysis</router-link>
+          <router-link to="/"><i class="fas fa-file-invoice"></i> 文档生成</router-link>
         </li>
         <li :class="{ active: $route.path === '/history' }">
-          <router-link to="/history"><i class="fas fa-history"></i> My Records</router-link>
+          <router-link to="/history"><i class="fas fa-history"></i> 历史提单</router-link>
         </li>
         <li :class="{ active: $route.path === '/lab' }">
-          <router-link to="/lab"><i class="fas fa-flask"></i> Template Lab</router-link>
+          <router-link to="/lab"><i class="fas fa-flask"></i> 模版生成</router-link>
         </li>
         <li :class="{ active: $route.path === '/templates' }">
-          <router-link to="/templates"><i class="fas fa-layer-group"></i> Template Management</router-link>
+          <router-link to="/templates"><i class="fas fa-layer-group"></i> 模版管理</router-link>
         </li>
       </ul>
       <div class="sidebar-footer">
-        <div class="user-info" @click="openProfileModal" title="Click to edit profile">
-          <i class="fas fa-user-circle"></i>
-          <span class="user-abbr">{{ userAbbr }}</span>
-          <span class="user-code">{{ currentUser }}</span>
+        <div class="user-profile" @click="openProfileModal">
+          <div class="user-avatar">{{ userAbbr }}</div>
+          <div class="user-info">
+            <span class="name">{{ currentUser }}</span>
+            <span class="role">Shipper</span>
+          </div>
         </div>
         <button @click="handleLogout" class="logout-btn">
           <i class="fas fa-sign-out-alt"></i> Logout
@@ -88,47 +90,49 @@
     <main class="main-content">
       <!-- Notion-style page header -->
       <div class="page-header">
-        <div class="page-icon"><i class="fas fa-layer-group"></i></div>
-        <div class="page-title-area">
-          <h1>Template Management</h1>
-          <p class="page-subtitle">Manage your document templates</p>
+        <div class="header-main">
+          <div class="page-icon"><i class="fas fa-layer-group"></i></div>
+          <div class="page-title-area">
+            <h1>Template Management</h1>
+            <p class="page-subtitle">Manage your document templates</p>
+          </div>
+        </div>
+        <div class="header-actions">
+          <router-link to="/lab" class="new-btn primary-gradient-btn">
+            <i class="fas fa-plus"></i> New Template
+          </router-link>
         </div>
       </div>
 
       <!-- Toolbar row -->
       <div class="toolbar">
         <div class="toolbar-left">
-          <span class="record-count" v-if="templateList.length > 0">{{ templateList.length }} templates</span>
-        </div>
-        <div class="toolbar-right">
-          <div class="search-inline">
+          <div class="search-input-wrapper">
             <i class="fas fa-search"></i>
-            <input v-model="queryParams.templateName" placeholder="Filter..." @keyup.enter="handleQuery">
+            <input v-model="queryParams.templateName" placeholder="Search templates..." @keyup.enter="handleQuery">
           </div>
-          <router-link to="/lab" class="new-btn">
-            <i class="fas fa-plus"></i> New
-          </router-link>
+          <span class="record-count" v-if="templateList.length > 0">{{ templateList.length }} templates record</span>
         </div>
       </div>
 
       <!-- Notion-style table -->
-      <div class="notion-table-wrap">
+      <div class="table-container">
         <table class="notion-table">
           <thead>
             <tr>
-              <th class="col-check">
+              <th class="check-cell">
                 <input type="checkbox" class="n-checkbox" :checked="allSelected" @change="toggleSelectAll">
               </th>
               <th class="col-name">Name</th>
               <th class="col-code">Code</th>
               <th class="col-time">Created</th>
-              <th class="col-actions"></th>
+              <th class="actions-cell"></th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="item in templateList" :key="item.templateId"
                 :class="{ 'row-checked': selectedIds.includes(item.templateId) }">
-              <td class="col-check">
+              <td class="check-cell">
                 <input type="checkbox" class="n-checkbox"
                        :checked="selectedIds.includes(item.templateId)"
                        @change="toggleSelect(item.templateId)">
@@ -139,14 +143,14 @@
                   <span>{{ item.templateName }}</span>
                 </div>
               </td>
-              <td class="col-code"><span class="code-tag">{{ item.templateCode }}</span></td>
+              <td class="col-code"><span class="template-code">{{ item.templateCode }}</span></td>
               <td class="col-time">{{ formatTime(item.createTime) }}</td>
-              <td class="col-actions">
+              <td class="actions-cell">
                 <div class="row-actions">
-                  <button class="act-btn" @click="handleUpdate(item)" title="Edit">
+                  <button class="icon-btn" @click="handleUpdate(item)" title="Edit">
                     <i class="fas fa-pen"></i>
                   </button>
-                  <button class="act-btn act-danger" @click="handleDelete(item)" title="Delete">
+                  <button class="icon-btn delete-btn" @click="handleDelete(item)" title="Delete">
                     <i class="fas fa-trash"></i>
                   </button>
                 </div>
@@ -164,14 +168,16 @@
 
       <!-- Floating selection bar (Notion-style) -->
       <transition name="slide-up">
-        <div v-if="selectedIds.length > 0" class="floating-bar">
-          <span class="bar-count">{{ selectedIds.length }} selected</span>
-          <button class="bar-btn bar-delete" @click="handleBatchDelete">
-            <i class="fas fa-trash-alt"></i> Delete
-          </button>
-          <button class="bar-btn bar-clear" @click="selectedIds = []">
-            <i class="fas fa-times"></i> Clear
-          </button>
+        <div v-if="selectedIds.length > 0" class="floating-bar" :class="{ active: selectedIds.length > 0 }">
+          <span class="count">{{ selectedIds.length }} selected</span>
+          <div class="actions">
+            <button class="bar-btn danger" @click="handleBatchDelete">
+              <i class="fas fa-trash-alt"></i> Delete Selected
+            </button>
+            <button class="bar-btn" @click="selectedIds = []">
+              <i class="fas fa-times"></i> Clear Selection
+            </button>
+          </div>
         </div>
       </transition>
     </main>
@@ -600,9 +606,27 @@ onMounted(() => {
 /* Notion-style Page Header */
 .page-header {
   display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 40px;
+}
+
+.header-main {
+  display: flex;
   align-items: center;
   gap: 24px;
-  margin-bottom: 40px;
+}
+
+.primary-gradient-btn {
+  background: var(--primary-gradient) !important;
+  color: white !important;
+  border: none !important;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.primary-gradient-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.3);
 }
 
 .page-icon {
@@ -641,33 +665,36 @@ onMounted(() => {
 
 .search-input-wrapper {
   position: relative;
-  width: 240px;
+  width: 320px;
 }
 
 .search-input-wrapper i {
   position: absolute;
-  left: 12px;
+  left: 14px;
   top: 50%;
   transform: translateY(-50%);
   color: var(--text-dim);
-  font-size: 14px;
+  font-size: 15px;
+  pointer-events: none;
 }
 
 .search-input-wrapper input {
   width: 100%;
-  padding: 8px 12px 8px 36px;
-  background: white;
+  padding: 10px 16px 10px 42px;
+  background: #f8fafc;
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: 12px;
   color: var(--text-main);
   font-size: 14px;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .search-input-wrapper input:focus {
   outline: none;
+  background: white;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.08);
+  width: 360px;
 }
 
 .new-btn {
@@ -775,23 +802,23 @@ tr:hover .row-actions {
 /* Floating Selection Bar */
 .floating-bar {
   position: fixed;
-  bottom: 32px;
+  bottom: 0px;
   left: 50%;
   transform: translateX(-50%) translateY(100px);
   background: #1e293b;
   color: white;
-  padding: 12px 24px;
-  border-radius: 100px;
+  padding: 16px 32px;
+  border-radius: 20px 20px 0 0;
   display: flex;
   align-items: center;
-  gap: 20px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+  gap: 24px;
+  box-shadow: 0 -10px 25px -5px rgba(0, 0, 0, 0.3);
   z-index: 1000;
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .floating-bar.active {
-  transform: translateX(-50%) translateY(0);
+  transform: translateX(-50%) translateY(-24px);
 }
 
 .floating-bar .count { font-weight: 600; border-right: 1px solid rgba(255,255,255,0.2); padding-right: 20px; }
