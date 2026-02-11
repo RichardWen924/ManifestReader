@@ -27,6 +27,7 @@ KNOWN_LABELS = [
     'PRE-CARRIAGE BY', 'PLACE OF RECEIPT', 'OCEAN VESSEL/VOY',
     'PORT OF LOADING', 'PORTC OF DISCHARGE', 'PORT OF DISCHARGE',
     'PLACE OF DELIVERY', 'B/L NO.', 'B/L NO',
+    'DOC. NO.', 'DOC NO.',
     'SERVICE TYPE / MODE', 'SERVICE TYPE/MODE',
     'LADEN ON BOARD', 'NUMBER OF ORIGINAL B/L(S)',
     'PAYABLE AT', 'PLACE AND DATE OF ISSUE',
@@ -54,6 +55,8 @@ LABEL_TO_KEY = {
     'PLACE OF DELIVERY': 'place_of_delivery',
     'B/L NO.': 'bl_no',
     'B/L NO': 'bl_no',
+    'DOC. NO.': 'doc_no',
+    'DOC NO.': 'doc_no',
     'BOOKING NO.': 'booking_no',
     'SERVICE TYPE / MODE': 'service_type',
     'SERVICE TYPE/MODE': 'service_type',
@@ -61,7 +64,7 @@ LABEL_TO_KEY = {
     'PLACE AND DATE OF ISSUE': 'issue_place',
     'CONTAINER,SEAL, MARKS & NUMBER': 'container_no',
     'REVENUE TONS': 'revenue_tons',
-    'NUMBER OF ORIGINAL B/L(S)': None,  # 不替换
+    'NUMBER OF ORIGINAL B/L(S)': 'original_bl_count',
     'FREIGHT & CHARGES': 'freight_term',
     'DESCRIPTION OF GOODS': 'goods_description',
     'GROSS WEIGHT (KGS)': 'gross_weight_kgs',
@@ -106,19 +109,27 @@ def get_label_key(label):
     """根据标签文本获取对应的 placeholder_key"""
     if not label:
         return None
-    upper = label.strip().upper()
+    upper = label.strip().upper().replace(':', '').strip()
     # 精确匹配
     if upper in LABEL_TO_KEY:
         return LABEL_TO_KEY[upper]
-    # 前缀匹配 (如 "FOR DELIVERY OF GOODS PLEASE APPLY TO:")
-    if upper.startswith('FOR DELIVERY') or upper.startswith('ALSO NOTIFY'):
+    # 前缀匹配 (归一化去除空格后再比对)
+    norm = re.sub(r'[^A-Z0-9]+', '', upper)
+    if norm.startswith('FORDELIVERY') or norm.startswith('ALSONOTIFY'):
         return 'delivery_agent'
     return None
 
 
 def normalize(text):
     """归一化文本：换行→空格，多余空白→单个空格"""
+    if not text: return ""
     return re.sub(r'\s+', ' ', text.replace('\n', ' ')).strip()
+
+
+def normalize_compare(text):
+    """极致归一化：仅保留字母数字，用于抗干扰对比"""
+    if not text: return ""
+    return re.sub(r'[^a-zA-Z0-9]+', '', text).lower()
 
 
 # =========================================================================
@@ -228,6 +239,7 @@ def process_cell(cell, mappings_by_key, sorted_mappings):
         trimmed = text.strip()
         is_first = not found_first_non_empty
         found_first_non_empty = True
+        
         if is_label(trimmed, is_first_paragraph=is_first) and first_value_idx == -1:
             cell_label = trimmed
             continue
@@ -282,30 +294,39 @@ def process_cell(cell, mappings_by_key, sorted_mappings):
     if not matched_placeholder:
         for m in sorted_mappings:
             orig = m['originalText']
-            normalized_orig = normalize(orig)
+            normalized_orig = normalize_compare(orig)
+            
+            # 使用极致归一化对比
+            cell_compare = normalize_compare(normalized_cell)
 
-            if normalized_cell == normalized_orig:
+            if cell_compare == normalized_orig:
                 matched_placeholder = '{{' + m['placeholderKey'] + '}}'
                 break
             # 允许短数字匹配 (如 "68")，非数字需 >= 3 chars
-            elif normalized_orig in normalized_cell and (len(normalized_orig) >= 3 or normalized_orig.isdigit()):
+            elif normalized_orig in cell_compare and (len(normalized_orig) >= 3 or normalized_orig.isdigit()):
                 # 特殊逻辑：如果差异仅在于前缀（FOR DELIVERY...），则视为全匹配，触发后续的前缀保留逻辑
-                if normalized_cell.endswith(normalized_orig):
-                    prefix_part = normalized_cell[:-len(normalized_orig)].strip()
-                    prefix_upper = prefix_part.upper().replace(':', '').strip()
-                    # 检查前缀关键词
-                    if "FOR DELIVERY" in prefix_upper or "ALSO NOTIFY" in prefix_upper:
+                if cell_compare.endswith(normalized_orig):
+                    # 检查 prefix 关键词 (norm_cell_prefix)
+                    prefix_norm = cell_compare[:-len(normalized_orig)]
+                    if "fordelivery" in prefix_norm or "alsonotify" in prefix_norm:
                          matched_placeholder = '{{' + m['placeholderKey'] + '}}'
                          break
 
                 # 子串匹配 — 手术刀替换
                 placeholder = '{{' + m['placeholderKey'] + '}}'
+                # 寻找原文中第1行作为锚点 (避开换行符干扰)
                 first_line = orig.split('\n')[0].strip()
                 for idx in value_indexes:
                     p = paragraphs[idx]
+                    # 如果精确包含则直接换；如果不包含，尝试在这个段落里模糊搜一下
                     if p.text and first_line in p.text:
                         surgical_replace_in_paragraph(p, first_line, placeholder)
                         break
+                    elif p.text and normalize_compare(first_line) in normalize_compare(p.text):
+                         # 这里的模糊匹配较危险，仅在长名称文本时尝试
+                         if len(first_line) > 10:
+                             surgical_replace_in_paragraph(p, p.text, placeholder) # 整个段落换掉
+                             break
                 continue  # 不消耗整个单元格
 
     # --- 第四步：整体替换 ---
@@ -386,23 +407,16 @@ def process_document(input_path, output_path, mappings):
         by_key[m['placeholderKey']] = m
 
     # 1. 处理所有表格（以单元格为单位）
-    # 使用 XML 遍历以确保涵盖所有单元格（包括被合并的）
-    from docx.table import _Cell
-    seen_cells = set()
-    for table in doc.tables:
-        for row in table.rows:
-            # 直接遍历 XML 元素 <w:tc>
-            # python-docx 的 row.cells 会自动处理合并单元格，导致某些被合并的单元格无法独立访问
-            # 通过访问 row._tr.tc_lst 可以获取该行所有定义的单元格
-            for tc in row._tr.tc_lst:
-                # 包装为 _Cell 对象以便复用 process_cell
-                cell = _Cell(tc, table)
-                
-                # 使用 XML 对象的 id 去重
+    # 用一个字典保存 id(tc) -> tc，防止对象被 GC 导致 ID 复用
+    tc_vault = {} 
+    for table_idx, table in enumerate(doc.tables):
+        for row_idx, row in enumerate(table.rows):
+            for cell_idx, cell in enumerate(row.cells):
+                tc = cell._tc
                 cid = id(tc)
-                if cid in seen_cells:
+                if cid in tc_vault:
                     continue
-                seen_cells.add(cid)
+                tc_vault[cid] = tc
                 
                 process_cell(cell, by_key, valid)
 
