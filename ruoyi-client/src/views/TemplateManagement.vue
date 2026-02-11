@@ -89,6 +89,12 @@
       <header class="content-header">
         <h1>Template Management</h1>
         <div class="header-actions">
+          <div v-if="selectedIds.length > 0" class="batch-actions">
+            <span class="selected-count">{{ selectedIds.length }} selected</span>
+            <button class="danger-btn" @click="handleBatchDelete">
+              <i class="fas fa-trash-alt"></i> Delete Selected
+            </button>
+          </div>
           <div class="search-box">
             <i class="fas fa-search"></i>
             <input v-model="queryParams.templateName" placeholder="Search templates..." @keyup.enter="handleQuery">
@@ -100,6 +106,9 @@
         <table class="custom-table" v-loading="loading">
           <thead>
             <tr>
+              <th width="40">
+                <input type="checkbox" class="custom-checkbox" :checked="allSelected" @change="toggleSelectAll">
+              </th>
               <th>ID</th>
               <th>Template Name</th>
               <th>Code</th>
@@ -108,7 +117,13 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="item in templateList" :key="item.templateId">
+            <tr v-for="item in templateList" :key="item.templateId"
+                :class="{ 'row-selected': selectedIds.includes(item.templateId) }">
+              <td>
+                <input type="checkbox" class="custom-checkbox"
+                       :checked="selectedIds.includes(item.templateId)"
+                       @change="toggleSelect(item.templateId)">
+              </td>
               <td>{{ item.templateId }}</td>
               <td>
                 <div class="template-name-cell">
@@ -178,7 +193,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { listTemplate, getTemplate, delTemplate, updateTemplate } from '../api/template'
 import api from '../api/request'
@@ -188,9 +203,45 @@ const loading = ref(true)
 const templateList = ref([])
 const open = ref(false)
 const form = ref({})
+const selectedIds = ref([])
 const queryParams = ref({
   templateName: ''
 })
+
+const allSelected = computed(() => {
+  return templateList.value.length > 0 && selectedIds.value.length === templateList.value.length
+})
+
+const toggleSelectAll = () => {
+  if (allSelected.value) {
+    selectedIds.value = []
+  } else {
+    selectedIds.value = templateList.value.map(t => t.templateId)
+  }
+}
+
+const toggleSelect = (id) => {
+  const idx = selectedIds.value.indexOf(id)
+  if (idx >= 0) {
+    selectedIds.value.splice(idx, 1)
+  } else {
+    selectedIds.value.push(id)
+  }
+}
+
+const handleBatchDelete = async () => {
+  if (!confirm(`Are you sure to delete ${selectedIds.value.length} selected templates?`)) return
+  try {
+    const res = await delTemplate(selectedIds.value.join(','))
+    if (res.code === 200 || res.code === 0) {
+      alert('Deleted successfully')
+      selectedIds.value = []
+      getList()
+    }
+  } catch (err) {
+    alert('Batch delete failed')
+  }
+}
 
 const currentUser = ref(localStorage.getItem('client_user') || 'Guest')
 const userAbbr = ref('Loading...')
@@ -581,6 +632,50 @@ onMounted(() => {
   font-size: 12px;
   font-weight: 600;
   font-family: monospace;
+}
+
+/* Multi-select */
+.custom-checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary-color);
+  cursor: pointer;
+}
+
+.row-selected {
+  background: rgba(99, 102, 241, 0.06) !important;
+}
+
+.batch-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-right: 16px;
+}
+
+.selected-count {
+  font-size: 13px;
+  color: var(--accent-blue, #38bdf8);
+  font-weight: 600;
+}
+
+.danger-btn {
+  padding: 8px 16px;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 10px;
+  color: #f87171;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.danger-btn:hover {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: #f87171;
 }
 
 .action-btns {

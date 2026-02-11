@@ -138,6 +138,27 @@ public class SysTemplateLabController extends BaseController {
     }
 
     /**
+     * 使用模版导出docx：将业务数据填充到模版的占位符中
+     */
+    @PostMapping("/export")
+    public void exportDoc(@RequestBody java.util.Map<String, Object> params,
+            HttpServletResponse response) throws IOException {
+        Long templateId = Long.valueOf(params.get("templateId").toString());
+        @SuppressWarnings("unchecked")
+        java.util.Map<String, Object> businessData = (java.util.Map<String, Object>) params.get("businessData");
+
+        byte[] data = templateLabService.exportWithTemplate(templateId, businessData);
+
+        response.reset();
+        response.addHeader("Access-Control-Allow-Origin", "*");
+        response.addHeader("Access-Control-Expose-Headers", "Content-Disposition");
+        response.setHeader("Content-Disposition", "attachment; filename=\"export.docx\"");
+        response.addHeader("Content-Length", "" + data.length);
+        response.setContentType("application/octet-stream; charset=UTF-8");
+        response.getOutputStream().write(data);
+    }
+
+    /**
      * 删除模版
      */
     @DeleteMapping("/{templateIds}")

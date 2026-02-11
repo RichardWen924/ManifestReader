@@ -26,12 +26,19 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Map;
+import com.ruoyi.system.domain.SysPdfTemplate;
+import com.ruoyi.system.service.ISysPdfTemplateService;
 
 @Service
 public class TemplateLabServiceImpl implements ITemplateLabService {
     private static final Logger log = LoggerFactory.getLogger(TemplateLabServiceImpl.class);
+
+    @Autowired
+    private ISysPdfTemplateService pdfTemplateService;
 
     private static final String DIFY_API_KEY_ANALYZE = "app-J8tEYmWBzqHsDqXlvDfNHn0r";
     private static final String DIFY_BASE_URL = "http://localhost/v1";
@@ -290,6 +297,117 @@ public class TemplateLabServiceImpl implements ITemplateLabService {
             log.error("Dify 调用异常", e);
         }
         return null;
+    }
+
+    @Override
+    public byte[] exportWithTemplate(Long templateId, Map<String, Object> businessData) {
+        log.info("使用模版导出: templateId={}", templateId);
+        try {
+            // 1. 从数据库读取模版记录
+            SysPdfTemplate template = pdfTemplateService.selectSysPdfTemplateById(templateId);
+            if (template == null) {
+                throw new RuntimeException("模版不存在: " + templateId);
+            }
+
+            // 2. 解析模版文件真实路径
+            // DB 存储格式: /profile/upload/templates/LAB_xxx.docx
+            // 真实路径: RuoYiConfig.getProfile() + "/templates/" + fileName
+            String dbPath = template.getTemplateFilePath();
+            String fileName = dbPath.substring(dbPath.lastIndexOf("/") + 1);
+            String realPath = RuoYiConfig.getProfile() + "/templates/" + fileName;
+
+            File templateFile = new File(realPath);
+            if (!templateFile.exists()) {
+                throw new RuntimeException("模版文件不存在: " + realPath);
+            }
+
+            // 3. 解析 fieldConfig 得到 placeholder_key 列表
+            // fieldConfig 格式:
+            // [{"placeholder_key":"shipper","original_text":"...","data_type":"string",...},
+            // ...]
+            String fieldConfigJson = template.getFieldConfig();
+            List<SysTemplateMapping> mappings = new ArrayList<>();
+            if (StringUtils.isNotEmpty(fieldConfigJson)) {
+                mappings = JSON.parseArray(fieldConfigJson, SysTemplateMapping.class);
+            }
+
+            // 4. 打开模版 docx，将 {{placeholder_key}} 替换为 businessData 中对应的值
+            java.io.FileInputStream fis = new java.io.FileInputStream(templateFile);
+            XWPFDocument doc = new XWPFDocument(fis);
+            fis.close();
+
+            for (SysTemplateMapping m : mappings) {
+                String placeholder = "{{" + m.getPlaceholderKey() + "}}";
+                String value = "";
+                if (businessData != null && businessData.containsKey(m.getPlaceholderKey())) {
+                    Object v = businessData.get(m.getPlaceholderKey());
+                    value = v != null ? v.toString() : "";
+                }
+                // 替换段落
+                for (XWPFParagraph p : doc.getParagraphs()) {
+                    replaceInParagraph(p, placeholder, value);
+                }
+                // 替换表格中的段落
+                for (XWPFTable table : doc.getTables()) {
+                    for (XWPFTableRow row : table.getRows()) {
+                        for (XWPFTableCell cell : row.getTableCells()) {
+                            for (XWPFParagraph p : cell.getParagraphs()) {
+                                replaceInParagraph(p, placeholder, value);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 5. 输出为 byte[]
+            java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+            doc.write(bos);
+            doc.close();
+            return bos.toByteArray();
+
+        } catch (Exception e) {
+            log.error("模版导出失败", e);
+            throw new RuntimeException("模版导出失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 在段落中替换占位符文本
+     */
+    private void replaceInParagraph(XWPFParagraph paragraph, String placeholder, String value) {
+        String text = paragraph.getText();
+        if (text == null || !text.contains(placeholder))
+            return;
+
+        // 尝试在单个 run 中替换
+        for (XWPFRun run : paragraph.getRuns()) {
+            String runText = run.getText(0);
+            if (runText != null && runText.contains(placeholder)) {
+                run.setText(runText.replace(placeholder, value), 0);
+            }
+        }
+
+        // 如果占位符跨越多个 run，合并后替换
+        String afterText = paragraph.getText();
+        if (afterText != null && afterText.contains(placeholder)) {
+            // 合并所有 run 文本
+            StringBuilder sb = new StringBuilder();
+            for (XWPFRun run : paragraph.getRuns()) {
+                String rt = run.getText(0);
+                if (rt != null)
+                    sb.append(rt);
+            }
+            String merged = sb.toString().replace(placeholder, value);
+            // 清除旧 run 文本
+            List<XWPFRun> runs = paragraph.getRuns();
+            for (int i = 0; i < runs.size(); i++) {
+                if (i == 0) {
+                    runs.get(i).setText(merged, 0);
+                } else {
+                    runs.get(i).setText("", 0);
+                }
+            }
+        }
     }
 
 }

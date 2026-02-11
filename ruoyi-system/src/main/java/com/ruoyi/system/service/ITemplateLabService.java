@@ -22,4 +22,9 @@ public interface ITemplateLabService {
      * 保存模版
      */
     public String saveTemplate(MultipartFile file, List<SysTemplateMapping> mappings, String templateName);
+
+    /**
+     * 使用模版导出docx：将业务数据填充到模版的占位符中
+     */
+    public byte[] exportWithTemplate(Long templateId, java.util.Map<String, Object> businessData);
 }

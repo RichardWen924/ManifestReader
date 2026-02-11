@@ -383,8 +383,25 @@
           </div>
 
           <footer class="modal-footer">
-            <button @click="closeModal" class="outline-btn">Cancel</button>
-            <button @click="saveFromModal" class="primary-btn"><i class="fas fa-check"></i> Save Record</button>
+            <div class="footer-left">
+              <div class="template-export-group">
+                <select v-model="selectedTemplateId" class="template-select">
+                  <option value="">-- Select Template --</option>
+                  <option v-for="t in templateOptions" :key="t.templateId" :value="t.templateId">
+                    {{ t.templateName }}
+                  </option>
+                </select>
+                <button @click="handleExportWithTemplate" :disabled="!selectedTemplateId || exporting" class="export-btn">
+                  <i class="fas fa-file-export"></i>
+                  <span v-if="!exporting">Export Doc</span>
+                  <span v-else class="loader"></span>
+                </button>
+              </div>
+            </div>
+            <div class="footer-right">
+              <button @click="closeModal" class="outline-btn">Cancel</button>
+              <button @click="saveFromModal" class="primary-btn"><i class="fas fa-check"></i> Save Record</button>
+            </div>
           </footer>
         </div>
       </div>
@@ -396,6 +413,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../api/request'
+import { listTemplate, exportWithTemplate } from '../api/template'
 
 const router = useRouter()
 const currentUser = ref(localStorage.getItem('client_user') || 'Guest')
@@ -486,6 +504,20 @@ const handleUpdateProfile = async () => {
 const isModalOpen = ref(false)
 const editingResult = ref(null)
 const editingIndex = ref(-1)
+const selectedTemplateId = ref('')
+const exporting = ref(false)
+const templateOptions = ref([])
+
+const fetchTemplateOptions = async () => {
+  try {
+    const res = await listTemplate({})
+    if (res.code === 200 || res.code === 0) {
+      templateOptions.value = res.data
+    }
+  } catch (err) {
+    console.error('Failed to fetch templates:', err)
+  }
+}
 
 const openEditModal = (result, index) => {
   editingResult.value = JSON.parse(JSON.stringify(result)) // Deep copy
@@ -511,6 +543,28 @@ const saveFromModal = async () => {
     alert('Record saved successfully!')
   } catch (err) {
     alert('Save failed: ' + err.message)
+  }
+}
+
+const handleExportWithTemplate = async () => {
+  if (!selectedTemplateId.value) return
+  exporting.value = true
+  try {
+    const blob = await exportWithTemplate(selectedTemplateId.value, editingResult.value.data)
+    // trigger download
+    const url = window.URL.createObjectURL(new Blob([blob]))
+    const link = document.createElement('a')
+    link.href = url
+    const bookingNo = editingResult.value.data.bookingNo || 'export'
+    link.setAttribute('download', `BL_${bookingNo}.docx`)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(url)
+  } catch (err) {
+    alert('Export failed: ' + (err.message || 'Unknown error'))
+  } finally {
+    exporting.value = false
   }
 }
 
@@ -643,6 +697,7 @@ onMounted(async () => {
   } catch (err) {
     router.push('/login')
   }
+  fetchTemplateOptions()
 })
 </script>
 
@@ -801,8 +856,50 @@ onMounted(async () => {
   padding: 24px;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   gap: 16px;
+}
+.footer-left { display: flex; align-items: center; }
+.footer-right { display: flex; gap: 12px; }
+
+.template-export-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.template-select {
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: white;
+  font-size: 13px;
+  min-width: 180px;
+  cursor: pointer;
+}
+.template-select option { background: #1e293b; color: white; }
+.export-btn {
+  padding: 8px 16px;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 8px;
+  color: #34d399;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.export-btn:hover:not(:disabled) {
+  background: rgba(16, 185, 129, 0.25);
+  border-color: #34d399;
+}
+.export-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 /* Form Groups & Grid */

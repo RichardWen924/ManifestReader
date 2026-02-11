@@ -35,3 +35,13 @@ export function delTemplate(templateIds) {
         method: 'delete'
     })
 }
+
+// 使用模版导出docx
+export function exportWithTemplate(templateId, businessData) {
+    return request({
+        url: `${baseUrl}/export`,
+        method: 'post',
+        data: { templateId, businessData },
+        responseType: 'blob'
+    })
+}
