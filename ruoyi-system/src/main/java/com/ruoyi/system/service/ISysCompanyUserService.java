@@ -6,7 +6,7 @@ import com.ruoyi.system.domain.SysCompanyUser;
 /**
  * 公司用户Service接口
  * 
- * @author ruoyi
+ * @author Richard
  * @date 2026-02-05
  */
 public interface ISysCompanyUserService {

@@ -22,7 +22,7 @@ import com.ruoyi.common.core.page.TableDataInfo;
 /**
  * 公司用户Controller
  * 
- * @author ruoyi
+ * @author Richard
  * @date 2026-02-05
  */
 @Controller

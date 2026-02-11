@@ -6,6 +6,7 @@ import com.ruoyi.system.domain.SysTemplateMapping;
 
 /**
  * 智能模版实验室Service接口
+  * @author Richard
  */
 public interface ITemplateLabService {
     /**

@@ -6,7 +6,7 @@ import com.ruoyi.system.domain.BillOfLading;
 /**
  * 提单信息Mapper接口
  * 
- * @author ruoyi
+ * @author Richard
  * @date 2026-01-29
  */
 public interface BillOfLadingMapper {

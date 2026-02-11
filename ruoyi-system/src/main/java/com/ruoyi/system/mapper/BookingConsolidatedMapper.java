@@ -6,7 +6,7 @@ import com.ruoyi.system.domain.BookingConsolidated;
 /**
  * 订舱与集装箱合并信息Mapper接口
  * 
- * @author ruoyi
+ * @author Richard
  * @date 2026-01-27
  */
 public interface BookingConsolidatedMapper {

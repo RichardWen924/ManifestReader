@@ -6,7 +6,7 @@ import com.ruoyi.system.domain.SysPdfTemplate;
 /**
  * PDF模版配置Service接口
  * 
- * @author ruoyi
+ * @author Richard
  * @date 2026-02-10
  */
 public interface ISysPdfTemplateService {

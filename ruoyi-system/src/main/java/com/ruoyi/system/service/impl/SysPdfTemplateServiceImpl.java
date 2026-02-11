@@ -10,7 +10,7 @@ import com.ruoyi.system.service.ISysPdfTemplateService;
 /**
  * PDF模版配置Service业务层处理
  * 
- * @author ruoyi
+ * @author Richard
  * @date 2026-02-10
  */
 @Service

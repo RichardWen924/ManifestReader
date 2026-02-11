@@ -29,7 +29,7 @@ import org.springframework.web.bind.annotation.RequestBody;
  * 订舱与集装箱合并信息Controller
  *
  *
- * @author ruoyi
+ * @author Richard
  * @date 2026-01-27
  */
 @Controller

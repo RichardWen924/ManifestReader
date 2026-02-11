@@ -64,6 +64,7 @@
 </template>
 
 <script setup>
+// @author Richard
 // No complex logic needed for static guide
 </script>
 

@@ -1,3 +1,4 @@
+// @author Richard
 /**
  * 前端字段映射（根据bill_of_lading_v3表结构）
  * 

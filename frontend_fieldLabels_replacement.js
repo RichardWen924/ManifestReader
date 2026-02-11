@@ -1,3 +1,4 @@
+// @author Richard
 // 字段名称映射（根据bill_of_lading_v3数据库表结构 - 31个字段）
 var fieldLabels = {
     // 基础编号与引用

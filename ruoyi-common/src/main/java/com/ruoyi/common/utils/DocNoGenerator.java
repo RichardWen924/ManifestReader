@@ -7,6 +7,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * 提单号生成器
  * 14位格式：前缀(4位字母) + 10位数字
  * 10位数字组成：公司编号前四位(4位) + 自增序列(6位)
+  * @author Richard
  */
 public class DocNoGenerator {
 

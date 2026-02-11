@@ -24,6 +24,7 @@ import java.util.Map;
 /**
  * PDF 编辑工具类 (基于 iText7)
  * 实现：抹除原数据并在同一位置重写新数据
+  * @author Richard
  */
 public class PdfEditUtils {
     private static final Logger log = LoggerFactory.getLogger(PdfEditUtils.class);

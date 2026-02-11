@@ -39,7 +39,7 @@ import org.springframework.web.client.RestTemplate;
 /**
  * 订舱与集装箱合并信息Service业务层处理
  * 
- * @author ruoyi
+ * @author Richard
  * @date 2026-01-27
  */
 @Service

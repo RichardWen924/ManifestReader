@@ -9,7 +9,7 @@ import com.ruoyi.common.core.domain.BaseEntity;
 /**
  * 提单信息对象 bill_of_lading
  * 
- * @author ruoyi
+ * @author Richard
  * @date 2026-01-29
  */
 public class BillOfLading extends BaseEntity {

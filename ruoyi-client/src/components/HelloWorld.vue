@@ -5,6 +5,7 @@
 </template>
 
 <script>
+// @author Richard
 export default {
   name: 'HelloWorld',
   props: {

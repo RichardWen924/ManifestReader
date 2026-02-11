@@ -25,7 +25,7 @@ import com.ruoyi.system.service.ITemplateLabService;
 /**
  * PDF模版配置Controller
  * 
- * @author ruoyi
+ * @author Richard
  * @date 2026-02-11
  */
 @Controller

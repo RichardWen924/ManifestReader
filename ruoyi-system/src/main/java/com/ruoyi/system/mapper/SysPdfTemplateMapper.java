@@ -6,7 +6,7 @@ import com.ruoyi.system.domain.SysPdfTemplate;
 /**
  * PDF模版配置Mapper接口
  * 
- * @author ruoyi
+ * @author Richard
  * @date 2026-01-28
  */
 public interface SysPdfTemplateMapper {

@@ -6,6 +6,7 @@ import java.util.Map;
 /**
  * 订舱与集装箱合并信息 DTO
  * 用于 Dify 识别回显及 PDF 坐标暂存
+  * @author Richard
  */
 public class BookingConsolidatedDto implements Serializable {
     private static final long serialVersionUID = 1L;

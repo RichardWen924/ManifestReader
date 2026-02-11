@@ -6,7 +6,7 @@ import com.ruoyi.common.core.domain.BaseEntity;
 /**
  * PDF模版配置对象 sys_pdf_template
  * 
- * @author ruoyi
+ * @author Richard
  * @date 2026-01-28
  */
 public class SysPdfTemplate extends BaseEntity {

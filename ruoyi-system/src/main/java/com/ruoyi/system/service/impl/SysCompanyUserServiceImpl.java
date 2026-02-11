@@ -12,7 +12,7 @@ import com.ruoyi.common.core.text.Convert;
 /**
  * 公司用户Service业务层处理
  * 
- * @author ruoyi
+ * @author Richard
  * @date 2026-02-05
  */
 @Service

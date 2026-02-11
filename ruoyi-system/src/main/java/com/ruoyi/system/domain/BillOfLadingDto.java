@@ -6,6 +6,7 @@ import java.util.Map;
 /**
  * 提单数据传输对象
  * 用于前后端交互和AI分析结果
+  * @author Richard
  */
 public class BillOfLadingDto implements Serializable {
     private static final long serialVersionUID = 1L;

@@ -8,7 +8,7 @@ import com.ruoyi.common.core.domain.BaseEntity;
 /**
  * 公司用户对象 sys_company_user
  * 
- * @author ruoyi
+ * @author Richard
  * @date 2026-02-05
  */
 public class SysCompanyUser extends BaseEntity

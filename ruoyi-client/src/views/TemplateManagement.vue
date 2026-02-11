@@ -223,6 +223,7 @@
 </template>
 
 <script setup>
+// @author Richard
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { listTemplate, getTemplate, delTemplate, updateTemplate } from '../api/template'

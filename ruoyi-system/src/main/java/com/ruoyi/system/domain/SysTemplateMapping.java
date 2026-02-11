@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * 模版映射对象
+  * @author Richard
  */
 public class SysTemplateMapping {
     @JSONField(name = "original_text")

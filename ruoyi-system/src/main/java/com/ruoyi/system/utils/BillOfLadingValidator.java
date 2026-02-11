@@ -10,7 +10,7 @@ import java.util.Map;
  * 提单业务规则验证器
  * 用于在PDF填充和数据保存前应用业务规则
  * 
- * @author ruoyi
+ * @author Richard
  * @date 2026-01-30
  */
 public class BillOfLadingValidator {

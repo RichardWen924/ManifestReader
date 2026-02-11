@@ -25,7 +25,7 @@ import java.util.Date;
 /**
  * 客户端 API 接口
  * 
- * @author ruoyi
+ * @author Richard
  */
 @RestController
 @RequestMapping("/client-api")

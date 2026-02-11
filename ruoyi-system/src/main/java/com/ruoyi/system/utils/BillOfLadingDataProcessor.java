@@ -7,6 +7,7 @@ import java.util.Map;
 /**
  * 提单数据预处理工具类
  * 负责清洗 Dify 返回的原始数据，为 Word 模板填充做准备
+  * @author Richard
  */
 public class BillOfLadingDataProcessor {
 

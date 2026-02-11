@@ -9,7 +9,7 @@ import java.util.Map;
 /**
  * BillOfLadingValidator 单元测试
  * 
- * @author ruoyi
+ * @author Richard
  * @date 2026-01-30
  */
 public class BillOfLadingValidatorTest {

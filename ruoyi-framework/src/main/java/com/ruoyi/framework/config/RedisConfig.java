@@ -12,7 +12,7 @@ import com.alibaba.fastjson.support.spring.GenericFastJsonRedisSerializer;
 /**
  * redis配置
  * 
- * @author ruoyi
+ * @author Richard
  */
 @Configuration
 @EnableCaching

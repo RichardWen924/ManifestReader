@@ -11,7 +11,7 @@ import com.ruoyi.common.core.domain.BaseEntity;
 /**
  * 订舱与集装箱合并信息对象 booking_consolidated (V5 版本)
  * 
- * @author ruoyi
+ * @author Richard
  * @date 2026-02-02
  */
 public class BookingConsolidated extends BaseEntity {
