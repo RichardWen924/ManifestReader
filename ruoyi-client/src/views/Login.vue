@@ -9,9 +9,9 @@
     <div class="login-card">
       <div class="login-header">
         <div class="logo">
-          <i class="fas fa-file-pdf"></i>
+          <i class="fas fa-ship"></i>
         </div>
-        <h1>提单导出系统</h1>
+        <h1>SHIPPING DOCFLOW</h1>
         <p>Premium Document Management</p>
       </div>
       
@@ -105,7 +105,7 @@ const handleLogin = async () => {
   justify-content: center;
   position: relative;
   overflow: hidden;
-  background: #0f172a;
+  background: var(--bg-light);
 }
 
 .background-blobs {
@@ -121,7 +121,7 @@ const handleLogin = async () => {
   position: absolute;
   width: 500px;
   height: 500px;
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(139, 92, 246, 0.3));
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(99, 102, 241, 0.1));
   filter: blur(80px);
   border-radius: 50%;
   animation: move 20s infinite alternate;
@@ -141,12 +141,11 @@ const handleLogin = async () => {
   z-index: 1;
   width: 100%;
   max-width: 420px;
-  padding: 40px;
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 48px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
   border-radius: 24px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
   animation: fadeInUp 0.8s ease-out;
 }
 
@@ -161,46 +160,44 @@ const handleLogin = async () => {
 }
 
 .logo {
-  width: 64px;
-  height: 64px;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  border-radius: 16px;
+  width: 56px;
+  height: 56px;
+  background: var(--primary-gradient);
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 16px;
-  box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.4);
 }
 
 .logo i {
-  font-size: 32px;
+  font-size: 28px;
   color: white;
 }
 
 h1 {
-  font-size: 28px;
-  font-weight: 700;
+  font-size: 24px;
+  font-weight: 800;
   margin-bottom: 8px;
-  background: linear-gradient(to right, #f8fafc, #cbd5e1);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--text-main);
 }
 
 .login-header p {
-  color: #94a3b8;
-  font-size: 14px;
+  color: var(--text-dim);
+  font-size: 15px;
 }
 
 .login-form .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 label {
   display: block;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 700;
   margin-bottom: 8px;
-  color: #cbd5e1;
+  color: var(--text-dim);
+  text-transform: uppercase;
 }
 
 .input-wrapper {
@@ -211,57 +208,53 @@ label {
 
 .input-wrapper i {
   position: absolute;
-  left: 16px;
-  color: #64748b;
+  left: 14px;
+  color: var(--text-dim);
   font-size: 14px;
 }
 
 input {
   width: 100%;
-  padding: 12px 16px 12px 44px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 12px 14px 12px 42px;
+  background: #f8fafc;
+  border: 1px solid var(--border-color);
   border-radius: 12px;
-  color: white;
+  color: var(--text-main);
   font-family: inherit;
   font-size: 15px;
-  transition: all 0.3s ease;
+  transition: all 0.2s;
 }
 
 input:focus {
   outline: none;
-  background: rgba(255, 255, 255, 0.08);
-  border-color: #6366f1;
-  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+  background: white;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
 }
 
 .forgot-password {
   text-align: right;
-  margin-bottom: 24px;
+  margin-bottom: 28px;
 }
 
 .forgot-password a {
   font-size: 13px;
-  color: #6366f1;
+  color: var(--primary-color);
   text-decoration: none;
-  transition: color 0.3s;
-}
-
-.forgot-password a:hover {
-  color: #8b5cf6;
+  font-weight: 600;
 }
 
 .login-btn {
   width: 100%;
   padding: 14px;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: var(--primary-gradient);
   border: none;
   border-radius: 12px;
   color: white;
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -269,22 +262,22 @@ input:focus {
 
 .login-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);
 }
 
 .login-btn:disabled {
   opacity: 0.7;
   cursor: not-allowed;
-  transform: none;
+  transform: none !important;
 }
 
 .error-msg {
   margin-top: 16px;
   padding: 12px;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.2);
+  background: #fef2f2;
+  border: 1px solid #fee2e2;
   border-radius: 8px;
-  color: #f87171;
+  color: #ef4444;
   font-size: 13px;
   display: flex;
   align-items: center;
@@ -295,13 +288,13 @@ input:focus {
   margin-top: 32px;
   text-align: center;
   font-size: 14px;
-  color: #94a3b8;
+  color: var(--text-dim);
 }
 
 .login-footer a {
-  color: #6366f1;
+  color: var(--primary-color);
   text-decoration: none;
-  font-weight: 500;
+  font-weight: 700;
 }
 
 .loader {
