@@ -211,7 +211,7 @@ public class ClientApiController extends BaseController {
      * 修改个人信息
      */
     @PostMapping("/update-profile")
-    public AjaxResult updateProfile(@RequestBody SysCompanyUser companyUser, HttpSession session) {
+    public AjaxResult updateProfile(@RequestBody Map<String, Object> params, HttpSession session) {
         String companyCode = (String) session.getAttribute(CLIENT_SESSION_KEY);
         if (StringUtils.isEmpty(companyCode) || "admin".equals(companyCode)) {
             return AjaxResult.error("该账号无法修改个人信息");
@@ -225,11 +225,18 @@ public class ClientApiController extends BaseController {
         }
 
         SysCompanyUser dbUser = list.get(0);
-        if (StringUtils.isNotEmpty(companyUser.getCompanyName())) {
-            dbUser.setCompanyName(companyUser.getCompanyName());
+
+        String companyName = (String) params.get("companyName");
+        String companyAbbr = (String) params.get("companyAbbr");
+        String oldPassword = (String) params.get("oldPassword");
+        String newPassword = (String) params.get("password");
+
+        if (StringUtils.isNotEmpty(companyName)) {
+            dbUser.setCompanyName(companyName);
         }
-        if (StringUtils.isNotEmpty(companyUser.getCompanyAbbr())) {
-            String abbr = companyUser.getCompanyAbbr().toUpperCase();
+
+        if (StringUtils.isNotEmpty(companyAbbr)) {
+            String abbr = companyAbbr.toUpperCase();
             if (abbr.length() != 4 || !abbr.matches("[A-Z]{4}")) {
                 return AjaxResult.error("航司缩写必须为4位大写字母");
             }
@@ -248,9 +255,17 @@ public class ClientApiController extends BaseController {
             }
             dbUser.setCompanyAbbr(abbr);
         }
-        if (StringUtils.isNotEmpty(companyUser.getPassword())) {
-            dbUser.setPassword(companyUser.getPassword());
+
+        if (StringUtils.isNotEmpty(newPassword)) {
+            if (StringUtils.isEmpty(oldPassword)) {
+                return AjaxResult.error("请输入原密码");
+            }
+            if (!dbUser.getPassword().equals(oldPassword)) {
+                return AjaxResult.error("原密码不正确");
+            }
+            dbUser.setPassword(newPassword);
         }
+
         dbUser.setUpdateTime(new Date());
 
         int result = sysCompanyUserService.updateSysCompanyUser(dbUser);

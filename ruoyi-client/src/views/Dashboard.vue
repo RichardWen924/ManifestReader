@@ -63,6 +63,11 @@
             </div>
             
             <div class="form-group-custom">
+              <label>Old Password (原密码)</label>
+              <input v-model="profileForm.oldPassword" type="password" placeholder="Required if changing password">
+            </div>
+
+            <div class="form-group-custom">
               <label>New Password (新密码)</label>
               <input v-model="profileForm.password" type="password" placeholder="Leave blank to keep current password">
             </div>
@@ -434,6 +439,7 @@ const profileSuccess = ref('')
 const profileForm = ref({
   companyName: '',
   companyAbbr: '',
+  oldPassword: '',
   password: '',
   confirmPassword: ''
 })
@@ -455,6 +461,7 @@ const openProfileModal = () => {
   isProfileModalOpen.value = true
   profileError.value = ''
   profileSuccess.value = ''
+  profileForm.value.oldPassword = ''
   profileForm.value.password = ''
   profileForm.value.confirmPassword = ''
   // Re-fetch to ensure we have latest data
@@ -466,13 +473,19 @@ const closeProfileModal = () => {
 }
 
 const handleUpdateProfile = async () => {
-  if (profileForm.value.password && profileForm.value.password !== profileForm.value.confirmPassword) {
-    profileError.value = 'Passwords do not match'
-    return
+  if (profileForm.value.password) {
+      if (!profileForm.value.oldPassword) {
+          alert('请输入原密码')
+          return
+      }
+      if (profileForm.value.password !== profileForm.value.confirmPassword) {
+        alert('两次输入的密码不一致')
+        return
+      }
   }
 
   if (profileForm.value.companyAbbr && !/^[A-Z]{4}$/.test(profileForm.value.companyAbbr.toUpperCase())) {
-    profileError.value = 'Shipline Code must be 4 uppercase letters'
+    alert('Shipline Code must be 4 uppercase letters')
     return
   }
 
@@ -484,6 +497,7 @@ const handleUpdateProfile = async () => {
     const res = await api.post('/client-api/update-profile', {
       companyName: profileForm.value.companyName,
       companyAbbr: profileForm.value.companyAbbr,
+      oldPassword: profileForm.value.oldPassword,
       password: profileForm.value.password
     })
     if (res.code === 200 || res.code === 0) {
@@ -493,10 +507,10 @@ const handleUpdateProfile = async () => {
         closeProfileModal()
       }, 1500)
     } else {
-      profileError.value = res.msg || 'Update failed'
+      alert(res.msg || 'Update failed')
     }
   } catch (err) {
-    profileError.value = err.message || 'Network error'
+    alert(err.message || 'Network error')
   } finally {
     profileLoading.value = false
   }
