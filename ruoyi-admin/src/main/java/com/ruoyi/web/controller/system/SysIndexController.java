@@ -101,7 +101,9 @@ public class SysIndexController extends BaseController {
                     || "订舱信息".equals(m.getMenuName())
                     || "集装箱信息".equals(m.getMenuName())
                     || "用户管理".equals(m.getMenuName())
-                    || "部门管理".equals(m.getMenuName())) {
+                    || "部门管理".equals(m.getMenuName())
+                    || "岗位管理".equals(m.getMenuName())
+                    || "通知公告".equals(m.getMenuName())) {
                 it.remove();
             } else {
                 if ("订舱与集装箱合并信息".equals(m.getMenuName())) {
