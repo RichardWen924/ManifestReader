@@ -95,7 +95,7 @@ const handleLogin = async () => {
 
     if (res.code === 200 || res.code === 0) {
       localStorage.setItem('client_user', res.data)
-      router.push('/')
+      router.push('/guide')
     }
   } catch (err) {
     error.value = err.message || 'Login failed'

@@ -24,6 +24,9 @@
         <li :class="{ active: $route.path === '/templates' }">
           <router-link to="/templates"><i class="fas fa-layer-group"></i> 模版管理</router-link>
         </li>
+        <li :class="{ active: $route.path === '/guide' }">
+          <router-link to="/guide"><i class="fas fa-question-circle"></i> 使用教程</router-link>
+        </li>
       </ul>
       <div class="sidebar-footer">
         <div class="user-profile" @click="openProfileModal">
