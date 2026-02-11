@@ -412,7 +412,13 @@ def process_cell(cell, mappings_by_key, sorted_mappings):
                     p = paragraphs[idx]
                     # 如果精确包含则直接换；如果不包含，尝试在这个段落里模糊搜一下
                     if p.text and first_line in p.text:
-                        surgical_replace_in_paragraph(p, first_line, placeholder)
+                        # 如果匹配文本后紧跟 '/'（如 ZCSU7894848/40HC/A4260285），替换整段
+                        pos = p.text.find(first_line)
+                        after = p.text[pos + len(first_line):]
+                        if after.startswith('/'):
+                            clear_and_set_paragraph(p, placeholder)
+                        else:
+                            surgical_replace_in_paragraph(p, first_line, placeholder)
                         break
                     elif p.text and normalize_compare(first_line) in normalize_compare(p.text):
                          # 这里的模糊匹配较危险，仅在长名称文本时尝试
