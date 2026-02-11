@@ -43,63 +43,75 @@ public class TemplateLabServiceImpl implements ITemplateLabService {
     private static final String DIFY_API_KEY_ANALYZE = "app-J8tEYmWBzqHsDqXlvDfNHn0r";
     private static final String DIFY_BASE_URL = "http://localhost/v1";
 
+    @Autowired
+    private com.ruoyi.system.service.ISysConfigService configService;
+
     @Override
     public List<SysTemplateMapping> analyzeDocument(MultipartFile file) {
         log.info("开始智能分析模版文档: {}", file.getOriginalFilename());
         List<SysTemplateMapping> list = new ArrayList<>();
 
-        /*
-         * // 1. 保存临时文件供 Dify 读取
-         * String tempPath = "";
-         * try {
-         * tempPath = FileUploadUtils.upload(RuoYiConfig.getProfile(), file);
-         * String fullPath = RuoYiConfig.getProfile() +
-         * tempPath.replaceFirst(Constants.RESOURCE_PREFIX, "");
-         * 
-         * // 2. 调用 Dify 工作流
-         * JSONObject result = callDifyWorkflow(fullPath, DIFY_API_KEY_ANALYZE);
-         * 
-         * if (result != null && result.containsKey("mappings")) {
-         * // 适配新结构: { "template_info": {...}, "mappings": [...] }
-         * List<SysTemplateMapping> dfMappings = result.getJSONArray("mappings")
-         * .toJavaList(SysTemplateMapping.class);
-         * if (dfMappings != null) {
-         * list.addAll(dfMappings);
-         * log.info("智能识别完成，提取到 {} 个映射字段", dfMappings.size());
-         * }
-         * if (result.containsKey("template_info")) {
-         * log.info("检测到模板信息: {}",
-         * result.getJSONObject("template_info").toJSONString());
-         * }
-         * } else {
-         * log.warn("Dify 返回结果不含 mappings: {}", result != null ? result.toJSONString() :
-         * "null");
-         * // 回退逻辑：如果 Dify 返回不规范或失败，进行基础解析
-         * log.warn("执行基础解析回退...");
-         * list.addAll(basicAnalyze(file));
-         * }
-         * } catch (Exception e) {
-         * log.error("智能分析过程中发生异常", e);
-         * list.addAll(basicAnalyze(file));
-         * } finally {
-         * // 清理临时文件
-         * if (StringUtils.isNotEmpty(tempPath)) {
-         * // Optional: delete or keep for audit
-         * }
-         * }
-         */
+        // 检查配置，判断是否开启测试模式 (默认为 false，即正常模式)
+        boolean isTestMode = false;
+        try {
+            String config = configService.selectConfigByKey("sys.dify.test.enabled");
+            isTestMode = Boolean.parseBoolean(config);
+        } catch (Exception e) {
+            log.warn("获取 sys.dify.test.enabled 配置失败，默认关闭测试模式");
+        }
 
-        // TODO: 暂时停用 Dify，使用静态测试数据进行测试
-        String testData = "{\"mappings\":[{\"original_text\":\"ZIMUSHH32021612\",\"placeholder_key\":\"doc_no\",\"data_type\":\"string\",\"description\":\"文档编号\"},{\"original_text\":\"EVHL26020240\",\"placeholder_key\":\"bl_no\",\"data_type\":\"string\",\"description\":\"提单号\"},{\"original_text\":null,\"placeholder_key\":\"booking_no\",\"data_type\":\"string\",\"description\":\"预订号\"},{\"original_text\":\"CHENGDU LIYUXIN TRADING CO., LTD 1ST FLOOR, NO.16 ZHONGHE XIONGJIAQIAO ROAD, CHENGDU HIGH TECH ZONE\",\"placeholder_key\":\"shipper\",\"data_type\":\"string\",\"description\":\"托运人\"},{\"original_text\":\"NEWSTAR TECHNOLOGY INC 645 GATES AVE STE 112, BROOKLYN, NY, 11221, USA\",\"placeholder_key\":\"consignee\",\"data_type\":\"string\",\"description\":\"收货人\"},{\"original_text\":\"NEWSTAR TECHNOLOGY INC 645 GATES AVE STE 112, BROOKLYN, NY, 11221, USA SEA-US.OP@YPLOGISTICS.COM\",\"placeholder_key\":\"notify_party\",\"data_type\":\"string\",\"description\":\"通知方\"},{\"original_text\":\"EURO-AMERICA CONTAINER LINE INC 1475 S. STATE COLLEGE BLVD. #120 ANAHEIM, CA 92806 OP@EUROAMERICA-USA.COM DOC@EUROAMERICA-USA.COM TEL: 1-657-655-6228\",\"placeholder_key\":\"delivery_agent\",\"data_type\":\"string\",\"description\":\"交付代理\"},{\"original_text\":\"EVERSTAR (GUANGDONG) SUPPLY CHAIN TECHNOLOGY CO. , LTD\",\"placeholder_key\":\"carrier_agent\",\"data_type\":\"string\",\"description\":\"承运人代理\"},{\"original_text\":\"ZIM SCORPIO 8E\",\"placeholder_key\":\"vessel_voyage\",\"data_type\":\"string\",\"description\":\"船舶/航次\"},{\"original_text\":\"YANTIAN\",\"placeholder_key\":\"port_of_loading\",\"data_type\":\"string\",\"description\":\"装货港\"},{\"original_text\":\"NEW YORK,NY\",\"placeholder_key\":\"port_of_discharge\",\"data_type\":\"string\",\"description\":\"卸货港\"},{\"original_text\":\"YANTIAN\",\"placeholder_key\":\"place_of_receipt\",\"data_type\":\"string\",\"description\":\"收货地点\"},{\"original_text\":\"NEW YORK,NY\",\"placeholder_key\":\"place_of_delivery\",\"data_type\":\"string\",\"description\":\"交付地点\"},{\"original_text\":\"YANTIAN\",\"placeholder_key\":\"pre_carriage_by\",\"data_type\":\"string\",\"description\":\"预装运方式\"},{\"original_text\":\"ZCSU7894848\",\"placeholder_key\":\"container_no\",\"data_type\":\"string\",\"description\":\"集装箱号\"},{\"original_text\":null,\"placeholder_key\":\"seal_no\",\"data_type\":\"string\",\"description\":\"封条号\"},{\"original_text\":\"N/M\",\"placeholder_key\":\"marks\",\"data_type\":\"string\",\"description\":\"标记\"},{\"original_text\":\"PLASTIC PHOTO FRAME\\nPLASTIC SCREEN PROTECTOR\",\"placeholder_key\":\"goods_description\",\"data_type\":\"string\",\"description\":\"货物描述\"},{\"original_text\":\"737\",\"placeholder_key\":\"package_quantity\",\"data_type\":\"string\",\"description\":\"包装数量\"},{\"original_text\":\"CARTONS\",\"placeholder_key\":\"package_unit\",\"data_type\":\"string\",\"description\":\"包装单位\"},{\"original_text\":\"8492\",\"placeholder_key\":\"gross_weight_kgs\",\"data_type\":\"string\",\"description\":\"毛重(KGS)\"},{\"original_text\":\"68\",\"placeholder_key\":\"measurement_cbm\",\"data_type\":\"string\",\"description\":\"体积(CBM)\"},{\"original_text\":null,\"placeholder_key\":\"container_weight\",\"data_type\":\"string\",\"description\":\"集装箱重量\"},{\"original_text\":null,\"placeholder_key\":\"vgm_weight\",\"data_type\":\"string\",\"description\":\"VGM重量\"},{\"original_text\":null,\"placeholder_key\":\"serial_no\",\"data_type\":\"string\",\"description\":\"序列号\"},{\"original_text\":\"CY/CY O/O\",\"placeholder_key\":\"service_type\",\"data_type\":\"string\",\"description\":\"服务类型\"},{\"original_text\":null,\"placeholder_key\":\"service_mode\",\"data_type\":\"string\",\"description\":\"服务模式\"},{\"original_text\":\"PREPAID\",\"placeholder_key\":\"freight_term\",\"data_type\":\"string\",\"description\":\"运费条款\"},{\"original_text\":\"AS ARRANGED\",\"placeholder_key\":\"collect_amount\",\"data_type\":\"string\",\"description\":\"收款金额\"},{\"original_text\":\"PREPAID\",\"placeholder_key\":\"prepaid_amount\",\"data_type\":\"string\",\"description\":\"预付金额\"},{\"original_text\":null,\"placeholder_key\":\"revenue_tons\",\"data_type\":\"string\",\"description\":\"收入吨数\"},{\"original_text\":\"YANTIAN\",\"placeholder_key\":\"payable_at\",\"data_type\":\"string\",\"description\":\"付款地点\"},{\"original_text\":\"ONE(1)\",\"placeholder_key\":\"original_bl_count\",\"data_type\":\"string\",\"description\":\"原始提单数量\"},{\"original_text\":\"YANTIAN\",\"placeholder_key\":\"issue_place\",\"data_type\":\"string\",\"description\":\"开证地点\"},{\"original_text\":null,\"placeholder_key\":\"laden_on_board\",\"data_type\":\"string\",\"description\":\"装载日期\"}]}";
-        JSONObject resultJSON = JSON.parseObject(testData);
-        if (resultJSON != null && resultJSON.containsKey("mappings")) {
-            List<SysTemplateMapping> dfMappings = resultJSON.getJSONArray("mappings")
-                    .toJavaList(SysTemplateMapping.class);
-            if (dfMappings != null) {
-                list.addAll(dfMappings);
-                log.info("【测试模式】提取到 {} 个模拟映射字段", dfMappings.size());
+        if (isTestMode) {
+            // ---------------------------------------------------------
+            // 测试模式：使用静态数据
+            // ---------------------------------------------------------
+            String testData = "{\"mappings\":[{\"original_text\":\"ZIMUSHH32021612\",\"placeholder_key\":\"doc_no\",\"data_type\":\"string\",\"description\":\"文档编号\"},{\"original_text\":\"EVHL26020240\",\"placeholder_key\":\"bl_no\",\"data_type\":\"string\",\"description\":\"提单号\"},{\"original_text\":null,\"placeholder_key\":\"booking_no\",\"data_type\":\"string\",\"description\":\"预订号\"},{\"original_text\":\"CHENGDU LIYUXIN TRADING CO., LTD 1ST FLOOR, NO.16 ZHONGHE XIONGJIAQIAO ROAD, CHENGDU HIGH TECH ZONE\",\"placeholder_key\":\"shipper\",\"data_type\":\"string\",\"description\":\"托运人\"},{\"original_text\":\"NEWSTAR TECHNOLOGY INC 645 GATES AVE STE 112, BROOKLYN, NY, 11221, USA\",\"placeholder_key\":\"consignee\",\"data_type\":\"string\",\"description\":\"收货人\"},{\"original_text\":\"NEWSTAR TECHNOLOGY INC 645 GATES AVE STE 112, BROOKLYN, NY, 11221, USA SEA-US.OP@YPLOGISTICS.COM\",\"placeholder_key\":\"notify_party\",\"data_type\":\"string\",\"description\":\"通知方\"},{\"original_text\":\"EURO-AMERICA CONTAINER LINE INC 1475 S. STATE COLLEGE BLVD. #120 ANAHEIM, CA 92806 OP@EUROAMERICA-USA.COM DOC@EUROAMERICA-USA.COM TEL: 1-657-655-6228\",\"placeholder_key\":\"delivery_agent\",\"data_type\":\"string\",\"description\":\"交付代理\"},{\"original_text\":\"EVERSTAR (GUANGDONG) SUPPLY CHAIN TECHNOLOGY CO. , LTD\",\"placeholder_key\":\"carrier_agent\",\"data_type\":\"string\",\"description\":\"承运人代理\"},{\"original_text\":\"ZIM SCORPIO 8E\",\"placeholder_key\":\"vessel_voyage\",\"data_type\":\"string\",\"description\":\"船舶/航次\"},{\"original_text\":\"YANTIAN\",\"placeholder_key\":\"port_of_loading\",\"data_type\":\"string\",\"description\":\"装货港\"},{\"original_text\":\"NEW YORK,NY\",\"placeholder_key\":\"port_of_discharge\",\"data_type\":\"string\",\"description\":\"卸货港\"},{\"original_text\":\"YANTIAN\",\"placeholder_key\":\"place_of_receipt\",\"data_type\":\"string\",\"description\":\"收货地点\"},{\"original_text\":\"NEW YORK,NY\",\"placeholder_key\":\"place_of_delivery\",\"data_type\":\"string\",\"description\":\"交付地点\"},{\"original_text\":\"YANTIAN\",\"placeholder_key\":\"pre_carriage_by\",\"data_type\":\"string\",\"description\":\"预装运方式\"},{\"original_text\":\"ZCSU7894848\",\"placeholder_key\":\"container_no\",\"data_type\":\"string\",\"description\":\"集装箱号\"},{\"original_text\":null,\"placeholder_key\":\"seal_no\",\"data_type\":\"string\",\"description\":\"封条号\"},{\"original_text\":\"N/M\",\"placeholder_key\":\"marks\",\"data_type\":\"string\",\"description\":\"标记\"},{\"original_text\":\"PLASTIC PHOTO FRAME\\nPLASTIC SCREEN PROTECTOR\",\"placeholder_key\":\"goods_description\",\"data_type\":\"string\",\"description\":\"货物描述\"},{\"original_text\":\"737\",\"placeholder_key\":\"package_quantity\",\"data_type\":\"string\",\"description\":\"包装数量\"},{\"original_text\":\"CARTONS\",\"placeholder_key\":\"package_unit\",\"data_type\":\"string\",\"description\":\"包装单位\"},{\"original_text\":\"8492\",\"placeholder_key\":\"gross_weight_kgs\",\"data_type\":\"string\",\"description\":\"毛重(KGS)\"},{\"original_text\":\"68\",\"placeholder_key\":\"measurement_cbm\",\"data_type\":\"string\",\"description\":\"体积(CBM)\"},{\"original_text\":null,\"placeholder_key\":\"container_weight\",\"data_type\":\"string\",\"description\":\"集装箱重量\"},{\"original_text\":null,\"placeholder_key\":\"vgm_weight\",\"data_type\":\"string\",\"description\":\"VGM重量\"},{\"original_text\":null,\"placeholder_key\":\"serial_no\",\"data_type\":\"string\",\"description\":\"序列号\"},{\"original_text\":\"CY/CY O/O\",\"placeholder_key\":\"service_type\",\"data_type\":\"string\",\"description\":\"服务类型\"},{\"original_text\":null,\"placeholder_key\":\"service_mode\",\"data_type\":\"string\",\"description\":\"服务模式\"},{\"original_text\":\"PREPAID\",\"placeholder_key\":\"freight_term\",\"data_type\":\"string\",\"description\":\"运费条款\"},{\"original_text\":\"AS ARRANGED\",\"placeholder_key\":\"collect_amount\",\"data_type\":\"string\",\"description\":\"收款金额\"},{\"original_text\":\"PREPAID\",\"placeholder_key\":\"prepaid_amount\",\"data_type\":\"string\",\"description\":\"预付金额\"},{\"original_text\":null,\"placeholder_key\":\"revenue_tons\",\"data_type\":\"string\",\"description\":\"收入吨数\"},{\"original_text\":\"YANTIAN\",\"placeholder_key\":\"payable_at\",\"data_type\":\"string\",\"description\":\"付款地点\"},{\"original_text\":\"ONE(1)\",\"placeholder_key\":\"original_bl_count\",\"data_type\":\"string\",\"description\":\"原始提单数量\"},{\"original_text\":\"YANTIAN\",\"placeholder_key\":\"issue_place\",\"data_type\":\"string\",\"description\":\"开证地点\"},{\"original_text\":null,\"placeholder_key\":\"laden_on_board\",\"data_type\":\"string\",\"description\":\"装载日期\"}]}";
+            JSONObject resultJSON = JSON.parseObject(testData);
+            if (resultJSON != null && resultJSON.containsKey("mappings")) {
+                List<SysTemplateMapping> dfMappings = resultJSON.getJSONArray("mappings")
+                        .toJavaList(SysTemplateMapping.class);
+                if (dfMappings != null) {
+                    list.addAll(dfMappings);
+                    log.info("【测试模式】提取到 {} 个模拟映射字段", dfMappings.size());
+                }
+            }
+        } else {
+            // ---------------------------------------------------------
+            // 正常模式：调用 Dify 工作流
+            // ---------------------------------------------------------
+            String tempPath = "";
+            try {
+                tempPath = FileUploadUtils.upload(RuoYiConfig.getProfile(), file);
+                String fullPath = RuoYiConfig.getProfile() +
+                        tempPath.replaceFirst(Constants.RESOURCE_PREFIX, "");
+
+                JSONObject result = callDifyWorkflow(fullPath, DIFY_API_KEY_ANALYZE);
+
+                if (result != null && result.containsKey("mappings")) {
+                    List<SysTemplateMapping> dfMappings = result.getJSONArray("mappings")
+                            .toJavaList(SysTemplateMapping.class);
+                    if (dfMappings != null) {
+                        list.addAll(dfMappings);
+                        log.info("智能识别完成，提取到 {} 个映射字段", dfMappings.size());
+                    }
+                    if (result.containsKey("template_info")) {
+                        log.info("检测到模板信息: {}",
+                                result.getJSONObject("template_info").toJSONString());
+                    }
+                } else {
+                    log.warn("Dify 返回结果不含 mappings: {}", result != null ? result.toJSONString() : "null");
+                    log.warn("执行基础解析回退...");
+                    list.addAll(basicAnalyze(file));
+                }
+            } catch (Exception e) {
+                log.error("智能分析过程中发生异常", e);
+                list.addAll(basicAnalyze(file));
+            } finally {
+                if (StringUtils.isNotEmpty(tempPath)) {
+                    // file cleanup if needed
+                }
             }
         }
+
         log.info("analyzeDocument 准备返回，字段总数: {}", list.size());
         return list;
     }

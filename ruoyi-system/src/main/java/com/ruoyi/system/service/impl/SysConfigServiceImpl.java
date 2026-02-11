@@ -20,8 +20,7 @@ import com.ruoyi.system.service.ISysConfigService;
  * @author ruoyi
  */
 @Service
-public class SysConfigServiceImpl implements ISysConfigService
-{
+public class SysConfigServiceImpl implements ISysConfigService {
     @Autowired
     private SysConfigMapper configMapper;
 
@@ -29,8 +28,7 @@ public class SysConfigServiceImpl implements ISysConfigService
      * 项目启动时，初始化参数到缓存
      */
     @PostConstruct
-    public void init()
-    {
+    public void init() {
         loadingConfigCache();
     }
 
@@ -41,8 +39,7 @@ public class SysConfigServiceImpl implements ISysConfigService
      * @return 参数配置信息
      */
     @Override
-    public SysConfig selectConfigById(Long configId)
-    {
+    public SysConfig selectConfigById(Long configId) {
         SysConfig config = new SysConfig();
         config.setConfigId(configId);
         return configMapper.selectConfig(config);
@@ -55,18 +52,15 @@ public class SysConfigServiceImpl implements ISysConfigService
      * @return 参数键值
      */
     @Override
-    public String selectConfigByKey(String configKey)
-    {
+    public String selectConfigByKey(String configKey) {
         String configValue = Convert.toStr(CacheUtils.get(getCacheName(), getCacheKey(configKey)));
-        if (StringUtils.isNotEmpty(configValue))
-        {
+        if (StringUtils.isNotEmpty(configValue)) {
             return configValue;
         }
         SysConfig config = new SysConfig();
         config.setConfigKey(configKey);
         SysConfig retConfig = configMapper.selectConfig(config);
-        if (StringUtils.isNotNull(retConfig))
-        {
+        if (StringUtils.isNotNull(retConfig)) {
             CacheUtils.put(getCacheName(), getCacheKey(configKey), retConfig.getConfigValue());
             return retConfig.getConfigValue();
         }
@@ -80,8 +74,7 @@ public class SysConfigServiceImpl implements ISysConfigService
      * @return 参数配置集合
      */
     @Override
-    public List<SysConfig> selectConfigList(SysConfig config)
-    {
+    public List<SysConfig> selectConfigList(SysConfig config) {
         return configMapper.selectConfigList(config);
     }
 
@@ -92,11 +85,9 @@ public class SysConfigServiceImpl implements ISysConfigService
      * @return 结果
      */
     @Override
-    public int insertConfig(SysConfig config)
-    {
+    public int insertConfig(SysConfig config) {
         int row = configMapper.insertConfig(config);
-        if (row > 0)
-        {
+        if (row > 0) {
             CacheUtils.put(getCacheName(), getCacheKey(config.getConfigKey()), config.getConfigValue());
         }
         return row;
@@ -109,17 +100,14 @@ public class SysConfigServiceImpl implements ISysConfigService
      * @return 结果
      */
     @Override
-    public int updateConfig(SysConfig config)
-    {
+    public int updateConfig(SysConfig config) {
         SysConfig temp = configMapper.selectConfigById(config.getConfigId());
-        if (!StringUtils.equals(temp.getConfigKey(), config.getConfigKey()))
-        {
+        if (!StringUtils.equals(temp.getConfigKey(), config.getConfigKey())) {
             CacheUtils.remove(getCacheName(), getCacheKey(temp.getConfigKey()));
         }
 
         int row = configMapper.updateConfig(config);
-        if (row > 0)
-        {
+        if (row > 0) {
             CacheUtils.put(getCacheName(), getCacheKey(config.getConfigKey()), config.getConfigValue());
         }
         return row;
@@ -131,14 +119,11 @@ public class SysConfigServiceImpl implements ISysConfigService
      * @param ids 需要删除的数据ID
      */
     @Override
-    public void deleteConfigByIds(String ids)
-    {
+    public void deleteConfigByIds(String ids) {
         Long[] configIds = Convert.toLongArray(ids);
-        for (Long configId : configIds)
-        {
+        for (Long configId : configIds) {
             SysConfig config = selectConfigById(configId);
-            if (StringUtils.equals(UserConstants.YES, config.getConfigType()))
-            {
+            if (StringUtils.equals(UserConstants.YES, config.getConfigType())) {
                 throw new ServiceException(String.format("内置参数【%1$s】不能删除 ", config.getConfigKey()));
             }
             configMapper.deleteConfigById(configId);
@@ -150,11 +135,9 @@ public class SysConfigServiceImpl implements ISysConfigService
      * 加载参数缓存数据
      */
     @Override
-    public void loadingConfigCache()
-    {
+    public void loadingConfigCache() {
         List<SysConfig> configsList = configMapper.selectConfigList(new SysConfig());
-        for (SysConfig config : configsList)
-        {
+        for (SysConfig config : configsList) {
             CacheUtils.put(getCacheName(), getCacheKey(config.getConfigKey()), config.getConfigValue());
         }
     }
@@ -163,8 +146,7 @@ public class SysConfigServiceImpl implements ISysConfigService
      * 清空参数缓存数据
      */
     @Override
-    public void clearConfigCache()
-    {
+    public void clearConfigCache() {
         CacheUtils.removeAll(getCacheName());
     }
 
@@ -172,10 +154,28 @@ public class SysConfigServiceImpl implements ISysConfigService
      * 重置参数缓存数据
      */
     @Override
-    public void resetConfigCache()
-    {
+    public void resetConfigCache() {
         clearConfigCache();
         loadingConfigCache();
+    }
+
+    /**
+     * 根据键名修改参数配置信息
+     */
+    @Override
+    public int updateValueByKey(String key, String value) {
+        SysConfig config = configMapper.checkConfigKeyUnique(key);
+        if (StringUtils.isNotNull(config)) {
+            config.setConfigValue(value);
+            return updateConfig(config);
+        } else {
+            SysConfig newConfig = new SysConfig();
+            newConfig.setConfigKey(key);
+            newConfig.setConfigValue(value);
+            newConfig.setConfigName("Dify测试模式开关");
+            newConfig.setConfigType("Y");
+            return insertConfig(newConfig);
+        }
     }
 
     /**
@@ -185,12 +185,10 @@ public class SysConfigServiceImpl implements ISysConfigService
      * @return 结果
      */
     @Override
-    public boolean checkConfigKeyUnique(SysConfig config)
-    {
+    public boolean checkConfigKeyUnique(SysConfig config) {
         Long configId = StringUtils.isNull(config.getConfigId()) ? -1L : config.getConfigId();
         SysConfig info = configMapper.checkConfigKeyUnique(config.getConfigKey());
-        if (StringUtils.isNotNull(info) && info.getConfigId().longValue() != configId.longValue())
-        {
+        if (StringUtils.isNotNull(info) && info.getConfigId().longValue() != configId.longValue()) {
             return UserConstants.NOT_UNIQUE;
         }
         return UserConstants.UNIQUE;
@@ -201,8 +199,7 @@ public class SysConfigServiceImpl implements ISysConfigService
      * 
      * @return 缓存名
      */
-    private String getCacheName()
-    {
+    private String getCacheName() {
         return Constants.SYS_CONFIG_CACHE;
     }
 
@@ -212,8 +209,7 @@ public class SysConfigServiceImpl implements ISysConfigService
      * @param configKey 参数键
      * @return 缓存键key
      */
-    private String getCacheKey(String configKey)
-    {
+    private String getCacheKey(String configKey) {
         return Constants.SYS_CONFIG_KEY + configKey;
     }
 }

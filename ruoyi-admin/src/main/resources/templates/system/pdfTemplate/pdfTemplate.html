@@ -47,6 +47,9 @@
                     shiro:hasPermission="system:pdfTemplate:remove">
                     <i class="fa fa-remove"></i> 删除
                 </a>
+                <a class="btn btn-info" onclick="toggleTestMode()">
+                    <i class="fa fa-exchange"></i> <span id="testModeText">Dify测试模式: 关</span>
+                </a>
             </div>
             <div class="col-sm-12 select-table table-striped">
                 <table id="bootstrap-table"></table>
@@ -103,7 +106,90 @@
                 }]
             };
             $.table.init(options);
+
+            // 初始化检查状态
+            checkTestMode();
         });
+
+        function checkTestMode() {
+            $.ajax({
+                url: ctx + "system/config/configKey/sys.dify.test.enabled",
+                type: "GET",
+                cache: false,
+                success: function (result) {
+                    console.log("Check Test Mode Result:", result);
+                    if (result.code === 0) {
+                        // 兼容处理：有时 result.data 可能是 boolean 或 string
+                        var val = String(result.data).trim().toLowerCase();
+                        var isTest = (val === 'true');
+                        updateTestModeUI(isTest);
+                    } else {
+                        updateTestModeUI(false);
+                    }
+                },
+                error: function (xhr) {
+                    console.error("Check Test Mode Error:", xhr);
+                }
+            });
+        }
+
+        function updateTestModeUI(isTest) {
+            console.log("Updating UI to:", isTest);
+            var text = isTest ? "Dify测试模式: 开" : "Dify测试模式: 关";
+            $("#testModeText").text(text);
+
+            var btn = $("#testModeText").parent();
+            if (isTest) {
+                btn.removeClass("btn-info").addClass("btn-warning");
+            } else {
+                btn.removeClass("btn-warning").addClass("btn-info");
+            }
+        }
+
+        function toggleTestMode() {
+            // 先获取当前状态
+            $.ajax({
+                url: ctx + "system/config/configKey/sys.dify.test.enabled",
+                type: "GET",
+                cache: false,
+                success: function (result) {
+                    console.log("Current Status Result:", result);
+                    var currentStatus = 'false';
+                    if (result.code === 0 && result.data != null) {
+                        currentStatus = String(result.data).trim().toLowerCase();
+                    }
+
+                    var newStatus = (currentStatus === 'true') ? 'false' : 'true';
+                    console.log("Switching to:", newStatus);
+
+                    // 保存新状态
+                    saveConfig("sys.dify.test.enabled", newStatus);
+                }
+            });
+        }
+
+        function saveConfig(key, value) {
+            $.ajax({
+                url: ctx + "system/config/updateByKey",
+                type: "POST",
+                data: {
+                    "configKey": key,
+                    "configValue": value
+                },
+                success: function (result) {
+                    console.log("Save Config Result:", result);
+                    if (result.code === 0) {
+                        updateTestModeUI(value === 'true');
+                        $.modal.msgSuccess("切换成功");
+                    } else {
+                        $.modal.alertError("切换失败: " + result.msg);
+                    }
+                },
+                error: function (xhr) {
+                    $.modal.alertError("系统错误");
+                }
+            });
+        }
     </script>
 </body>
 

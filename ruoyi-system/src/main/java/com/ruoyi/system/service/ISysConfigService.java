@@ -8,8 +8,7 @@ import com.ruoyi.system.domain.SysConfig;
  * 
  * @author ruoyi
  */
-public interface ISysConfigService
-{
+public interface ISysConfigService {
     /**
      * 查询参数配置信息
      * 
@@ -71,6 +70,15 @@ public interface ISysConfigService
      * 重置参数缓存数据
      */
     public void resetConfigCache();
+
+    /**
+     * 根据键名修改参数配置信息
+     * 
+     * @param key   参数键名
+     * @param value 参数键值
+     * @return 结果
+     */
+    public int updateValueByKey(String key, String value);
 
     /**
      * 校验参数键名是否唯一
