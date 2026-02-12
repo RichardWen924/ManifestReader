@@ -246,7 +246,7 @@ const fetchTemplateCount = async () => {
   try {
     const res = await listTemplate({})
     if (res.code === 200 || res.code === 0) {
-      templateCount.value = res.data ? res.data.length : 0
+      templateCount.value = res.total !== undefined ? res.total : (res.rows ? res.rows.length : 0)
     }
   } catch (err) {
     console.error('Failed to fetch template count:', err)

@@ -21,7 +21,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <sql id="selectSysCompanyUserVo">
         select user_id, company_name, company_code, company_abbr, password, 
-               (select count(*) from bill_of_lading_v5 b where b.create_by = company_code) as data_count, 
+               (select count(*) from bill_of_lading_v5 b where b.create_by = sys_company_user.company_code) as data_count, 
                status, vip_status, expiry_date, package_type, create_time, update_time from sys_company_user
     </sql>
 

@@ -174,23 +174,22 @@ public class ClientApiController extends BaseController {
         if (StringUtils.isEmpty(companyCode)) {
             return AjaxResult.error("未登录");
         }
+
+        SysCompanyUser user;
         if ("admin".equals(companyCode)) {
-            SysCompanyUser admin = new SysCompanyUser();
-            admin.setCompanyCode("admin");
-            admin.setCompanyName("Administrator");
-            admin.setCompanyAbbr("ADMN");
-            return AjaxResult.success(admin);
-        }
-        SysCompanyUser query = new SysCompanyUser();
-        query.setCompanyCode(companyCode);
-        List<SysCompanyUser> list = sysCompanyUserService.selectSysCompanyUserList(query);
-        if (list.isEmpty()) {
-            return AjaxResult.error("用户不存在");
-        }
-        SysCompanyUser user = list.get(0);
-        // 如果是管理员，模拟一个VIP状态
-        if ("admin".equals(companyCode)) {
+            user = new SysCompanyUser();
+            user.setCompanyCode("admin");
+            user.setCompanyName("Administrator");
+            user.setCompanyAbbr("ADMN");
             user.setVipStatus("1");
+        } else {
+            SysCompanyUser query = new SysCompanyUser();
+            query.setCompanyCode(companyCode);
+            List<SysCompanyUser> list = sysCompanyUserService.selectSysCompanyUserList(query);
+            if (list.isEmpty()) {
+                return AjaxResult.error("用户不存在");
+            }
+            user = list.get(0);
         }
         return AjaxResult.success(user);
     }
@@ -450,5 +449,16 @@ public class ClientApiController extends BaseController {
             response.setCharacterEncoding("UTF-8");
             response.getWriter().write("{\"msg\":\"" + e.getMessage() + "\",\"code\":500}");
         }
+    }
+
+    /**
+     * 调试：检查所有提单数据的作者，排查配额错误
+     */
+    @GetMapping("/debug-quota")
+    public AjaxResult debugQuota() {
+        // 获取所有记录
+        List<com.ruoyi.system.domain.BillOfLading> all = billOfLadingMapper
+                .selectBillOfLadingList(new com.ruoyi.system.domain.BillOfLading());
+        return AjaxResult.success(all);
     }
 }

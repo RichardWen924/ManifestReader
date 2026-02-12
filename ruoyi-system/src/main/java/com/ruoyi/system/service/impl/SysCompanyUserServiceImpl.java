@@ -63,6 +63,8 @@ public class SysCompanyUserServiceImpl implements ISysCompanyUserService {
             BillOfLading query = new BillOfLading();
             query.setCreateBy(user.getCompanyCode());
             List<BillOfLading> records = billOfLadingMapper.selectBillOfLadingList(query);
+            System.out.println("DEBUG: Quota count for user " + user.getCompanyCode() + " is "
+                    + (records != null ? records.size() : 0));
             user.setDataCount((long) (records != null ? records.size() : 0));
         }
     }

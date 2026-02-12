@@ -78,6 +78,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="vesselVoyage != null  and vesselVoyage != ''"> and vessel_voyage like concat('%', #{vesselVoyage}, '%')</if>
             <if test="portOfLoading != null  and portOfLoading != ''"> and port_of_loading = #{portOfLoading}</if>
             <if test="portOfDischarge != null  and portOfDischarge != ''"> and port_of_discharge = #{portOfDischarge}</if>
+            <if test="createBy != null and createBy != ''"> and create_by = #{createBy}</if>
         </where>
         order by created_at desc
     </select>
