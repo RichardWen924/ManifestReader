@@ -40,9 +40,6 @@ public class ClientApiController extends BaseController {
     private ISysCompanyUserService sysCompanyUserService;
 
     @Autowired
-    private javax.sql.DataSource dataSource;
-
-    @Autowired
     private BillOfLadingMapper billOfLadingMapper;
 
     @Autowired
@@ -52,41 +49,6 @@ public class ClientApiController extends BaseController {
     private com.ruoyi.framework.shiro.service.SysPasswordService passwordService;
 
     private static final String CLIENT_SESSION_KEY = "CLIENT_USER_ID";
-
-    /**
-     * 初始化数据库（添加缺失的字段）
-     */
-    @GetMapping("/init-db")
-    public AjaxResult initDb() {
-        try (java.sql.Connection conn = dataSource.getConnection();
-                java.sql.Statement stmt = conn.createStatement()) {
-            try {
-                stmt.execute(
-                        "ALTER TABLE bill_of_lading_v5 ADD COLUMN create_by VARCHAR(64) DEFAULT NULL COMMENT '创建者'");
-            } catch (java.sql.SQLException e) {
-                log.warn("字段 create_by 可能已存在: {}", e.getMessage());
-            }
-
-            try {
-                stmt.execute("CREATE TABLE IF NOT EXISTS sys_company_user (" +
-                        "user_id BIGINT AUTO_INCREMENT PRIMARY KEY," +
-                        "company_name VARCHAR(255) NOT NULL," +
-                        "company_code VARCHAR(50) UNIQUE NOT NULL," +
-                        "company_abbr VARCHAR(10) NOT NULL," +
-                        "password VARCHAR(255) NOT NULL," +
-                        "data_count BIGINT DEFAULT 0," +
-                        "status CHAR(1) DEFAULT '0'," +
-                        "create_time DATETIME," +
-                        "update_time DATETIME" +
-                        ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
-                return AjaxResult.success("数据库初始化成功");
-            } catch (java.sql.SQLException e) {
-                return AjaxResult.error("创建表失败: " + e.getMessage());
-            }
-        } catch (Exception e) {
-            return AjaxResult.error("数据库初始化失败: " + e.getMessage());
-        }
-    }
 
     /**
      * 客户注册
@@ -231,29 +193,6 @@ public class ClientApiController extends BaseController {
             user.setVipStatus("1");
         }
         return AjaxResult.success(user);
-    }
-
-    /**
-     * 账户升级（模拟）
-     */
-    @PostMapping("/upgrade")
-    public AjaxResult upgrade(HttpSession session) {
-        String companyCode = (String) session.getAttribute(CLIENT_SESSION_KEY);
-        if (StringUtils.isEmpty(companyCode) || "admin".equals(companyCode)) {
-            return AjaxResult.error("无效操作");
-        }
-
-        SysCompanyUser query = new SysCompanyUser();
-        query.setCompanyCode(companyCode);
-        List<SysCompanyUser> list = sysCompanyUserService.selectSysCompanyUserList(query);
-        if (list.isEmpty()) {
-            return AjaxResult.error("用户不存在");
-        }
-
-        SysCompanyUser user = list.get(0);
-        user.setVipStatus("1"); // 升级为VIP
-        sysCompanyUserService.updateSysCompanyUser(user);
-        return AjaxResult.success("升级成功！您现在可以使用全部模版并拥有无限生成额度。");
     }
 
     /**

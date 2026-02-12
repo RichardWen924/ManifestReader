@@ -108,100 +108,121 @@
         <p>Loading record data...</p>
       </div>
       
-      <section v-else class="edit-section card">
-        <form @submit.prevent="handleSave" class="edit-form">
-          <div class="form-grid">
-            <div class="form-group">
-              <label>B/L NO.</label>
-              <input v-model="form.blNo">
-            </div>
-            <div class="form-group">
-              <label>Booking NO.</label>
-              <input v-model="form.bookingNo">
-            </div>
-             <div class="form-group">
-              <label>DOC NO.</label>
-              <input v-model="form.docNo">
-            </div>
-            <div class="form-group">
-               <label>Serial NO.</label>
-               <input v-model="form.serialNo">
-            </div>
-            <div class="form-group">
-               <label>Created By</label>
-               <input v-model="form.createBy" disabled class="disabled">
+      <div v-else class="split-container">
+        <!-- Left Pane: Edit Form -->
+        <section class="edit-section card left-pane">
+          <form @submit.prevent="handleSave" class="edit-form">
+            <div class="form-grid">
+              <div class="form-group">
+                <label>B/L NO.</label>
+                <input v-model="form.blNo">
+              </div>
+              <div class="form-group">
+                <label>Booking NO.</label>
+                <input v-model="form.bookingNo">
+              </div>
+               <div class="form-group">
+                <label>DOC NO.</label>
+                <input v-model="form.docNo">
+              </div>
+              <div class="form-group">
+                 <label>Serial NO.</label>
+                 <input v-model="form.serialNo">
+              </div>
+              <div class="form-group">
+                 <label>Created By</label>
+                 <input v-model="form.createBy" disabled class="disabled">
+              </div>
+              
+              <div class="form-group full-width">
+                <label>Shipper</label>
+                <textarea v-model="form.shipper" rows="4"></textarea>
+              </div>
+              
+              <div class="form-group full-width">
+                <label>Consignee</label>
+                <textarea v-model="form.consignee" rows="4"></textarea>
+              </div>
+              
+              <div class="form-group">
+                <label>Vessel / Voyage</label>
+                <input v-model="form.vesselVoyage">
+              </div>
+              <div class="form-group">
+                <label>Port of Loading</label>
+                <input v-model="form.portOfLoading">
+              </div>
+              <div class="form-group">
+                <label>Port of Discharge</label>
+                <input v-model="form.portOfDischarge">
+              </div>
+              <div class="form-group">
+                <label>Package Quantity</label>
+                <input v-model="form.packageQuantity" type="number">
+              </div>
+              <div class="form-group">
+                <label>Package Unit</label>
+                <input v-model="form.packageUnit">
+              </div>
+              <div class="form-group">
+                <label>Gross Weight (KGS)</label>
+                <input v-model="form.grossWeightKgs" type="number" step="0.01">
+              </div>
+              <div class="form-group">
+                <label>Measurement (CBM)</label>
+                <input v-model="form.measurementCbm" type="number" step="0.01">
+              </div>
+              <div class="form-group">
+                <label>Place of Delivery</label>
+                <input v-model="form.placeOfDelivery">
+              </div>
+              <div class="form-group">
+                <label>Container No</label>
+                <input v-model="form.containerNo">
+              </div>
+              <div class="form-group">
+                <label>Seal No</label>
+                <input v-model="form.sealNo">
+              </div>
+              <div class="form-group">
+                <label>Container Weight</label>
+                <input v-model="form.containerWeight" type="number" step="0.01">
+              </div>
+              <div class="form-group">
+                <label>VGM Weight</label>
+                <input v-model="form.vgmWeight" type="number" step="0.01">
+              </div>
             </div>
             
-            <div class="form-group full-width">
-              <label>Shipper</label>
-              <textarea v-model="form.shipper" rows="4"></textarea>
+            <div class="form-actions">
+               <button type="button" @click="handleExport" class="outline-btn">
+                 <i class="fas fa-file-export"></i> Export PDF
+               </button>
+               <button type="submit" :disabled="saving" class="primary-btn">
+                 <i class="fas fa-save"></i> {{ saving ? 'Saving...' : 'Save Changes' }}
+               </button>
             </div>
-            
-            <div class="form-group full-width">
-              <label>Consignee</label>
-              <textarea v-model="form.consignee" rows="4"></textarea>
-            </div>
-            
-            <div class="form-group">
-              <label>Vessel / Voyage</label>
-              <input v-model="form.vesselVoyage">
-            </div>
-            <div class="form-group">
-              <label>Port of Loading</label>
-              <input v-model="form.portOfLoading">
-            </div>
-            <div class="form-group">
-              <label>Port of Discharge</label>
-              <input v-model="form.portOfDischarge">
-            </div>
-            <div class="form-group">
-              <label>Package Quantity</label>
-              <input v-model="form.packageQuantity" type="number">
-            </div>
-            <div class="form-group">
-              <label>Package Unit</label>
-              <input v-model="form.packageUnit">
-            </div>
-            <div class="form-group">
-              <label>Gross Weight (KGS)</label>
-              <input v-model="form.grossWeightKgs" type="number" step="0.01">
-            </div>
-            <div class="form-group">
-              <label>Measurement (CBM)</label>
-              <input v-model="form.measurementCbm" type="number" step="0.01">
-            </div>
-            <div class="form-group">
-              <label>Place of Delivery</label>
-              <input v-model="form.placeOfDelivery">
-            </div>
-            <div class="form-group">
-              <label>Container No</label>
-              <input v-model="form.containerNo">
-            </div>
-            <div class="form-group">
-              <label>Seal No</label>
-              <input v-model="form.sealNo">
-            </div>
-            <div class="form-group">
-              <label>Container Weight</label>
-              <input v-model="form.containerWeight" type="number" step="0.01">
-            </div>
-            <div class="form-group">
-              <label>VGM Weight</label>
-              <input v-model="form.vgmWeight" type="number" step="0.01">
-            </div>
+          </form>
+        </section>
+
+        <!-- Right Pane: Live Preview -->
+        <section class="preview-section card right-pane">
+          <div class="preview-header">
+            <h3><i class="fas fa-eye"></i> Document Preview</h3>
+            <button @click="handlePreview" :disabled="previewLoading" class="refresh-btn">
+              <i class="fas" :class="previewLoading ? 'fa-spinner fa-spin' : 'fa-sync-alt'"></i>
+              Refresh Preview
+            </button>
           </div>
-          
-          <div class="form-actions">
-             <button type="button" @click="handleExport" class="outline-btn">
-               <i class="fas fa-file-export"></i> Export PDF
-             </button>
-             <button type="submit" :disabled="saving" class="primary-btn">
-               <i class="fas fa-save"></i> {{ saving ? 'Saving...' : 'Save Changes' }}
-             </button>
+          <div class="preview-container">
+            <div v-if="!previewUrl" class="preview-placeholder">
+              <i class="fas fa-file-pdf"></i>
+              <p>Click "Refresh Preview" to generate a preview</p>
+            </div>
+            <iframe v-else :src="previewUrl" class="preview-frame"></iframe>
           </div>
-        </form>
-      </section>
+        </section>
+      </div>
     </main>
   </div>
 </template>
@@ -219,6 +240,8 @@ const userAbbr = ref('Loading...')
 const isVip = ref(false)
 const loading = ref(true)
 const saving = ref(false)
+const previewLoading = ref(false)
+const previewUrl = ref('')
 const form = ref({})
 
 // Profile Modal States
@@ -314,6 +337,8 @@ const fetchRecord = async () => {
     })
     if (res.rows && res.rows.length > 0) {
       form.value = res.rows[0]
+      // Try to generate initial preview
+      setTimeout(() => handlePreview(), 500)
     } else {
       alert('Record not found')
       router.push('/history')
@@ -358,6 +383,28 @@ const handleExport = async () => {
     document.body.removeChild(link)
   } catch (err) {
     alert('Export failed: ' + err.message)
+  }
+}
+
+const handlePreview = async () => {
+  previewLoading.value = true
+  try {
+    const dto = {
+      businessData: form.value,
+      uuid: ''
+    }
+    const response = await api.post('/client-api/export-pdf', dto, {
+      responseType: 'blob'
+    })
+    
+    if (previewUrl.value) {
+      URL.revokeObjectURL(previewUrl.value)
+    }
+    previewUrl.value = window.URL.createObjectURL(new Blob([response], { type: 'application/pdf' }))
+  } catch (err) {
+    console.error('Preview failed:', err)
+  } finally {
+    previewLoading.value = false
   }
 }
 
@@ -581,7 +628,104 @@ onMounted(async () => {
 .back-link:hover { color: #6366f1; }
 
 .edit-section {
-  max-width: 900px;
+  flex: 1;
+  min-width: 0; 
+}
+
+.split-container {
+  display: flex;
+  gap: 20px;
+  height: calc(100vh - 120px);
+}
+
+.left-pane {
+  flex: 1;
+  overflow-y: auto;
+  min-width: 500px;
+  max-width: 800px;
+}
+
+.right-pane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.preview-section {
+  background: #1e293b;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.preview-header {
+  padding: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.preview-header h3 {
+  color: white;
+  margin: 0;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.refresh-btn {
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+.refresh-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.refresh-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.preview-container {
+  flex: 1;
+  background: #0f172a;
+  position: relative;
+  display: flex;
+  height: 100%;
+}
+
+.preview-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  gap: 16px;
+}
+
+.preview-placeholder i {
+  font-size: 48px;
+  opacity: 0.5;
+}
+
+.preview-frame {
+  width: 100%;
+  height: 100%;
+  border: none;
 }
 
 .form-grid {
