@@ -215,6 +215,44 @@
         </div>
       </div>
     </div>
+    
+    <!-- Upgrade Modal (Custom Quota Interception) -->
+    <div v-if="isUpgradeModalOpen" class="modal-overlay" @click.self="isUpgradeModalOpen = false">
+      <div class="modal-content upgrade-modal card">
+        <div class="upgrade-header">
+          <div class="premium-icon">
+            <i class="fas fa-crown"></i>
+          </div>
+          <h2>模版额度已满</h2>
+          <p>Template Limit Reached</p>
+        </div>
+        <div class="upgrade-body">
+          <div class="limit-status">
+            <div class="status-item">
+              <span class="label">当前模版</span>
+              <span class="value">{{ templateCount }}</span>
+            </div>
+            <div class="status-separator">/</div>
+            <div class="status-item">
+              <span class="label">免费额度</span>
+              <span class="value">{{ TEMPLATE_LIMIT }}</span>
+            </div>
+          </div>
+          <p class="upgrade-msg">您的非会员模版额度已用完。升级为 <strong>Premium Member</strong> 即可解锁无限模版生成，并使用所有高级功能。</p>
+          <div class="premium-features">
+            <div class="feature-item"><i class="fas fa-check-circle"></i> 无限次 AI 模版识别</div>
+            <div class="feature-item"><i class="fas fa-check-circle"></i> 云端永久保存</div>
+            <div class="feature-item"><i class="fas fa-check-circle"></i> 商业级数据加密</div>
+          </div>
+        </div>
+        <footer class="modal-footer upgrade-footer">
+          <button @click="isUpgradeModalOpen = false" class="outline-btn-custom">稍后再说</button>
+          <button @click="router.push('/upgrade')" class="primary-btn-custom upgrade-cta-btn">
+            <i class="fas fa-rocket"></i> 立即升级
+          </button>
+        </footer>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -224,6 +262,7 @@ import { defineComponent, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { renderAsync } from 'docx-preview'
 import { analyzeTemplate, previewTemplate, saveTemplate } from '../api/lab'
+import { listTemplate } from '../api/template'
 import api from '../api/request'
 
 export default defineComponent({
@@ -240,6 +279,9 @@ export default defineComponent({
     const isVip = ref(false)
     const textModalOpen = ref(false)
     const textModalItem = ref({})
+    const templateCount = ref(0)
+    const TEMPLATE_LIMIT = 2
+    const isUpgradeModalOpen = ref(false)
 
     // Profile Modal States
     const isProfileModalOpen = ref(false)
@@ -265,6 +307,17 @@ export default defineComponent({
         }
       } catch (err) {
         console.error('Failed to fetch user data:', err)
+      }
+    }
+
+    const fetchTemplateCount = async () => {
+      try {
+        const res = await listTemplate({})
+        if (res.code === 200 || res.code === 0) {
+          templateCount.value = res.data ? res.data.length : 0
+        }
+      } catch (err) {
+        console.error('Failed to fetch template count:', err)
       }
     }
 
@@ -320,12 +373,23 @@ export default defineComponent({
       try {
         await api.get('/client-api/check-auth')
         await fetchUserData()
+        await fetchTemplateCount()
       } catch (err) {
         router.push('/login')
       }
     })
 
+    const checkTemplateQuota = () => {
+      if (isVip.value) return true
+      if (templateCount.value >= TEMPLATE_LIMIT) {
+        isUpgradeModalOpen.value = true
+        return false
+      }
+      return true
+    }
+
     const handleFileChange = (e) => {
+      if (!checkTemplateQuota()) return
       const selected = e.target.files[0]
       if (selected) {
         file.value = selected
@@ -391,18 +455,7 @@ export default defineComponent({
       }
 
       // 会员检查：非会员限额2个模版
-      if (!isVip.value) {
-        try {
-          const checkRes = await api.get('/client-api/templates/list', { params: { pageSize: 10 } })
-          if (checkRes.rows && checkRes.rows.length >= 2) {
-            alert('非会员模版数量已达上限（限2个），请升级账户以解锁无限模版！')
-            router.push('/upgrade')
-            return
-          }
-        } catch (err) {
-          console.error('Check template limit failed:', err)
-        }
-      }
+      if (!checkTemplateQuota()) return
 
       const name = prompt('请输入模版名称:', '新模版')
       if (!name) return
@@ -415,6 +468,7 @@ export default defineComponent({
       try {
         const res = await saveTemplate(formData)
         alert('模版保存成功: ' + res.data)
+        fetchTemplateCount() // 刷新模版数量
       } catch (err) {
         console.error('Save failed:', err)
         alert('保存失败')
@@ -463,6 +517,7 @@ export default defineComponent({
       file, mappings, previewLoading, analyzeLoading, currentUser, currentUserDisplay, userAbbr, isVip,
       isProfileModalOpen, profileLoading, profileError, profileSuccess, profileForm,
       textModalOpen, textModalItem,
+      isUpgradeModalOpen,
       handleFileChange, syncPreview, handleSave, removeMapping, handleMouseEnter, handleMouseLeave,
       handleLogout, openProfileModal, closeProfileModal, handleUpdateProfile, showOriginalText
     }
@@ -1088,6 +1143,82 @@ export default defineComponent({
   word-break: break-all;
   max-height: 300px;
   overflow-y: auto;
+}
+
+.upgrade-modal {
+  max-width: 440px !important;
+  text-align: center;
+  padding: 40px !important;
+  border: 1px solid rgba(251, 191, 36, 0.3) !important;
+  background: white !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+}
+
+.upgrade-header { margin-bottom: 24px; }
+
+.premium-icon {
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  color: white;
+  margin: 0 auto 16px;
+  box-shadow: 0 8px 16px rgba(245, 158, 11, 0.2);
+}
+
+.upgrade-header h2 { font-size: 24px; font-weight: 800; color: #1e293b; margin: 0; }
+
+.upgrade-header p {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  margin: 4px 0 0;
+  letter-spacing: 1px;
+}
+
+.limit-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 16px;
+}
+
+.status-item { display: flex; flex-direction: column; }
+.status-item .label { font-size: 11px; font-weight: 600; color: #64748b; margin-bottom: 4px; }
+.status-item .value { font-size: 20px; font-weight: 800; color: #1e293b; }
+.status-separator { font-size: 24px; font-weight: 300; color: #cbd5e1; }
+
+.upgrade-msg { font-size: 14px; color: #475569; line-height: 1.6; margin-bottom: 24px; }
+
+.premium-features {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 32px;
+  text-align: left;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 24px;
+}
+
+.feature-item { display: flex; align-items: center; gap: 10px; font-size: 13px; color: #334155; font-weight: 500; }
+.feature-item i { color: #10b981; }
+
+.upgrade-footer { display: flex; gap: 12px; padding: 0 !important; border: none !important; }
+.upgrade-footer button { flex: 1; }
+
+.upgrade-cta-btn {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b) !important;
+  color: white !important;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3) !important;
 }
 
 :deep(.lab-highlight) {

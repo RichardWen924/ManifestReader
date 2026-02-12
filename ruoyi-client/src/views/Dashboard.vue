@@ -426,6 +426,43 @@
           </footer>
         </div>
       </div>
+      <!-- Upgrade Modal (Custom Quota Interception) -->
+      <div v-if="isUpgradeModalOpen" class="modal-overlay" @click.self="isUpgradeModalOpen = false">
+        <div class="modal-content upgrade-modal card">
+          <div class="upgrade-header">
+            <div class="premium-icon">
+              <i class="fas fa-crown"></i>
+            </div>
+            <h2>额度已达上限</h2>
+            <p>Quota Limit Reached</p>
+          </div>
+          <div class="upgrade-body">
+            <div class="limit-status">
+              <div class="status-item">
+                <span class="label">当前使用</span>
+                <span class="value">{{ recordsCount }}</span>
+              </div>
+              <div class="status-separator">/</div>
+              <div class="status-item">
+                <span class="label">免费额度</span>
+                <span class="value">{{ QUOTA_LIMIT }}</span>
+              </div>
+            </div>
+            <p class="upgrade-msg">您的非会员额度已用完。升级为 <strong>Premium Member</strong> 即可解锁无限生成额度，并使用所有高级模版。</p>
+            <div class="premium-features">
+              <div class="feature-item"><i class="fas fa-check-circle"></i> 无限次 AI 智能分析</div>
+              <div class="feature-item"><i class="fas fa-check-circle"></i> 解锁所有专业贸易模版</div>
+              <div class="feature-item"><i class="fas fa-check-circle"></i> 优先技术支持</div>
+            </div>
+          </div>
+          <footer class="modal-footer upgrade-footer">
+            <button @click="isUpgradeModalOpen = false" class="outline-btn">稍后再说</button>
+            <button @click="router.push('/upgrade')" class="primary-btn upgrade-cta-btn">
+              <i class="fas fa-rocket"></i> 立即升级
+            </button>
+          </footer>
+        </div>
+      </div>
     </main>
   </div>
 </template>
@@ -446,6 +483,9 @@ const fileInput = ref(null)
 const files = ref([])
 const isAnalyzing = ref(false)
 const results = ref([])
+const recordsCount = ref(0) // 记录用户已生成的提单数量
+const QUOTA_LIMIT = 4 // 非会员限额
+const isUpgradeModalOpen = ref(false) // 会员升级弹窗状态
 
 // Profile Modal States
 const isProfileModalOpen = ref(false)
@@ -466,6 +506,7 @@ const fetchUserData = async () => {
     if (res.code === 200 || res.code === 0) {
       userAbbr.value = res.data.companyAbbr
       isVip.value = res.data.vipStatus === '1'
+      recordsCount.value = res.data.dataCount || 0
       profileForm.value.companyName = res.data.companyName
       profileForm.value.companyAbbr = res.data.companyAbbr
     }
@@ -577,6 +618,7 @@ const saveFromModal = async () => {
     })
     results.value.splice(editingIndex.value, 1)
     closeModal()
+    fetchUserData() // 更新额度
     alert('Record saved successfully!')
   } catch (err) {
     alert('Save failed: ' + err.message)
@@ -627,7 +669,18 @@ const handleDrop = (e) => {
   addFiles(droppedFiles)
 }
 
+const checkQuota = () => {
+  if (isVip.value) return true
+  if (recordsCount.value >= QUOTA_LIMIT) {
+    isUpgradeModalOpen.value = true
+    return false
+  }
+  return true
+}
+
 const addFiles = (newFiles) => {
+  if (!checkQuota()) return
+  
   newFiles.forEach(file => {
     files.value.push({
       file,
@@ -643,6 +696,7 @@ const removeFile = (index) => {
 }
 
 const startAnalysis = async () => {
+  if (!checkQuota()) return
   isAnalyzing.value = true
   
   for (const fileObj of files.value) {
@@ -696,6 +750,7 @@ const saveSingle = async (result, index) => {
       editedData: result.data
     })
     results.value.splice(index, 1)
+    fetchUserData() // 更新额度
     alert('Record saved successfully!')
     // 如果文件列表里也有这个文件，标记为已保存或删除
   } catch (err) {
@@ -713,6 +768,7 @@ const saveAll = async () => {
   try {
     await Promise.all(promises)
     results.value = []
+    fetchUserData() // 更新额度
     alert('All records saved successfully!')
   } catch (err) {
     alert('Some records failed to save')
@@ -1229,6 +1285,134 @@ onMounted(async () => {
 
 .profile-modal {
   max-width: 500px !important;
+}
+
+.upgrade-modal {
+  max-width: 440px !important;
+  text-align: center;
+  padding: 40px !important;
+  border: 1px solid rgba(251, 191, 36, 0.3) !important;
+  background: linear-gradient(to bottom, #ffffff, #fffdfa) !important;
+}
+
+.upgrade-header {
+  margin-bottom: 24px;
+}
+
+.premium-icon {
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  color: white;
+  margin: 0 auto 16px;
+  box-shadow: 0 8px 16px rgba(245, 158, 11, 0.2);
+}
+
+.upgrade-header h2 {
+  font-size: 24px;
+  font-weight: 800;
+  color: #1e293b;
+  margin: 0;
+}
+
+.upgrade-header p {
+  font-size: 12px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  margin: 4px 0 0;
+  letter-spacing: 1px;
+}
+
+.limit-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 16px;
+}
+
+.status-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.status-item .label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.status-item .value {
+  font-size: 20px;
+  font-weight: 800;
+  color: #1e293b;
+}
+
+.status-separator {
+  font-size: 24px;
+  font-weight: 300;
+  color: #cbd5e1;
+}
+
+.upgrade-msg {
+  font-size: 14px;
+  color: #475569;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.premium-features {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 32px;
+  text-align: left;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 24px;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: #334155;
+  font-weight: 500;
+}
+
+.feature-item i {
+  color: #10b981;
+}
+
+.upgrade-footer {
+  display: flex;
+  gap: 12px;
+  padding: 0 !important;
+  border: none !important;
+}
+
+.upgrade-footer button {
+  flex: 1;
+}
+
+.upgrade-cta-btn {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b) !important;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3) !important;
+}
+
+.upgrade-cta-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4) !important;
 }
 
 .modal-header {
