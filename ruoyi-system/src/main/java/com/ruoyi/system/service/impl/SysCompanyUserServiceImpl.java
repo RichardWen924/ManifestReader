@@ -8,6 +8,8 @@ import com.ruoyi.system.mapper.SysCompanyUserMapper;
 import com.ruoyi.system.domain.SysCompanyUser;
 import com.ruoyi.system.service.ISysCompanyUserService;
 import com.ruoyi.common.core.text.Convert;
+import com.ruoyi.system.mapper.BillOfLadingMapper;
+import com.ruoyi.system.domain.BillOfLading;
 
 /**
  * 公司用户Service业务层处理
@@ -20,6 +22,9 @@ public class SysCompanyUserServiceImpl implements ISysCompanyUserService {
     @Autowired
     private SysCompanyUserMapper sysCompanyUserMapper;
 
+    @Autowired
+    private BillOfLadingMapper billOfLadingMapper;
+
     /**
      * 查询公司用户
      * 
@@ -28,7 +33,11 @@ public class SysCompanyUserServiceImpl implements ISysCompanyUserService {
      */
     @Override
     public SysCompanyUser selectSysCompanyUserByUserId(Long userId) {
-        return sysCompanyUserMapper.selectSysCompanyUserByUserId(userId);
+        SysCompanyUser user = sysCompanyUserMapper.selectSysCompanyUserByUserId(userId);
+        if (user != null) {
+            calculateDataCount(user);
+        }
+        return user;
     }
 
     /**
@@ -39,7 +48,23 @@ public class SysCompanyUserServiceImpl implements ISysCompanyUserService {
      */
     @Override
     public List<SysCompanyUser> selectSysCompanyUserList(SysCompanyUser sysCompanyUser) {
-        return sysCompanyUserMapper.selectSysCompanyUserList(sysCompanyUser);
+        List<SysCompanyUser> list = sysCompanyUserMapper.selectSysCompanyUserList(sysCompanyUser);
+        for (SysCompanyUser user : list) {
+            calculateDataCount(user);
+        }
+        return list;
+    }
+
+    /**
+     * 手动计算并设置业务数据量
+     */
+    private void calculateDataCount(SysCompanyUser user) {
+        if (user != null && user.getCompanyCode() != null) {
+            BillOfLading query = new BillOfLading();
+            query.setCreateBy(user.getCompanyCode());
+            List<BillOfLading> records = billOfLadingMapper.selectBillOfLadingList(query);
+            user.setDataCount((long) (records != null ? records.size() : 0));
+        }
     }
 
     /**
