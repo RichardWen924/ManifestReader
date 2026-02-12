@@ -96,7 +96,14 @@ const handleLogin = async () => {
 
     if (res.code === 200 || res.code === 0) {
       localStorage.setItem('client_user', res.data)
-      router.push('/guide')
+      
+      // Redirect to guide only if just registered
+      if (localStorage.getItem('just_registered') === 'true') {
+        localStorage.removeItem('just_registered')
+        router.push('/guide')
+      } else {
+        router.push('/')
+      }
     }
   } catch (err) {
     error.value = err.message || 'Login failed'

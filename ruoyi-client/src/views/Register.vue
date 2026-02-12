@@ -129,6 +129,8 @@ const handleRegister = async () => {
     const res = await api.post('/client-api/register', form.value)
     if (res.code === 200 || res.code === 0) {
       successMsg.value = res.msg || 'Registration successful!'
+      // Set flag to show guide on first login
+      localStorage.setItem('just_registered', 'true')
       // Redirect to login after a short delay
       setTimeout(() => {
         router.push('/login')
