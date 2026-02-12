@@ -18,7 +18,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectSysCompanyUserVo">
-        select user_id, company_name, company_code, company_abbr, password, data_count, status, vip_status, create_time, update_time from sys_company_user
+        select user_id, company_name, company_code, company_abbr, password, 
+               (select count(*) from bill_of_lading_v5 b where b.create_by = company_code) as data_count, 
+               status, vip_status, create_time, update_time from sys_company_user
     </sql>
 
     <select id="selectSysCompanyUserList" parameterType="SysCompanyUser" resultMap="SysCompanyUserResult">
@@ -46,7 +48,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="companyCode != null and companyCode != ''">company_code,</if>
             <if test="companyAbbr != null and companyAbbr != ''">company_abbr,</if>
             <if test="password != null and password != ''">password,</if>
-            <if test="dataCount != null">data_count,</if>
             <if test="status != null">status,</if>
             <if test="vipStatus != null">vip_status,</if>
             <if test="createTime != null">create_time,</if>
@@ -57,7 +58,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="companyCode != null and companyCode != ''">#{companyCode},</if>
             <if test="companyAbbr != null and companyAbbr != ''">#{companyAbbr},</if>
             <if test="password != null and password != ''">#{password},</if>
-            <if test="dataCount != null">#{dataCount},</if>
             <if test="status != null">#{status},</if>
             <if test="vipStatus != null">#{vipStatus},</if>
             <if test="createTime != null">#{createTime},</if>
@@ -72,7 +72,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="companyCode != null and companyCode != ''">company_code = #{companyCode},</if>
             <if test="companyAbbr != null and companyAbbr != ''">company_abbr = #{companyAbbr},</if>
             <if test="password != null and password != ''">password = #{password},</if>
-            <if test="dataCount != null">data_count = #{dataCount},</if>
             <if test="status != null">status = #{status},</if>
             <if test="vipStatus != null">vip_status = #{vipStatus},</if>
             <if test="createTime != null">create_time = #{createTime},</if>
