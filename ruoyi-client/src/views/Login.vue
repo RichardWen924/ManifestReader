@@ -17,14 +17,14 @@
       
       <form @submit.prevent="handleLogin" class="login-form">
         <div class="form-group">
-          <label for="username">Username</label>
+          <label for="username">Company Name / Code / Abbr</label>
           <div class="input-wrapper">
             <i class="fas fa-user"></i>
             <input 
               v-model="username" 
               type="text" 
               id="username" 
-              placeholder="Enter your username" 
+              placeholder="Name, Code or Shipline Abbr" 
               required
             >
           </div>

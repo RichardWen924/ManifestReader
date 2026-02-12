@@ -141,33 +141,54 @@ public class ClientApiController extends BaseController {
      */
     @PostMapping("/login")
     public AjaxResult login(@RequestBody Map<String, String> loginData, HttpSession session) {
-        String username = loginData.get("username"); // 这里的 username 对应公司名或公司编号
+        String username = loginData.get("username"); // 这里的 username 对应公司名、公司编号或航司缩写
         String password = loginData.get("password");
 
         if (StringUtils.isEmpty(username) || StringUtils.isEmpty(password)) {
             return AjaxResult.error("用户名或密码不能为空");
         }
 
-        // 先按公司编号查，再按公司名查
-        SysCompanyUser query = new SysCompanyUser();
-        query.setCompanyCode(username);
-        List<SysCompanyUser> list = sysCompanyUserService.selectSysCompanyUserList(query);
+        List<SysCompanyUser> list = new java.util.ArrayList<>();
 
+        // 1. 先按公司编号查
+        SysCompanyUser queryCode = new SysCompanyUser();
+        queryCode.setCompanyCode(username);
+        list.addAll(sysCompanyUserService.selectSysCompanyUserList(queryCode));
+
+        // 2. 如果没找到，按航司缩写查
         if (list.isEmpty()) {
-            query = new SysCompanyUser();
-            query.setCompanyName(username);
-            list = sysCompanyUserService.selectSysCompanyUserList(query);
+            SysCompanyUser queryAbbr = new SysCompanyUser();
+            queryAbbr.setCompanyAbbr(username.toUpperCase());
+            list.addAll(sysCompanyUserService.selectSysCompanyUserList(queryAbbr));
         }
 
+        // 3. 如果还没找到，按公司名查
+        if (list.isEmpty()) {
+            SysCompanyUser queryName = new SysCompanyUser();
+            queryName.setCompanyName(username);
+            list.addAll(sysCompanyUserService.selectSysCompanyUserList(queryName));
+        }
+
+        // 4. 遍历所有匹配的用户，检查密码
+        List<SysCompanyUser> validUsers = new java.util.ArrayList<>();
         if (!list.isEmpty()) {
-            SysCompanyUser user = list.get(0);
-            if (password.equals(user.getPassword())) {
-                if ("1".equals(user.getStatus())) {
-                    return AjaxResult.error("帐号已停用");
+            for (SysCompanyUser user : list) {
+                if (password.equals(user.getPassword())) {
+                    validUsers.add(user);
                 }
-                session.setAttribute(CLIENT_SESSION_KEY, user.getCompanyCode());
-                return AjaxResult.success("登录成功", user.getCompanyCode());
             }
+        }
+
+        // 5. 处理登录结果
+        if (validUsers.size() == 1) {
+            SysCompanyUser user = validUsers.get(0);
+            if ("1".equals(user.getStatus())) {
+                return AjaxResult.error("帐号已停用");
+            }
+            session.setAttribute(CLIENT_SESSION_KEY, user.getCompanyCode());
+            return AjaxResult.success("登录成功", user.getCompanyCode());
+        } else if (validUsers.size() > 1) {
+            return AjaxResult.error("存在重复同名帐号，请使用公司编号或航司缩写登录");
         }
 
         // 检查是否为后台管理员 (sys_user 表)
