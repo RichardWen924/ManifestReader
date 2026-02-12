@@ -12,25 +12,25 @@
       </div>
       <ul class="nav-links">
         <li :class="{ active: $route.path === '/' }">
-          <router-link to="/"><i class="fas fa-file-invoice"></i> 文档生成</router-link>
+          <router-link to="/"><i class="fas fa-file-invoice"></i> {{ $t('sidebar.docGen') }}</router-link>
         </li>
         <li :class="{ active: $route.path === '/history' }">
-          <router-link to="/history"><i class="fas fa-history"></i> 历史提单</router-link>
+          <router-link to="/history"><i class="fas fa-history"></i> {{ $t('sidebar.history') }}</router-link>
         </li>
         <li :class="{ active: $route.path === '/lab' }">
-          <router-link to="/lab"><i class="fas fa-flask"></i> 模版生成</router-link>
+          <router-link to="/lab"><i class="fas fa-flask"></i> {{ $t('sidebar.lab') }}</router-link>
         </li>
         <li :class="{ active: $route.path === '/templates' }">
-          <router-link to="/templates"><i class="fas fa-layer-group"></i> 模版管理</router-link>
+          <router-link to="/templates"><i class="fas fa-layer-group"></i> {{ $t('sidebar.templates') }}</router-link>
         </li>
         <li :class="{ active: $route.path === '/guide' }">
-          <router-link to="/guide"><i class="fas fa-question-circle"></i> 使用教程</router-link>
+          <router-link to="/guide"><i class="fas fa-question-circle"></i> {{ $t('sidebar.guide') }}</router-link>
         </li>
       </ul>
       <div class="sidebar-footer">
-        <div class="upgrade-link" @click="router.push('/upgrade')" title="Account Upgrade">
+        <div class="upgrade-link" @click="router.push('/upgrade')" :title="$t('sidebar.upgrade')">
           <i class="fas fa-shopping-cart"></i>
-          <span>Account Upgrade</span>
+          <span>{{ $t('sidebar.upgrade') }}</span>
         </div>
         <div class="user-profile" @click="router.push('/profile')">
           <div class="user-avatar">{{ userAbbr }}</div>
@@ -39,11 +39,11 @@
               <span class="name">{{ currentUser }}</span>
               <span v-if="isVip" class="vip-badge">VIP</span>
             </div>
-            <span class="role">{{ isVip ? 'Premium Member' : 'Shipper' }}</span>
+            <span class="role">{{ isVip ? $t('profile.premium') : $t('profile.shipper') }}</span>
           </div>
         </div>
         <button @click="handleLogout" class="logout-btn">
-          <i class="fas fa-sign-out-alt"></i> Logout
+          <i class="fas fa-sign-out-alt"></i> {{ $t('sidebar.logout') }}
         </button>
       </div>
     </nav>
@@ -52,8 +52,11 @@
     
     <main class="main-content">
       <header class="content-header">
-        <h1>AI Intelligent Analysis</h1>
-        <p>Upload your document files for instant data extraction</p>
+        <div class="header-text">
+          <h1>{{ $t('dashboard.title') }}</h1>
+          <p>{{ $t('dashboard.subtitle') }}</p>
+        </div>
+        <LanguageSwitcher />
       </header>
       
       <section class="upload-section card">
@@ -74,8 +77,8 @@
               hidden
             >
             <i class="fas fa-cloud-upload-alt upload-icon"></i>
-            <h3>Click or drag files to upload</h3>
-            <p>Support for PDF, Images, Word documents</p>
+            <h3>{{ $t('dashboard.uploadTitle') }}</h3>
+            <p>{{ $t('dashboard.uploadDesc') }}</p>
           </div>
           
           <div v-if="files.length > 0" class="file-list-container">
@@ -101,7 +104,7 @@
                 :disabled="isAnalyzing || files.every(f => f.status === 'success')"
                 class="primary-btn"
               >
-                <i class="fas fa-brain"></i> Start AI Analysis
+                <i class="fas fa-brain"></i> {{ $t('dashboard.startAnalysis') }}
               </button>
             </div>
           </div>
@@ -110,10 +113,10 @@
       
       <section v-if="results.length > 0" class="results-section">
         <div class="section-title">
-          <h2>Analysis Results</h2>
+          <h2>{{ $t('dashboard.analysisResults') }}</h2>
           <div class="actions">
              <button @click="saveAll" class="success-btn">
-               <i class="fas fa-save"></i> Save All to Records
+               <i class="fas fa-save"></i> {{ $t('dashboard.saveAll') }}
              </button>
           </div>
         </div>
@@ -122,7 +125,7 @@
           <div v-for="(result, index) in results" :key="index" class="result-card card">
             <div class="result-header">
               <h3>{{ result.fileName }}</h3>
-              <span class="badge">Analyzed</span>
+              <span class="badge">{{ $t('dashboard.analyzed') }}</span>
             </div>
             <div class="result-preview-info">
               <div class="preview-item">
@@ -139,8 +142,8 @@
               </div>
             </div>
             <div class="result-actions">
-              <button @click="openEditModal(result, index)" class="outline-btn"><i class="fas fa-edit"></i> Review & Edit</button>
-              <button @click="saveSingle(result, index)" class="primary-btn"><i class="fas fa-save"></i> Save</button>
+              <button @click="openEditModal(result, index)" class="outline-btn"><i class="fas fa-edit"></i> {{ $t('dashboard.reviewEdit') }}</button>
+              <button @click="saveSingle(result, index)" class="primary-btn"><i class="fas fa-save"></i> {{ $t('dashboard.save') }}</button>
             </div>
           </div>
         </div>
@@ -421,6 +424,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../api/request'
 import { listTemplate, exportWithTemplate } from '../api/template'
+import LanguageSwitcher from '../components/LanguageSwitcher.vue'
 
 const router = useRouter()
 const currentUser = ref(localStorage.getItem('client_user') || 'Guest')
@@ -901,9 +905,12 @@ onMounted(async () => {
 
 .content-header {
   margin-bottom: 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.content-header h1 {
+.header-text h1 {
   font-size: 28px;
   font-weight: 800;
   color: var(--text-main);

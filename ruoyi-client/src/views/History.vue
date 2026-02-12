@@ -12,25 +12,25 @@
       </div>
       <ul class="nav-links">
         <li :class="{ active: $route.path === '/' }">
-          <router-link to="/"><i class="fas fa-file-invoice"></i> 文档生成</router-link>
+          <router-link to="/"><i class="fas fa-file-invoice"></i> {{ $t('sidebar.docGen') }}</router-link>
         </li>
         <li :class="{ active: $route.path === '/history' }">
-          <router-link to="/history"><i class="fas fa-history"></i> 历史提单</router-link>
+          <router-link to="/history"><i class="fas fa-history"></i> {{ $t('sidebar.history') }}</router-link>
         </li>
         <li :class="{ active: $route.path === '/lab' }">
-          <router-link to="/lab"><i class="fas fa-flask"></i> 模版生成</router-link>
+          <router-link to="/lab"><i class="fas fa-flask"></i> {{ $t('sidebar.lab') }}</router-link>
         </li>
         <li :class="{ active: $route.path === '/templates' }">
-          <router-link to="/templates"><i class="fas fa-layer-group"></i> 模版管理</router-link>
+          <router-link to="/templates"><i class="fas fa-layer-group"></i> {{ $t('sidebar.templates') }}</router-link>
         </li>
         <li :class="{ active: $route.path === '/guide' }">
-          <router-link to="/guide"><i class="fas fa-question-circle"></i> 使用教程</router-link>
+          <router-link to="/guide"><i class="fas fa-question-circle"></i> {{ $t('sidebar.guide') }}</router-link>
         </li>
       </ul>
       <div class="sidebar-footer">
-        <div class="upgrade-link" @click="router.push('/upgrade')" title="Account Upgrade">
+        <div class="upgrade-link" @click="router.push('/upgrade')" :title="$t('sidebar.upgrade')">
           <i class="fas fa-shopping-cart"></i>
-          <span>Account Upgrade</span>
+          <span>{{ $t('sidebar.upgrade') }}</span>
         </div>
         <div class="user-profile" @click="router.push('/profile')">
           <div class="user-avatar">{{ userAbbr }}</div>
@@ -39,11 +39,11 @@
               <span class="name">{{ currentUser }}</span>
               <span v-if="isVip" class="vip-badge">VIP</span>
             </div>
-            <span class="role">{{ isVip ? 'Premium Member' : 'Shipper' }}</span>
+            <span class="role">{{ isVip ? $t('profile.premium') : $t('profile.shipper') }}</span>
           </div>
         </div>
         <button @click="handleLogout" class="logout-btn">
-          <i class="fas fa-sign-out-alt"></i> Logout
+          <i class="fas fa-sign-out-alt"></i> {{ $t('sidebar.logout') }}
         </button>
       </div>
     </nav>
@@ -52,15 +52,18 @@
     
     <main class="main-content">
       <header class="content-header">
-        <h1>My Records</h1>
-        <p>View and manage your saved document declarations</p>
+        <div class="header-text">
+          <h1>{{ $t('history.title') }}</h1>
+          <p>{{ $t('history.subtitle') }}</p>
+        </div>
+        <LanguageSwitcher />
       </header>
       
       <section class="table-section card">
         <div class="table-filters">
           <div class="search-box">
             <i class="fas fa-search search-icon"></i>
-            <input v-model="searchQuery" @input="fetchRecords" placeholder="Search by Booking No. or B/L No...">
+            <input v-model="searchQuery" @input="fetchRecords" :placeholder="$t('history.searchPlaceholder')">
           </div>
         </div>
         
@@ -68,16 +71,16 @@
           <table>
             <thead>
               <tr>
-                <th>Booking No.</th>
-                <th>B/L No.</th>
-                <th>Doc No.</th>
-                <th>Vessel / Voyage</th>
-                <th>Weight (KG)</th>
-                <th>Volume (CBM)</th>
-                <th>Package Info</th>
-                <th>Created By</th>
-                <th>Created At</th>
-                <th>Actions</th>
+                <th>{{ $t('history.columns.bookingNo') }}</th>
+                <th>{{ $t('history.columns.blNo') }}</th>
+                <th>{{ $t('history.columns.docNo') }}</th>
+                <th>{{ $t('history.columns.vessel') }}</th>
+                <th>{{ $t('history.columns.weight') }}</th>
+                <th>{{ $t('history.columns.volume') }}</th>
+                <th>{{ $t('history.columns.package') }}</th>
+                <th>{{ $t('history.columns.createdBy') }}</th>
+                <th>{{ $t('history.columns.createdAt') }}</th>
+                <th>{{ $t('history.columns.actions') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -93,13 +96,13 @@
                 <td class="dim">{{ record.createdAt }}</td>
                 <td>
                   <div class="row-actions">
-                    <button @click="editRecord(record)" class="icon-btn edit-btn" title="Edit">
+                    <button @click="editRecord(record)" class="icon-btn edit-btn" :title="$t('common.edit')">
                       <i class="fas fa-edit"></i>
                     </button>
-                    <button @click="exportPdf(record)" class="icon-btn export-btn" title="Export PDF">
+                    <button @click="exportPdf(record)" class="icon-btn export-btn" :title="$t('common.export')">
                       <i class="fas fa-file-export"></i>
                     </button>
-                    <button @click="handleDelete(record)" class="icon-btn delete-btn" title="Delete">
+                    <button @click="handleDelete(record)" class="icon-btn delete-btn" :title="$t('common.delete')">
                       <i class="fas fa-trash-alt"></i>
                     </button>
                   </div>
@@ -121,6 +124,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../api/request'
+import LanguageSwitcher from '../components/LanguageSwitcher.vue'
 
 const router = useRouter()
 const currentUser = ref(localStorage.getItem('client_user') || 'Guest')

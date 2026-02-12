@@ -13,25 +13,25 @@
       </div>
       <ul class="nav-links">
         <li :class="{ active: $route.path === '/' }">
-          <router-link to="/"><i class="fas fa-file-invoice"></i> 文档生成</router-link>
+          <router-link to="/"><i class="fas fa-file-invoice"></i> {{ $t('sidebar.docGen') }}</router-link>
         </li>
         <li :class="{ active: $route.path === '/history' }">
-          <router-link to="/history"><i class="fas fa-history"></i> 历史提单</router-link>
+          <router-link to="/history"><i class="fas fa-history"></i> {{ $t('sidebar.history') }}</router-link>
         </li>
         <li :class="{ active: $route.path === '/lab' }">
-          <router-link to="/lab"><i class="fas fa-flask"></i> 模版生成</router-link>
+          <router-link to="/lab"><i class="fas fa-flask"></i> {{ $t('sidebar.lab') }}</router-link>
         </li>
         <li :class="{ active: $route.path === '/templates' }">
-          <router-link to="/templates"><i class="fas fa-layer-group"></i> 模版管理</router-link>
+          <router-link to="/templates"><i class="fas fa-layer-group"></i> {{ $t('sidebar.templates') }}</router-link>
         </li>
         <li :class="{ active: $route.path === '/guide' }">
-          <router-link to="/guide"><i class="fas fa-question-circle"></i> 使用教程</router-link>
+          <router-link to="/guide"><i class="fas fa-question-circle"></i> {{ $t('sidebar.guide') }}</router-link>
         </li>
       </ul>
       <div class="sidebar-footer">
-        <div class="upgrade-link" @click="router.push('/upgrade')" title="Account Upgrade">
+        <div class="upgrade-link" @click="router.push('/upgrade')" :title="$t('sidebar.upgrade')">
           <i class="fas fa-shopping-cart"></i>
-          <span>Account Upgrade</span>
+          <span>{{ $t('sidebar.upgrade') }}</span>
         </div>
         <div class="user-profile active" @click="router.push('/profile')">
           <div class="user-avatar">{{ userAbbr }}</div>
@@ -40,19 +40,22 @@
               <span class="name">{{ currentUser }}</span>
               <span v-if="isVip" class="vip-badge">VIP</span>
             </div>
-            <span class="role">{{ isVip ? 'Premium Member' : 'Shipper' }}</span>
+            <span class="role">{{ isVip ? $t('profile.premium') : $t('profile.shipper') }}</span>
           </div>
         </div>
         <button @click="handleLogout" class="logout-btn">
-          <i class="fas fa-sign-out-alt"></i> Logout
+          <i class="fas fa-sign-out-alt"></i> {{ $t('sidebar.logout') }}
         </button>
       </div>
     </nav>
 
     <main class="main-content">
-      <header class="content-header">
-        <h1>User Profile</h1>
-        <p>Manage your account settings and view your membership status</p>
+      <header class="content-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div>
+          <h1>{{ $t('profilePage.title') }}</h1>
+          <p>{{ $t('profilePage.subtitle') }}</p>
+        </div>
+        <LanguageSwitcher />
       </header>
 
       <section class="profile-layout">
@@ -61,22 +64,22 @@
           <div class="info-grid">
             <div class="card glass-card info-card">
               <div class="card-header">
-                <h3><i class="fas fa-user-circle"></i> Basic Information</h3>
+                <h3><i class="fas fa-user-circle"></i> {{ $t('profilePage.basicInfo') }}</h3>
                 <button class="edit-profile-btn" @click="openEditModal">
-                  <i class="fas fa-edit"></i> Edit Profile
+                  <i class="fas fa-edit"></i> {{ $t('profilePage.editProfile') }}
                 </button>
               </div>
               <div class="info-content">
                 <div class="info-item">
-                  <label>Company Name</label>
+                  <label>{{ $t('profilePage.companyName') }}</label>
                   <span>{{ userData.companyName || '-' }}</span>
                 </div>
                 <div class="info-item">
-                  <label>Company Code</label>
+                  <label>{{ $t('profilePage.companyCode') }}</label>
                   <span>{{ userData.companyCode || '-' }}</span>
                 </div>
                 <div class="info-item">
-                  <label>Shipline Abbr</label>
+                  <label>{{ $t('profilePage.shiplineAbbr') }}</label>
                   <span class="abbr-tag">{{ userData.companyAbbr || '-' }}</span>
                 </div>
               </div>
@@ -84,23 +87,23 @@
 
             <div class="card glass-card membership-card">
               <div class="card-header">
-                <h3><i class="fas fa-gem"></i> Membership Plan</h3>
+                <h3><i class="fas fa-gem"></i> {{ $t('profilePage.membershipPlan') }}</h3>
                 <span :class="['plan-badge', isVip ? 'premium' : 'free']">
                   {{ isVip ? 'PREMIUM' : 'FREE PLAN' }}
                 </span>
               </div>
               <div class="info-content">
                 <div class="info-item">
-                  <label>Package Type</label>
-                  <span class="highlight">{{ userData.packageType || 'Free Edition' }}</span>
+                  <label>{{ $t('profilePage.packageType') }}</label>
+                  <span class="highlight">{{ userData.packageType || $t('profilePage.freeEdition') }}</span>
                 </div>
                 <div class="info-item">
-                  <label>Expiry Date</label>
-                  <span>{{ formatTime(userData.expiryDate) || 'No Expiration' }}</span>
+                  <label>{{ $t('profilePage.expiryDate') }}</label>
+                  <span>{{ formatTime(userData.expiryDate) || $t('profilePage.noExpiration') }}</span>
                 </div>
                 <div class="membership-cta" v-if="!isVip">
-                  <p>Upgrade to Premium for unlimited exports and more features.</p>
-                  <button class="primary-btn" @click="router.push('/upgrade')">Upgrade Now</button>
+                  <p>{{ $t('profilePage.upgradeHint') }}</p>
+                  <button class="primary-btn" @click="router.push('/upgrade')">{{ $t('upgrade.upgradeNow') }}</button>
                 </div>
               </div>
             </div>
@@ -108,32 +111,32 @@
 
           <!-- Quota Section -->
           <div class="card glass-card quota-card">
-            <h3><i class="fas fa-chart-pie"></i> Usage & Quotas</h3>
+            <h3><i class="fas fa-chart-pie"></i> {{ $t('profilePage.usageQuotas') }}</h3>
             <div class="quota-grid">
               <div class="quota-item">
                 <div class="quota-info">
                   <div class="quota-text">
-                    <label>B/L Export Quota</label>
-                    <span class="quota-count">{{ isVip ? 'Unlimited' : (QUOTA_LIMIT - userData.dataCount) + ' / ' + QUOTA_LIMIT }}</span>
+                    <label>{{ $t('profilePage.exportQuota') }}</label>
+                    <span class="quota-count">{{ isVip ? $t('profilePage.unlimited') : (QUOTA_LIMIT - userData.dataCount) + ' / ' + QUOTA_LIMIT }}</span>
                   </div>
                   <div class="quota-progress-bg">
                     <div class="quota-progress-bar" :style="{ width: isVip ? '100%' : (userData.dataCount / QUOTA_LIMIT * 100) + '%' }"></div>
                   </div>
                 </div>
-                <p class="quota-hint">Remaining exportable records for this month.</p>
+                <p class="quota-hint">{{ $t('profilePage.exportHint') }}</p>
               </div>
 
               <div class="quota-item">
                 <div class="quota-info">
                   <div class="quota-text">
-                    <label>Template Quota</label>
-                    <span class="quota-count">{{ isVip ? 'Unlimited' : (TEMPLATE_LIMIT - templateCount) + ' / ' + TEMPLATE_LIMIT }}</span>
+                    <label>{{ $t('profilePage.templateQuota') }}</label>
+                    <span class="quota-count">{{ isVip ? $t('profilePage.unlimited') : (TEMPLATE_LIMIT - templateCount) + ' / ' + TEMPLATE_LIMIT }}</span>
                   </div>
                   <div class="quota-progress-bg template">
                     <div class="quota-progress-bar template" :style="{ width: isVip ? '100%' : (templateCount / TEMPLATE_LIMIT * 100) + '%' }"></div>
                   </div>
                 </div>
-                <p class="quota-hint">Number of custom mustache templates allowed.</p>
+                <p class="quota-hint">{{ $t('profilePage.templateHint') }}</p>
               </div>
             </div>
           </div>
@@ -145,8 +148,8 @@
         <div class="modal-content profile-modal card">
           <header class="modal-header">
             <div class="header-left">
-              <h2>Edit Profile</h2>
-              <p>Update your company name and password</p>
+              <h2>{{ $t('profilePage.editModal.title') }}</h2>
+              <p>{{ $t('profilePage.editModal.subtitle') }}</p>
             </div>
             <button @click="closeProfileModal" class="close-btn"><i class="fas fa-times"></i></button>
           </header>
@@ -154,36 +157,36 @@
           <div class="modal-body">
             <form @submit.prevent="handleUpdateProfile" class="profile-form">
               <div class="form-group-custom">
-                <label>Company Name</label>
-                <input v-model="profileForm.companyName" placeholder="Enter new company name">
+                <label>{{ $t('profilePage.companyName') }}</label>
+                <input v-model="profileForm.companyName" :placeholder="$t('profilePage.companyName')">
               </div>
 
               <div class="form-group-custom">
-                <label>Shipline Code (4 Abbr)</label>
+                <label>{{ $t('profilePage.shiplineAbbr') }} (4 Abbr)</label>
                 <input v-model="profileForm.companyAbbr" placeholder="e.g. MSKU" maxlength="4">
               </div>
 
               <div class="form-group-custom">
-                <label>Old Password</label>
-                <input v-model="profileForm.oldPassword" type="password" placeholder="Required if changing password">
+                <label>{{ $t('profilePage.editModal.oldPassword') }}</label>
+                <input v-model="profileForm.oldPassword" type="password" :placeholder="$t('profilePage.editModal.oldPassword')">
               </div>
 
               <div class="form-group-custom">
-                <label>New Password</label>
-                <input v-model="profileForm.password" type="password" placeholder="Leave blank to keep current password">
+                <label>{{ $t('profilePage.editModal.newPassword') }}</label>
+                <input v-model="profileForm.password" type="password" :placeholder="$t('profilePage.editModal.newPassword')">
               </div>
 
               <div class="form-group-custom">
-                <label>Confirm Password</label>
-                <input v-model="profileForm.confirmPassword" type="password" placeholder="Repeat new password">
+                <label>{{ $t('profilePage.editModal.confirmPassword') }}</label>
+                <input v-model="profileForm.confirmPassword" type="password" :placeholder="$t('profilePage.editModal.confirmPassword')">
               </div>
             </form>
           </div>
 
           <footer class="modal-footer">
-            <button @click="closeProfileModal" class="outline-btn">Cancel</button>
+            <button @click="closeProfileModal" class="outline-btn">{{ $t('profilePage.editModal.cancel') }}</button>
             <button @click="handleUpdateProfile" :disabled="profileLoading" class="primary-btn">
-              <span v-if="!profileLoading">Save Changes</span>
+              <span v-if="!profileLoading">{{ $t('profilePage.editModal.save') }}</span>
               <span v-else class="loader"></span>
             </button>
           </footer>
@@ -199,6 +202,10 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../api/request'
 import { listTemplate } from '../api/template'
+import LanguageSwitcher from '../components/LanguageSwitcher.vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const router = useRouter()
 const currentUser = ref(localStorage.getItem('client_user') || 'Guest')
@@ -257,11 +264,11 @@ const closeProfileModal = () => {
 const handleUpdateProfile = async () => {
   if (profileForm.value.password) {
     if (!profileForm.value.oldPassword) {
-      alert('请输入原密码')
+      alert(t('profilePage.editModal.requiredOld'))
       return
     }
     if (profileForm.value.password !== profileForm.value.confirmPassword) {
-      alert('两次输入的密码不一致')
+      alert(t('profilePage.editModal.mismatch'))
       return
     }
   }
@@ -275,14 +282,14 @@ const handleUpdateProfile = async () => {
       password: profileForm.value.password
     })
     if (res.code === 200 || res.code === 0) {
-      alert('Profile updated successfully!')
+      alert(t('profilePage.editModal.success'))
       fetchUserData()
       closeProfileModal()
     } else {
-      alert(res.msg || 'Update failed')
+      alert(res.msg || t('profilePage.editModal.updateFailed'))
     }
   } catch (err) {
-    alert(err.message || 'Network error')
+    alert(err.message || t('profilePage.editModal.networkError'))
   } finally {
     profileLoading.value = false
   }

@@ -11,47 +11,50 @@
         <div class="logo">
           <i class="fas fa-crown"></i>
         </div>
-        <h1>Elevate Your Workflow</h1>
-        <p>Unlock unrestricted AI power and professional features</p>
+        <h1>{{ $t('upgrade.title') }}</h1>
+        <p>{{ $t('upgrade.subtitle') }}</p>
+        <div style="margin-top: 16px;">
+          <LanguageSwitcher />
+        </div>
       </header>
 
       <div class="plans-grid">
         <!-- Free Plan -->
         <div class="plan-card animate-slide-up" style="animation-delay: 0.1s">
-          <div class="plan-badge">CURRENT</div>
-          <h2 class="plan-name">Basic</h2>
+          <div class="plan-badge">{{ $t('upgrade.current') }}</div>
+          <h2 class="plan-name">{{ $t('upgrade.basic') }}</h2>
           <div class="plan-price">$0<span>/mo</span></div>
           <ul class="plan-features">
-            <li><i class="fas fa-check"></i> 4 Document Generations</li>
-            <li><i class="fas fa-check"></i> 2 Standard Templates</li>
-            <li><i class="fas fa-check"></i> AI Extraction Support</li>
-            <li class="restricted"><i class="fas fa-times"></i> Priority API Access</li>
-            <li class="restricted"><i class="fas fa-times"></i> Custom Branding</li>
+            <li><i class="fas fa-check"></i> {{ $t('upgrade.features.generations') }}</li>
+            <li><i class="fas fa-check"></i> {{ $t('upgrade.features.standardTemplates') }}</li>
+            <li><i class="fas fa-check"></i> {{ $t('upgrade.features.extraction') }}</li>
+            <li class="restricted"><i class="fas fa-times"></i> {{ $t('upgrade.features.priority') }}</li>
+            <li class="restricted"><i class="fas fa-times"></i> {{ $t('upgrade.features.branding') }}</li>
           </ul>
-          <button class="plan-btn disabled" disabled>Active Plan</button>
+          <button class="plan-btn disabled" disabled>{{ $t('upgrade.active') }}</button>
         </div>
 
         <!-- Pro Plan -->
         <div class="plan-card pro animate-slide-up" style="animation-delay: 0.2s">
-          <div class="plan-badge featured">MOST POPULAR</div>
-          <h2 class="plan-name">VIP Pro</h2>
+          <div class="plan-badge featured">{{ $t('upgrade.mostPopular') }}</div>
+          <h2 class="plan-name">{{ $t('upgrade.pro') }}</h2>
           <div class="plan-price">$29<span>/mo</span></div>
           <ul class="plan-features">
-            <li><i class="fas fa-check"></i> Unlimited Generations</li>
-            <li><i class="fas fa-check"></i> All Professional Templates</li>
-            <li><i class="fas fa-check"></i> Priority AI Processing</li>
-            <li><i class="fas fa-check"></i> Advanced PDF Tools</li>
-            <li><i class="fas fa-check"></i> 24/7 Dedicated Support</li>
+            <li><i class="fas fa-check"></i> {{ $t('upgrade.features.unlimited') }}</li>
+            <li><i class="fas fa-check"></i> {{ $t('upgrade.features.proTemplates') }}</li>
+            <li><i class="fas fa-check"></i> {{ $t('upgrade.features.processing') }}</li>
+            <li><i class="fas fa-check"></i> {{ $t('upgrade.features.pdfTools') }}</li>
+            <li><i class="fas fa-check"></i> {{ $t('upgrade.features.support') }}</li>
           </ul>
           <button @click="handleUpgrade" :disabled="loading" class="plan-btn primary">
-            <span v-if="!loading">Upgrade Now</span>
+            <span v-if="!loading">{{ $t('upgrade.upgradeNow') }}</span>
             <span v-else class="loader"></span>
           </button>
         </div>
       </div>
 
       <div class="back-link animate-fade-in">
-        <router-link to="/"><i class="fas fa-arrow-left"></i> Back to Dashboard</router-link>
+        <router-link to="/"><i class="fas fa-arrow-left"></i> {{ $t('upgrade.back') }}</router-link>
       </div>
     </div>
   </div>
@@ -63,19 +66,22 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../api/request'
 import Swal from 'sweetalert2'
+import LanguageSwitcher from '../components/LanguageSwitcher.vue'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const loading = ref(false)
 const router = useRouter()
 
 const handleUpgrade = async () => {
   const result = await Swal.fire({
-    title: 'Confirm Upgrade?',
-    text: "You are about to upgrade to VIP Pro. This will unlock all features instantly.",
+    title: t('upgrade.modal.title'),
+    text: t('upgrade.modal.text'),
     icon: 'question',
     showCancelButton: true,
     confirmButtonColor: '#3b82f6',
     cancelButtonColor: '#64748b',
-    confirmButtonText: 'Yes, Upgrade!',
+    confirmButtonText: t('upgrade.modal.confirm'),
     background: '#1e293b',
     color: '#ffffff'
   })
@@ -86,8 +92,8 @@ const handleUpgrade = async () => {
       const res = await api.post('/client-api/upgrade')
       if (res.code === 200 || res.code === 0) {
         await Swal.fire({
-          title: 'Success!',
-          text: res.msg || 'Welcome to VIP Pro!',
+          title: t('upgrade.modal.successTitle'),
+          text: t('upgrade.modal.successText'),
           icon: 'success',
           background: '#1e293b',
           color: '#ffffff'
@@ -185,6 +191,7 @@ h1 {
   margin-bottom: 16px;
   background: linear-gradient(to right, #fff, #94a3b8);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 

@@ -13,25 +13,25 @@
       </div>
       <ul class="nav-links">
         <li :class="{ active: $route.path === '/' }">
-          <router-link to="/"><i class="fas fa-file-invoice"></i> 文档生成</router-link>
+          <router-link to="/"><i class="fas fa-file-invoice"></i> {{ $t('sidebar.docGen') }}</router-link>
         </li>
         <li :class="{ active: $route.path === '/history' }">
-          <router-link to="/history"><i class="fas fa-history"></i> 历史提单</router-link>
+          <router-link to="/history"><i class="fas fa-history"></i> {{ $t('sidebar.history') }}</router-link>
         </li>
         <li :class="{ active: $route.path === '/lab' }">
-          <router-link to="/lab"><i class="fas fa-flask"></i> 模版生成</router-link>
+          <router-link to="/lab"><i class="fas fa-flask"></i> {{ $t('sidebar.lab') }}</router-link>
         </li>
         <li :class="{ active: $route.path === '/templates' }">
-          <router-link to="/templates"><i class="fas fa-layer-group"></i> 模版管理</router-link>
+          <router-link to="/templates"><i class="fas fa-layer-group"></i> {{ $t('sidebar.templates') }}</router-link>
         </li>
         <li :class="{ active: $route.path === '/guide' }">
-          <router-link to="/guide"><i class="fas fa-question-circle"></i> 使用教程</router-link>
+          <router-link to="/guide"><i class="fas fa-question-circle"></i> {{ $t('sidebar.guide') }}</router-link>
         </li>
       </ul>
       <div class="sidebar-footer">
-        <div class="upgrade-link" @click="router.push('/upgrade')" title="Account Upgrade">
+        <div class="upgrade-link" @click="router.push('/upgrade')" :title="$t('sidebar.upgrade')">
           <i class="fas fa-shopping-cart"></i>
-          <span>Account Upgrade</span>
+          <span>{{ $t('sidebar.upgrade') }}</span>
         </div>
         <div class="user-profile" @click="router.push('/profile')">
           <div class="user-avatar">{{ userAbbr }}</div>
@@ -40,11 +40,11 @@
               <span class="name">{{ currentUserDisplay }}</span>
               <span v-if="isVip" class="vip-badge">VIP</span>
             </div>
-            <span class="role">{{ isVip ? 'Premium Member' : 'Shipper' }}</span>
+            <span class="role">{{ isVip ? $t('profile.premium') : $t('profile.shipper') }}</span>
           </div>
         </div>
         <button @click="handleLogout" class="logout-btn">
-          <i class="fas fa-sign-out-alt"></i> Logout
+          <i class="fas fa-sign-out-alt"></i> {{ $t('sidebar.logout') }}
         </button>
       </div>
     </nav>
@@ -56,20 +56,21 @@
       <div class="template-lab-content">
         <header class="lab-header">
           <div class="title-area">
-            <h2>智能模版实验室 <span class="badge">BETA</span></h2>
-            <p>上传 Docx 文档，AI 自动识别并生成 mustache {{}} 动态模版</p>
+            <h2 style="display:flex; align-items:center; gap:10px;">{{ $t('lab.title') }} <span class="badge">BETA</span></h2>
+            <p>{{ $t('lab.subtitle') }}</p>
           </div>
-          <div class="actions">
+          <div class="actions" style="display:flex; align-items:center; gap:10px;">
             <label class="btn-primary">
-              <i class="fas fa-upload"></i> 上传原始文档
+              <i class="fas fa-upload"></i> {{ $t('lab.upload') }}
               <input type="file" @change="handleFileChange" accept=".docx" hidden>
             </label>
             <button class="btn-success" @click="syncPreview" :disabled="!file || previewLoading">
-              <i class="fas fa-sync" :class="{ 'fa-spin': previewLoading }"></i> 同步预览
+              <i class="fas fa-sync" :class="{ 'fa-spin': previewLoading }"></i> {{ $t('lab.analyze') }}
             </button>
             <button class="btn-warning" @click="handleSave" :disabled="!file || analyzeLoading || mappings.length === 0">
-              <i class="fas fa-save"></i> 保存模版
+              <i class="fas fa-save"></i> {{ $t('lab.save') }}
             </button>
+            <LanguageSwitcher />
           </div>
         </header>
 
@@ -217,9 +218,11 @@ import { renderAsync } from 'docx-preview'
 import { analyzeTemplate, previewTemplate, saveTemplate } from '../api/lab'
 import { listTemplate } from '../api/template'
 import api from '../api/request'
+import LanguageSwitcher from '../components/LanguageSwitcher.vue'
 
 export default defineComponent({
   name: 'FreightTemplateLab',
+  components: { LanguageSwitcher },
   setup() {
     const router = useRouter()
     const file = ref(null)
