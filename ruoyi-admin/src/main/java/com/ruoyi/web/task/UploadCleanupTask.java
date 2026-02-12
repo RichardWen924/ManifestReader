@@ -1,26 +1,21 @@
 package com.ruoyi.web.task;
 
 import java.io.File;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import com.ruoyi.common.config.RuoYiConfig;
 
-/**
- * 定期清理上传文件区的旧文件
- * 每天凌晨2点执行，删除超过7天的文件
- */
+
 @Component
 public class UploadCleanupTask {
     private static final Logger log = LoggerFactory.getLogger(UploadCleanupTask.class);
 
-    /** 文件保留天数 */
-    private static final int RETENTION_DAYS = 7;
+    /** 文件保留时间 (10分钟) */
+    private static final long RETENTION_MILLIS = 600 * 1000;
 
-    @Scheduled(cron = "0 0 2 * * ?")
+    @Scheduled(fixedRate = 600000)
     public void cleanOldUploads() {
         String uploadPath = RuoYiConfig.getUploadPath();
         File uploadDir = new File(uploadPath);
@@ -29,10 +24,9 @@ public class UploadCleanupTask {
             return;
         }
 
-        long cutoff = Instant.now().minus(RETENTION_DAYS, ChronoUnit.DAYS).toEpochMilli();
+        long cutoff = System.currentTimeMillis() - RETENTION_MILLIS;
         int count = cleanDirectory(uploadDir, cutoff);
-        log.info("Upload cleanup completed. Deleted {} files older than {} days from {}", count, RETENTION_DAYS,
-                uploadPath);
+        log.info("Upload cleanup completed. Deleted {} files older than 600 seconds from {}", count, uploadPath);
     }
 
     /**
