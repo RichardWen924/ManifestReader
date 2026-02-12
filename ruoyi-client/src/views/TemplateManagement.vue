@@ -75,7 +75,7 @@
             <i class="fas fa-search"></i>
             <input v-model="queryParams.templateName" :placeholder="$t('templates.searchPlaceholder')" @keyup.enter="handleQuery">
           </div>
-          <span class="record-count" v-if="templateList.length > 0">{{ $t('templates.recordCount', { count: templateList.length }) }}</span>
+          <span class="record-count" v-if="total > 0">{{ $t('templates.recordCount', { count: total }) }}</span>
         </div>
       </div>
 
@@ -190,6 +190,7 @@ import { useRouter } from 'vue-router'
 import { listTemplate, getTemplate, delTemplate, updateTemplate } from '../api/template'
 import api from '../api/request'
 import LanguageSwitcher from '../components/LanguageSwitcher.vue'
+import Pagination from '../components/Pagination.vue'
 
 const router = useRouter()
 const loading = ref(true)
@@ -198,10 +199,13 @@ const currentUserDisplay = computed(() => currentUser.value)
 const userAbbr = ref('Loading...')
 const isVip = ref(false)
 const templateList = ref([])
+const total = ref(0)
 const open = ref(false)
 const form = ref({})
 const selectedIds = ref([])
 const queryParams = ref({
+  pageNum: 1,
+  pageSize: 10,
   templateName: ''
 })
 
@@ -264,10 +268,18 @@ const getList = async () => {
   try {
     const res = await listTemplate(queryParams.value)
     if (res.code === 200 || res.code === 0) {
-      if (!isVip.value && res.data && res.data.length > 2) {
-        templateList.value = res.data.slice(0, 2)
+      // Backend now returns TableDataInfo (rows, total)
+      // Fix for VIP display: check rows instead of data
+      let rows = res.rows || res.data || []
+      
+      if (!isVip.value && rows.length > 2) {
+        // Enforce non-VIP limit on display if needed, though usually limit is on creation
+        // If we want to strictly limit view to 2 for non-VIP:
+        templateList.value = rows.slice(0, 2)
+        total.value = 2
       } else {
-        templateList.value = res.data
+        templateList.value = rows
+        total.value = res.total || rows.length
       }
     }
   } catch (err) {

@@ -1,5 +1,6 @@
 package com.ruoyi.web.controller.system;
 
+import com.ruoyi.common.core.page.TableDataInfo;
 import java.io.IOException;
 import java.util.List;
 import java.util.ArrayList;
@@ -128,15 +129,19 @@ public class SysTemplateLabController extends BaseController {
     /**
      * 查询模版列表 (仅限当前用户)
      */
+    /**
+     * 查询模版列表 (仅限当前用户)
+     */
     @GetMapping("/list")
-    public AjaxResult list(SysPdfTemplate sysPdfTemplate) {
+    public TableDataInfo list(SysPdfTemplate sysPdfTemplate) {
         String loginName = getCurrentLoginName();
         if (loginName == null) {
-            return AjaxResult.error("未获取到用户信息，请重新登录");
+            return new TableDataInfo();
         }
+        startPage();
         sysPdfTemplate.setCreateBy(loginName);
         List<SysPdfTemplate> list = pdfTemplateService.selectSysPdfTemplateList(sysPdfTemplate);
-        return AjaxResult.success(list);
+        return getDataTable(list);
     }
 
     /**

@@ -115,6 +115,14 @@
           </table>
         </div>
       </section>
+      
+      <Pagination
+        v-if="total > 0"
+        :total="total"
+        v-model:page="queryParams.pageNum"
+        v-model:limit="queryParams.pageSize"
+        @pagination="fetchRecords"
+      />
     </main>
   </div>
 </template>
@@ -123,15 +131,23 @@
 // @author Richard
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+
 import api from '../api/request'
 import LanguageSwitcher from '../components/LanguageSwitcher.vue'
+import Pagination from '../components/Pagination.vue'
 
 const router = useRouter()
 const currentUser = ref(localStorage.getItem('client_user') || 'Guest')
 const userAbbr = ref('Loading...')
 const isVip = ref(false)
+
 const records = ref([])
+const total = ref(0)
 const searchQuery = ref('')
+const queryParams = ref({
+  pageNum: 1,
+  pageSize: 10
+})
 
 const fetchUserData = async () => {
   try {
@@ -163,14 +179,17 @@ const fetchRecords = async () => {
     const res = await api.get('/client-api/list', {
       params: { 
         blNo: searchQuery.value,
-        pageSize: 100 
+        pageNum: queryParams.value.pageNum,
+        pageSize: queryParams.value.pageSize
       }
     })
     records.value = res.rows || []
+    total.value = res.total || 0
   } catch (err) {
     console.error('Fetch failed:', err)
   }
 }
+
 
 const editRecord = (record) => {
   router.push(`/edit/${record.blNo}`)
