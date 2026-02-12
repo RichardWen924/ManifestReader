@@ -361,6 +361,7 @@ export default defineComponent({
         const res = await saveTemplate(formData)
         alert('模版保存成功: ' + res.data)
         fetchTemplateCount() // 刷新模版数量
+        router.push('/templates')
       } catch (err) {
         console.error('Save failed:', err)
         alert('保存失败')
