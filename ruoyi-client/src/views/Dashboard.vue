@@ -160,198 +160,220 @@
             <button @click="closeModal" class="close-btn"><i class="fas fa-times"></i></button>
           </header>
 
-          <div class="modal-body custom-scrollbar">
-            <form @submit.prevent="saveFromModal" class="modal-form">
-              <!-- Basic Info Group -->
-              <div class="form-section">
-                <h3><i class="fas fa-info-circle"></i> Basic Information</h3>
-                <div class="grid-3">
-                  <div class="form-group-custom">
-                    <label>B/L NO.</label>
-                    <input v-model="editingResult.data.blNo" placeholder="B/L NO.">
-                  </div>
-                  <div class="form-group-custom">
-                    <label>Booking NO.</label>
-                    <input v-model="editingResult.data.bookingNo" placeholder="Booking NO.">
-                  </div>
-                  <div class="form-group-custom">
-                    <label>Serial NO.</label>
-                    <input v-model="editingResult.data.serialNo" placeholder="Serial NO.">
-                  </div>
-                </div>
-              </div>
 
-              <!-- Parties Group -->
-              <div class="form-section">
-                <h3><i class="fas fa-users"></i> Parties</h3>
-                <div class="grid-2">
-                  <div class="form-group-custom">
-                    <label>Shipper</label>
-                    <textarea v-model="editingResult.data.shipper" rows="3" placeholder="Shipper info"></textarea>
-                  </div>
-                  <div class="form-group-custom">
-                    <label>Consignee</label>
-                    <textarea v-model="editingResult.data.consignee" rows="3" placeholder="Consignee info"></textarea>
-                  </div>
-                  <div class="form-group-custom">
-                    <label>Notify Party</label>
-                    <textarea v-model="editingResult.data.notifyParty" rows="3" placeholder="Notify party info"></textarea>
-                  </div>
-                  <div class="form-group-custom">
-                    <label>Carrier Agent</label>
-                    <textarea v-model="editingResult.data.carrierAgent" rows="3" placeholder="Carrier agent info"></textarea>
-                  </div>
-                  <div class="form-group-custom full-width">
-                    <label>Delivery Agent</label>
-                    <textarea v-model="editingResult.data.deliveryAgent" rows="2" placeholder="Delivery agent info"></textarea>
+          <div class="modal-body-split">
+            <!-- Left Pane: Edit Form -->
+            <div class="left-pane custom-scrollbar">
+              <form @submit.prevent="saveFromModal" class="modal-form">
+                <!-- Basic Info Group -->
+                <div class="form-section">
+                  <h3><i class="fas fa-info-circle"></i> Basic Information</h3>
+                  <div class="grid-3">
+                    <div class="form-group-custom">
+                      <label>B/L NO.</label>
+                      <input v-model="editingResult.data.blNo" placeholder="B/L NO.">
+                    </div>
+                    <div class="form-group-custom">
+                      <label>Booking NO.</label>
+                      <input v-model="editingResult.data.bookingNo" placeholder="Booking NO.">
+                    </div>
+                    <div class="form-group-custom">
+                      <label>Serial NO.</label>
+                      <input v-model="editingResult.data.serialNo" placeholder="Serial NO.">
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <!-- Route Group -->
-              <div class="form-section">
-                <h3><i class="fas fa-route"></i> Route Information</h3>
-                <div class="grid-3">
-                  <div class="form-group-custom">
-                    <label>Vessel/Voyage</label>
-                    <input v-model="editingResult.data.vesselVoyage" placeholder="Vessel/Voyage">
-                  </div>
-                  <div class="form-group-custom">
-                    <label>Vessel Name</label>
-                    <input v-model="editingResult.data.vesselName" placeholder="Vessel Name">
-                  </div>
-                  <div class="form-group-custom">
-                    <label>Voyage No</label>
-                    <input v-model="editingResult.data.voyageNo" placeholder="Voyage No">
-                  </div>
-                  <div class="form-group-custom">
-                    <label>Port of Loading</label>
-                    <input v-model="editingResult.data.portOfLoading" placeholder="POL">
-                  </div>
-                  <div class="form-group-custom">
-                    <label>Port of Discharge</label>
-                    <input v-model="editingResult.data.portOfDischarge" placeholder="POD">
-                  </div>
-                  <div class="form-group-custom">
-                    <label>Place of Receipt</label>
-                    <input v-model="editingResult.data.placeOfReceipt" placeholder="Place of Receipt">
-                  </div>
-                  <div class="form-group-custom">
-                    <label>Place of Delivery</label>
-                    <input v-model="editingResult.data.placeOfDelivery" placeholder="Place of Delivery">
+                <!-- Parties Group -->
+                <div class="form-section">
+                  <h3><i class="fas fa-users"></i> Parties</h3>
+                  <div class="grid-2">
+                    <div class="form-group-custom">
+                      <label>Shipper</label>
+                      <textarea v-model="editingResult.data.shipper" rows="3" placeholder="Shipper info"></textarea>
+                    </div>
+                    <div class="form-group-custom">
+                      <label>Consignee</label>
+                      <textarea v-model="editingResult.data.consignee" rows="3" placeholder="Consignee info"></textarea>
+                    </div>
+                    <div class="form-group-custom">
+                      <label>Notify Party</label>
+                      <textarea v-model="editingResult.data.notifyParty" rows="3" placeholder="Notify party info"></textarea>
+                    </div>
+                    <div class="form-group-custom">
+                      <label>Carrier Agent</label>
+                      <textarea v-model="editingResult.data.carrierAgent" rows="3" placeholder="Carrier agent info"></textarea>
+                    </div>
+                    <div class="form-group-custom full-width">
+                      <label>Delivery Agent</label>
+                      <textarea v-model="editingResult.data.deliveryAgent" rows="2" placeholder="Delivery agent info"></textarea>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <!-- Goods Group -->
-              <div class="form-section">
-                <h3><i class="fas fa-box"></i> Goods & Packages</h3>
-                <div class="grid-2">
-                  <div class="form-group-custom">
-                    <label>Package Quantity</label>
-                    <input v-model="editingResult.data.packageQuantity" type="text" placeholder="Quantity">
-                  </div>
-                  <div class="form-group-custom">
-                    <label>Package Unit</label>
-                    <input v-model="editingResult.data.packageUnit" placeholder="Unit">
-                  </div>
-                  <div class="form-group-custom full-width">
-                    <label>Goods Description</label>
-                    <textarea v-model="editingResult.data.goodsDescription" rows="4" placeholder="Goods description"></textarea>
-                  </div>
-                  <div class="form-group-custom full-width">
-                    <label>Marks</label>
-                    <textarea v-model="editingResult.data.marks" rows="2" placeholder="Marks"></textarea>
+                <!-- Route Group -->
+                <div class="form-section">
+                  <h3><i class="fas fa-route"></i> Route Information</h3>
+                  <div class="grid-3">
+                    <div class="form-group-custom">
+                      <label>Vessel/Voyage</label>
+                      <input v-model="editingResult.data.vesselVoyage" placeholder="Vessel/Voyage">
+                    </div>
+                    <div class="form-group-custom">
+                      <label>Vessel Name</label>
+                      <input v-model="editingResult.data.vesselName" placeholder="Vessel Name">
+                    </div>
+                    <div class="form-group-custom">
+                      <label>Voyage No</label>
+                      <input v-model="editingResult.data.voyageNo" placeholder="Voyage No">
+                    </div>
+                    <div class="form-group-custom">
+                      <label>Port of Loading</label>
+                      <input v-model="editingResult.data.portOfLoading" placeholder="POL">
+                    </div>
+                    <div class="form-group-custom">
+                      <label>Port of Discharge</label>
+                      <input v-model="editingResult.data.portOfDischarge" placeholder="POD">
+                    </div>
+                    <div class="form-group-custom">
+                      <label>Place of Receipt</label>
+                      <input v-model="editingResult.data.placeOfReceipt" placeholder="Place of Receipt">
+                    </div>
+                    <div class="form-group-custom">
+                      <label>Place of Delivery</label>
+                      <input v-model="editingResult.data.placeOfDelivery" placeholder="Place of Delivery">
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <!-- Weight & Container Group -->
-              <div class="form-section">
-                <h3><i class="fas fa-weight-hanging"></i> Weight & Container</h3>
-                <div class="grid-3">
-                  <div class="form-group-custom">
-                    <label>Gross Weight (KGS)</label>
-                    <input v-model="editingResult.data.grossWeightKgs" type="number" step="0.01">
-                  </div>
-                  <div class="form-group-custom">
-                    <label>Measurement (CBM)</label>
-                    <input v-model="editingResult.data.measurementCbm" type="number" step="0.01">
-                  </div>
-                  <div class="form-group-custom">
-                    <label>Container Weight</label>
-                    <input v-model="editingResult.data.containerWeight" type="number" step="0.01">
-                  </div>
-                  <div class="form-group-custom">
-                    <label>VGM Weight</label>
-                    <input v-model="editingResult.data.vgmWeight" type="number" step="0.01">
-                  </div>
-                  <div class="form-group-custom">
-                    <label>Container No</label>
-                    <input v-model="editingResult.data.containerNo" placeholder="Container No">
-                  </div>
-                  <div class="form-group-custom">
-                    <label>Seal No</label>
-                    <input v-model="editingResult.data.sealNo" placeholder="Seal No">
-                  </div>
-                  <div class="form-group-custom full-width">
-                    <label>Container/Seal Info</label>
-                    <textarea v-model="editingResult.data.containerSealInfo" rows="2" placeholder="Container/Seal details"></textarea>
+                <!-- Goods Group -->
+                <div class="form-section">
+                  <h3><i class="fas fa-box"></i> Goods & Packages</h3>
+                  <div class="grid-2">
+                    <div class="form-group-custom">
+                      <label>Package Quantity</label>
+                      <input v-model="editingResult.data.packageQuantity" type="text" placeholder="Quantity">
+                    </div>
+                    <div class="form-group-custom">
+                      <label>Package Unit</label>
+                      <input v-model="editingResult.data.packageUnit" placeholder="Unit">
+                    </div>
+                    <div class="form-group-custom full-width">
+                      <label>Goods Description</label>
+                      <textarea v-model="editingResult.data.goodsDescription" rows="4" placeholder="Goods description"></textarea>
+                    </div>
+                    <div class="form-group-custom full-width">
+                      <label>Marks</label>
+                      <textarea v-model="editingResult.data.marks" rows="2" placeholder="Marks"></textarea>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <!-- Freight & Other Group -->
-              <div class="form-section">
-                <h3><i class="fas fa-file-invoice-dollar"></i> Freight & Issuance</h3>
-                <div class="grid-3">
-                  <div class="form-group-custom">
-                    <label>Service Type</label>
-                    <input v-model="editingResult.data.serviceType" placeholder="Service Type">
-                  </div>
-                  <div class="form-group-custom">
-                    <label>Service Mode</label>
-                    <input v-model="editingResult.data.serviceMode" placeholder="Service Mode">
-                  </div>
-                  <div class="form-group-custom">
-                    <label>Revenue Tons</label>
-                    <input v-model="editingResult.data.revenueTons" placeholder="Revenue Tons">
-                  </div>
-                  <div class="form-group-custom">
-                    <label>Freight Term</label>
-                    <input v-model="editingResult.data.freightTerm" placeholder="Freight Term">
-                  </div>
-                  <div class="form-group-custom">
-                    <label>Freight Rate</label>
-                    <input v-model="editingResult.data.freightRate" placeholder="Freight Rate">
-                  </div>
-                  <div class="form-group-custom">
-                    <label>Prepaid Amount</label>
-                    <input v-model="editingResult.data.prepaidAmount" placeholder="Prepaid">
-                  </div>
-                  <div class="form-group-custom">
-                    <label>Collect Amount</label>
-                    <input v-model="editingResult.data.collectAmount" placeholder="Collect">
-                  </div>
-                  <div class="form-group-custom">
-                    <label>Payable At</label>
-                    <input v-model="editingResult.data.payableAt" placeholder="Payable At">
-                  </div>
-                  <div class="form-group-custom">
-                    <label>Original B/L Count</label>
-                    <input v-model="editingResult.data.originalBlCount" placeholder="Count">
-                  </div>
-                  <div class="form-group-custom">
-                    <label>Issue Place</label>
-                    <input v-model="editingResult.data.issuePlace" placeholder="Issue Place">
-                  </div>
-                  <div class="form-group-custom full-width">
-                    <label>Laden On Board</label>
-                    <input v-model="editingResult.data.ladenOnBoard" placeholder="Laden On Board info">
+                <!-- Weight & Container Group -->
+                <div class="form-section">
+                  <h3><i class="fas fa-weight-hanging"></i> Weight & Container</h3>
+                  <div class="grid-3">
+                    <div class="form-group-custom">
+                      <label>Gross Weight (KGS)</label>
+                      <input v-model="editingResult.data.grossWeightKgs" type="number" step="0.01">
+                    </div>
+                    <div class="form-group-custom">
+                      <label>Measurement (CBM)</label>
+                      <input v-model="editingResult.data.measurementCbm" type="number" step="0.01">
+                    </div>
+                    <div class="form-group-custom">
+                      <label>Container Weight</label>
+                      <input v-model="editingResult.data.containerWeight" type="number" step="0.01">
+                    </div>
+                    <div class="form-group-custom">
+                      <label>VGM Weight</label>
+                      <input v-model="editingResult.data.vgmWeight" type="number" step="0.01">
+                    </div>
+                    <div class="form-group-custom">
+                      <label>Container No</label>
+                      <input v-model="editingResult.data.containerNo" placeholder="Container No">
+                    </div>
+                    <div class="form-group-custom">
+                      <label>Seal No</label>
+                      <input v-model="editingResult.data.sealNo" placeholder="Seal No">
+                    </div>
+                    <div class="form-group-custom full-width">
+                      <label>Container/Seal Info</label>
+                      <textarea v-model="editingResult.data.containerSealInfo" rows="2" placeholder="Container/Seal details"></textarea>
+                    </div>
                   </div>
                 </div>
+
+                <!-- Freight & Other Group -->
+                <div class="form-section">
+                  <h3><i class="fas fa-file-invoice-dollar"></i> Freight & Issuance</h3>
+                  <div class="grid-3">
+                    <div class="form-group-custom">
+                      <label>Service Type</label>
+                      <input v-model="editingResult.data.serviceType" placeholder="Service Type">
+                    </div>
+                    <div class="form-group-custom">
+                      <label>Service Mode</label>
+                      <input v-model="editingResult.data.serviceMode" placeholder="Service Mode">
+                    </div>
+                    <div class="form-group-custom">
+                      <label>Revenue Tons</label>
+                      <input v-model="editingResult.data.revenueTons" placeholder="Revenue Tons">
+                    </div>
+                    <div class="form-group-custom">
+                      <label>Freight Term</label>
+                      <input v-model="editingResult.data.freightTerm" placeholder="Freight Term">
+                    </div>
+                    <div class="form-group-custom">
+                      <label>Freight Rate</label>
+                      <input v-model="editingResult.data.freightRate" placeholder="Freight Rate">
+                    </div>
+                    <div class="form-group-custom">
+                      <label>Prepaid Amount</label>
+                      <input v-model="editingResult.data.prepaidAmount" placeholder="Prepaid">
+                    </div>
+                    <div class="form-group-custom">
+                      <label>Collect Amount</label>
+                      <input v-model="editingResult.data.collectAmount" placeholder="Collect">
+                    </div>
+                    <div class="form-group-custom">
+                      <label>Payable At</label>
+                      <input v-model="editingResult.data.payableAt" placeholder="Payable At">
+                    </div>
+                    <div class="form-group-custom">
+                      <label>Original B/L Count</label>
+                      <input v-model="editingResult.data.originalBlCount" placeholder="Count">
+                    </div>
+                    <div class="form-group-custom">
+                      <label>Issue Place</label>
+                      <input v-model="editingResult.data.issuePlace" placeholder="Issue Place">
+                    </div>
+                    <div class="form-group-custom full-width">
+                      <label>Laden On Board</label>
+                      <input v-model="editingResult.data.ladenOnBoard" placeholder="Laden On Board info">
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            <!-- Right Pane: Live Preview -->
+            <div class="right-pane preview-section">
+              <div class="preview-header">
+                <h3><i class="fas fa-eye"></i> Document Preview</h3>
+                <button @click="handlePreview" :disabled="previewLoading" class="refresh-btn">
+                  <i class="fas" :class="previewLoading ? 'fa-spinner fa-spin' : 'fa-sync-alt'"></i>
+                  Refresh Preview
+                </button>
               </div>
-            </form>
+              <div class="preview-container">
+                <div v-if="!previewUrl" class="preview-placeholder">
+                  <i class="fas fa-file-pdf"></i>
+                  <p>Click "Refresh Preview" to generate a preview</p>
+                </div>
+                <iframe v-else :src="previewUrl" class="preview-frame"></iframe>
+              </div>
+            </div>
           </div>
 
           <footer class="modal-footer">
@@ -459,6 +481,8 @@ const editingIndex = ref(-1)
 const selectedTemplateId = ref('')
 const exporting = ref(false)
 const templateOptions = ref([])
+const previewLoading = ref(false)
+const previewUrl = ref('')
 
 const fetchTemplateOptions = async () => {
   try {
@@ -479,9 +503,16 @@ const openEditModal = (result, index) => {
   editingResult.value = JSON.parse(JSON.stringify(result)) // Deep copy
   editingIndex.value = index
   isModalOpen.value = true
+  previewUrl.value = ''
+  // Optionally trigger initial preview
+  setTimeout(() => handlePreview(), 500)
 }
 
 const closeModal = () => {
+  if (previewUrl.value) {
+    URL.revokeObjectURL(previewUrl.value)
+    previewUrl.value = ''
+  }
   isModalOpen.value = false
   editingResult.value = null
   editingIndex.value = -1
@@ -522,6 +553,28 @@ const handleExportWithTemplate = async () => {
     alert('Export failed: ' + (err.message || 'Unknown error'))
   } finally {
     exporting.value = false
+  }
+}
+
+const handlePreview = async () => {
+  previewLoading.value = true
+  try {
+    const dto = {
+      businessData: editingResult.value.data,
+      uuid: editingResult.value.uuid || ''
+    }
+    const response = await api.post('/client-api/export-pdf', dto, {
+      responseType: 'blob'
+    })
+    
+    if (previewUrl.value) {
+      URL.revokeObjectURL(previewUrl.value)
+    }
+    previewUrl.value = window.URL.createObjectURL(new Blob([response], { type: 'application/pdf' }))
+  } catch (err) {
+    console.error('Preview failed:', err)
+  } finally {
+    previewLoading.value = false
   }
 }
 
@@ -1353,7 +1406,165 @@ onMounted(async () => {
   gap: 12px;
 }
 
-/* Form Styles in Modal */
+/* Modal Customization */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.modal-content {
+  width: 90vw;
+  max-width: 1300px;
+  height: 85vh;
+  display: flex;
+  flex-direction: column;
+  background: #1e293b;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-left h2 {
+  margin: 0;
+  font-size: 18px;
+  color: white;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px;
+  transition: all 0.2s;
+}
+
+.close-btn:hover {
+  color: white;
+  transform: rotate(90deg);
+}
+
+.modal-body-split {
+  flex: 1;
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+  overflow: hidden; /* Important for scrollbars */
+}
+
+.left-pane {
+  flex: 1;
+  overflow-y: auto;
+  min-width: 500px;
+}
+
+.right-pane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 400px;
+}
+
+.preview-section {
+  background: #0f172a;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.preview-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.preview-header h3 {
+  color: white;
+  margin: 0;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.refresh-btn {
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+.refresh-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.refresh-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.preview-container {
+  flex: 1;
+  background: #0f172a;
+  position: relative;
+  display: flex;
+  height: 100%;
+}
+
+.preview-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  gap: 16px;
+}
+
+.preview-placeholder i {
+  font-size: 48px;
+  opacity: 0.5;
+}
+
+.preview-frame {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* Modal Customization End */
+
 .modal-form {
   display: flex;
   flex-direction: column;
