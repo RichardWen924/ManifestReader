@@ -45,6 +45,14 @@ public class SysCompanyUser extends BaseEntity {
     @Excel(name = "会员状态", readConverterExp = "0=普通,1=会员")
     private String vipStatus;
 
+    /** 会员到期时间 */
+    @Excel(name = "会员到期时间", width = 30, dateFormat = "yyyy-MM-dd HH:mm:ss")
+    private java.util.Date expiryDate;
+
+    /** 套餐类型 */
+    @Excel(name = "套餐类型")
+    private String packageType;
+
     public void setUserId(Long userId) {
         this.userId = userId;
     }
@@ -109,6 +117,22 @@ public class SysCompanyUser extends BaseEntity {
         return vipStatus;
     }
 
+    public void setExpiryDate(java.util.Date expiryDate) {
+        this.expiryDate = expiryDate;
+    }
+
+    public java.util.Date getExpiryDate() {
+        return expiryDate;
+    }
+
+    public void setPackageType(String packageType) {
+        this.packageType = packageType;
+    }
+
+    public String getPackageType() {
+        return packageType;
+    }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE)
@@ -120,6 +144,8 @@ public class SysCompanyUser extends BaseEntity {
                 .append("dataCount", getDataCount())
                 .append("status", getStatus())
                 .append("vipStatus", getVipStatus())
+                .append("expiryDate", getExpiryDate())
+                .append("packageType", getPackageType())
                 .append("createTime", getCreateTime())
                 .append("updateTime", getUpdateTime())
                 .toString();

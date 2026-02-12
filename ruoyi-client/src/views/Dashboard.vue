@@ -32,7 +32,7 @@
           <i class="fas fa-shopping-cart"></i>
           <span>Account Upgrade</span>
         </div>
-        <div class="user-profile" @click="openProfileModal">
+        <div class="user-profile" @click="router.push('/profile')">
           <div class="user-avatar">{{ userAbbr }}</div>
           <div class="user-info">
             <div class="name-row">
@@ -48,59 +48,7 @@
       </div>
     </nav>
     
-    <!-- Profile Edit Modal -->
-    <div v-if="isProfileModalOpen" class="modal-overlay" @click.self="closeProfileModal">
-      <div class="modal-content profile-modal card">
-        <header class="modal-header">
-          <div class="header-left">
-            <h2>Edit Profile (修改个人信息)</h2>
-            <p>Update your company name and password</p>
-          </div>
-          <button @click="closeProfileModal" class="close-btn"><i class="fas fa-times"></i></button>
-        </header>
-
-        <div class="modal-body">
-          <form @submit.prevent="handleUpdateProfile" class="profile-form">
-            <div class="form-group-custom">
-              <label>Company Name (公司名称)</label>
-              <input v-model="profileForm.companyName" placeholder="Enter new company name">
-            </div>
-
-            <div class="form-group-custom">
-              <label>Shipline Code (航司四字码)</label>
-              <input v-model="profileForm.companyAbbr" placeholder="e.g. MSKU" maxlength="4">
-              <small class="hint">Must be 4 uppercase letters</small>
-            </div>
-            
-            <div class="form-group-custom">
-              <label>Old Password (原密码)</label>
-              <input v-model="profileForm.oldPassword" type="password" placeholder="Required if changing password">
-            </div>
-
-            <div class="form-group-custom">
-              <label>New Password (新密码)</label>
-              <input v-model="profileForm.password" type="password" placeholder="Leave blank to keep current password">
-            </div>
-
-            <div class="form-group-custom">
-              <label>Confirm Password (确认密码)</label>
-              <input v-model="profileForm.confirmPassword" type="password" placeholder="Repeat new password">
-            </div>
-            
-            <div v-if="profileError" class="error-msg">{{ profileError }}</div>
-            <div v-if="profileSuccess" class="success-msg">{{ profileSuccess }}</div>
-          </form>
-        </div>
-
-        <footer class="modal-footer">
-          <button @click="closeProfileModal" class="outline-btn">Cancel</button>
-          <button @click="handleUpdateProfile" :disabled="profileLoading" class="primary-btn">
-            <span v-if="!profileLoading">Save Changes</span>
-            <span v-else class="loader"></span>
-          </button>
-        </footer>
-      </div>
-    </div>
+    <!-- Profile Edit Modal Removed (Moved to Profile page) -->
     
     <main class="main-content">
       <header class="content-header">
@@ -487,19 +435,6 @@ const recordsCount = ref(0) // 记录用户已生成的提单数量
 const QUOTA_LIMIT = 4 // 非会员限额
 const isUpgradeModalOpen = ref(false) // 会员升级弹窗状态
 
-// Profile Modal States
-const isProfileModalOpen = ref(false)
-const profileLoading = ref(false)
-const profileError = ref('')
-const profileSuccess = ref('')
-const profileForm = ref({
-  companyName: '',
-  companyAbbr: '',
-  oldPassword: '',
-  password: '',
-  confirmPassword: ''
-})
-
 const fetchUserData = async () => {
   try {
     const res = await api.get('/client-api/current-user')
@@ -507,70 +442,9 @@ const fetchUserData = async () => {
       userAbbr.value = res.data.companyAbbr
       isVip.value = res.data.vipStatus === '1'
       recordsCount.value = res.data.dataCount || 0
-      profileForm.value.companyName = res.data.companyName
-      profileForm.value.companyAbbr = res.data.companyAbbr
     }
   } catch (err) {
     console.error('Failed to fetch user data:', err)
-  }
-}
-
-const openProfileModal = () => {
-  isProfileModalOpen.value = true
-  profileError.value = ''
-  profileSuccess.value = ''
-  profileForm.value.oldPassword = ''
-  profileForm.value.password = ''
-  profileForm.value.confirmPassword = ''
-  // Re-fetch to ensure we have latest data
-  fetchUserData()
-}
-
-const closeProfileModal = () => {
-  isProfileModalOpen.value = false
-}
-
-const handleUpdateProfile = async () => {
-  if (profileForm.value.password) {
-      if (!profileForm.value.oldPassword) {
-          alert('请输入原密码')
-          return
-      }
-      if (profileForm.value.password !== profileForm.value.confirmPassword) {
-        alert('两次输入的密码不一致')
-        return
-      }
-  }
-
-  if (profileForm.value.companyAbbr && !/^[A-Z]{4}$/.test(profileForm.value.companyAbbr.toUpperCase())) {
-    alert('Shipline Code must be 4 uppercase letters')
-    return
-  }
-
-  profileLoading.value = true
-  profileError.value = ''
-  profileSuccess.value = ''
-
-  try {
-    const res = await api.post('/client-api/update-profile', {
-      companyName: profileForm.value.companyName,
-      companyAbbr: profileForm.value.companyAbbr,
-      oldPassword: profileForm.value.oldPassword,
-      password: profileForm.value.password
-    })
-    if (res.code === 200 || res.code === 0) {
-      profileSuccess.value = 'Profile updated successfully!'
-      fetchUserData() // Update sidebar
-      setTimeout(() => {
-        closeProfileModal()
-      }, 1500)
-    } else {
-      alert(res.msg || 'Update failed')
-    }
-  } catch (err) {
-    alert(err.message || 'Network error')
-  } finally {
-    profileLoading.value = false
   }
 }
 
@@ -1625,9 +1499,6 @@ onMounted(async () => {
   border-top-color: white;
   animation: spin 0.8s linear infinite;
 }
-
-.error-msg { color: #ef4444; font-size: 13px; margin-top: 8px; }
-.success-msg { color: #10b981; font-size: 13px; margin-top: 8px; }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 </style>

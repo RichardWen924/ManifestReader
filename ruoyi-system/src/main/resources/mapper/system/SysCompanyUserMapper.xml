@@ -13,6 +13,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="dataCount"    column="data_count"    />
         <result property="status"    column="status"    />
         <result property="vipStatus"    column="vip_status"    />
+        <result property="expiryDate"   column="expiry_date"   />
+        <result property="packageType"  column="package_type"  />
         <result property="createTime"    column="create_time"    />
         <result property="updateTime"    column="update_time"    />
     </resultMap>
@@ -20,7 +22,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <sql id="selectSysCompanyUserVo">
         select user_id, company_name, company_code, company_abbr, password, 
                (select count(*) from bill_of_lading_v5 b where b.create_by = company_code) as data_count, 
-               status, vip_status, create_time, update_time from sys_company_user
+               status, vip_status, expiry_date, package_type, create_time, update_time from sys_company_user
     </sql>
 
     <select id="selectSysCompanyUserList" parameterType="SysCompanyUser" resultMap="SysCompanyUserResult">
@@ -33,6 +35,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="dataCount != null "> and data_count = #{dataCount}</if>
             <if test="status != null  and status != ''"> and status = #{status}</if>
             <if test="vipStatus != null  and vipStatus != ''"> and vip_status = #{vipStatus}</if>
+            <if test="packageType != null  and packageType != ''"> and package_type = #{packageType}</if>
         </where>
     </select>
     
@@ -50,6 +53,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="password != null and password != ''">password,</if>
             <if test="status != null">status,</if>
             <if test="vipStatus != null">vip_status,</if>
+            <if test="expiryDate != null">expiry_date,</if>
+            <if test="packageType != null">package_type,</if>
             <if test="createTime != null">create_time,</if>
             <if test="updateTime != null">update_time,</if>
          </trim>
@@ -60,6 +65,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="password != null and password != ''">#{password},</if>
             <if test="status != null">#{status},</if>
             <if test="vipStatus != null">#{vipStatus},</if>
+            <if test="expiryDate != null">#{expiryDate},</if>
+            <if test="packageType != null">#{packageType},</if>
             <if test="createTime != null">#{createTime},</if>
             <if test="updateTime != null">#{updateTime},</if>
          </trim>
@@ -74,6 +81,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="password != null and password != ''">password = #{password},</if>
             <if test="status != null">status = #{status},</if>
             <if test="vipStatus != null">vip_status = #{vipStatus},</if>
+            <if test="expiryDate != null">expiry_date = #{expiryDate},</if>
+            <if test="packageType != null">package_type = #{packageType},</if>
             <if test="createTime != null">create_time = #{createTime},</if>
             <if test="updateTime != null">update_time = #{updateTime},</if>
         </trim>

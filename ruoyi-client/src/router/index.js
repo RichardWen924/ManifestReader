@@ -10,6 +10,8 @@ import TemplateManagement from '../views/TemplateManagement.vue'
 import Guide from '../views/Guide.vue'
 import Upgrade from '../views/Upgrade.vue'
 
+import Profile from '../views/Profile.vue'
+
 const routes = [
     { path: '/login', component: Login },
     { path: '/register', component: Register },
@@ -19,7 +21,8 @@ const routes = [
     { path: '/lab', component: FreightTemplateLab, meta: { requiresAuth: true } },
     { path: '/templates', component: TemplateManagement, meta: { requiresAuth: true } },
     { path: '/guide', component: Guide, meta: { requiresAuth: true } },
-    { path: '/upgrade', component: Upgrade, meta: { requiresAuth: true } }
+    { path: '/upgrade', component: Upgrade, meta: { requiresAuth: true } },
+    { path: '/profile', component: Profile, meta: { requiresAuth: true } }
 ]
 
 const router = createRouter({
