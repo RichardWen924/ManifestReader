@@ -62,4 +62,20 @@ public interface ISysCompanyUserService {
      * 获取指定前缀的最大公司编号
      */
     public String getLatestCompanyCode(String prefix);
+
+    /**
+     * 修改公司用户内容状态
+     * 
+     * @param user 用户信息
+     * @return 结果
+     */
+    public int changeStatus(SysCompanyUser user);
+
+    /**
+     * 修改会员状态
+     * 
+     * @param user 用户信息
+     * @return 结果
+     */
+    public int changeVipStatus(SysCompanyUser user);
 }

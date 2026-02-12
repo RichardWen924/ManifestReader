@@ -27,8 +27,7 @@ import com.ruoyi.common.core.page.TableDataInfo;
  */
 @Controller
 @RequestMapping("/system/user")
-public class SysCompanyUserController extends BaseController
-{
+public class SysCompanyUserController extends BaseController {
     private String prefix = "system/user";
 
     @Autowired
@@ -36,8 +35,7 @@ public class SysCompanyUserController extends BaseController
 
     @RequiresPermissions("system:user:view")
     @GetMapping()
-    public String user()
-    {
+    public String user() {
         return prefix + "/user";
     }
 
@@ -47,8 +45,7 @@ public class SysCompanyUserController extends BaseController
     @RequiresPermissions("system:user:list")
     @PostMapping("/list")
     @ResponseBody
-    public TableDataInfo list(SysCompanyUser sysCompanyUser)
-    {
+    public TableDataInfo list(SysCompanyUser sysCompanyUser) {
         startPage();
         List<SysCompanyUser> list = sysCompanyUserService.selectSysCompanyUserList(sysCompanyUser);
         return getDataTable(list);
@@ -61,8 +58,7 @@ public class SysCompanyUserController extends BaseController
     @Log(title = "公司用户", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     @ResponseBody
-    public AjaxResult export(SysCompanyUser sysCompanyUser)
-    {
+    public AjaxResult export(SysCompanyUser sysCompanyUser) {
         List<SysCompanyUser> list = sysCompanyUserService.selectSysCompanyUserList(sysCompanyUser);
         ExcelUtil<SysCompanyUser> util = new ExcelUtil<SysCompanyUser>(SysCompanyUser.class);
         return util.exportExcel(list, "公司用户数据");
@@ -73,8 +69,7 @@ public class SysCompanyUserController extends BaseController
      */
     @RequiresPermissions("system:user:add")
     @GetMapping("/add")
-    public String add()
-    {
+    public String add() {
         return prefix + "/add";
     }
 
@@ -85,8 +80,7 @@ public class SysCompanyUserController extends BaseController
     @Log(title = "公司用户", businessType = BusinessType.INSERT)
     @PostMapping("/add")
     @ResponseBody
-    public AjaxResult addSave(SysCompanyUser sysCompanyUser)
-    {
+    public AjaxResult addSave(SysCompanyUser sysCompanyUser) {
         return toAjax(sysCompanyUserService.insertSysCompanyUser(sysCompanyUser));
     }
 
@@ -95,8 +89,7 @@ public class SysCompanyUserController extends BaseController
      */
     @RequiresPermissions("system:user:edit")
     @GetMapping("/edit/{userId}")
-    public String edit(@PathVariable("userId") Long userId, ModelMap mmap)
-    {
+    public String edit(@PathVariable("userId") Long userId, ModelMap mmap) {
         SysCompanyUser sysCompanyUser = sysCompanyUserService.selectSysCompanyUserByUserId(userId);
         mmap.put("sysCompanyUser", sysCompanyUser);
         return prefix + "/edit";
@@ -109,8 +102,7 @@ public class SysCompanyUserController extends BaseController
     @Log(title = "公司用户", businessType = BusinessType.UPDATE)
     @PostMapping("/edit")
     @ResponseBody
-    public AjaxResult editSave(SysCompanyUser sysCompanyUser)
-    {
+    public AjaxResult editSave(SysCompanyUser sysCompanyUser) {
         return toAjax(sysCompanyUserService.updateSysCompanyUser(sysCompanyUser));
     }
 
@@ -119,10 +111,31 @@ public class SysCompanyUserController extends BaseController
      */
     @RequiresPermissions("system:user:remove")
     @Log(title = "公司用户", businessType = BusinessType.DELETE)
-    @PostMapping( "/remove")
+    @PostMapping("/remove")
     @ResponseBody
-    public AjaxResult remove(String ids)
-    {
+    public AjaxResult remove(String ids) {
         return toAjax(sysCompanyUserService.deleteSysCompanyUserByUserIds(ids));
+    }
+
+    /**
+     * 公司用户状态修改
+     */
+    @Log(title = "公司用户", businessType = BusinessType.UPDATE)
+    @RequiresPermissions("system:user:edit")
+    @PostMapping("/changeStatus")
+    @ResponseBody
+    public AjaxResult changeStatus(SysCompanyUser user) {
+        return toAjax(sysCompanyUserService.changeStatus(user));
+    }
+
+    /**
+     * 会员状态修改
+     */
+    @Log(title = "公司用户", businessType = BusinessType.UPDATE)
+    @RequiresPermissions("system:user:edit")
+    @PostMapping("/changeVipStatus")
+    @ResponseBody
+    public AjaxResult changeVipStatus(SysCompanyUser user) {
+        return toAjax(sysCompanyUserService.changeVipStatus(user));
     }
 }

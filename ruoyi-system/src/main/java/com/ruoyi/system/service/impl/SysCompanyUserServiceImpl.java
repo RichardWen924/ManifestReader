@@ -95,4 +95,26 @@ public class SysCompanyUserServiceImpl implements ISysCompanyUserService {
     public String getLatestCompanyCode(String prefix) {
         return sysCompanyUserMapper.getLatestCompanyCode(prefix);
     }
+
+    /**
+     * 修改公司用户内容状态
+     * 
+     * @param user 用户信息
+     * @return 结果
+     */
+    @Override
+    public int changeStatus(SysCompanyUser user) {
+        return sysCompanyUserMapper.updateSysCompanyUser(user);
+    }
+
+    /**
+     * 修改会员状态
+     * 
+     * @param user 用户信息
+     * @return 结果
+     */
+    @Override
+    public int changeVipStatus(SysCompanyUser user) {
+        return sysCompanyUserMapper.updateSysCompanyUser(user);
+    }
 }

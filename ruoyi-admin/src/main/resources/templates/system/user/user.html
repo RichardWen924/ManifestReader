@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="zh" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+
 <head>
     <th:block th:include="include :: header('公司用户列表')" />
 </head>
+
 <body class="gray-bg">
-     <div class="container-div">
+    <div class="container-div">
         <div class="row">
             <div class="col-sm-12 search-collapse">
                 <form id="formId">
@@ -12,27 +14,29 @@
                         <ul>
                             <li>
                                 <label>公司名：</label>
-                                <input type="text" name="companyName"/>
+                                <input type="text" name="companyName" />
                             </li>
                             <li>
                                 <label>公司编号 (对应业务表 create_by)：</label>
-                                <input type="text" name="companyCode"/>
+                                <input type="text" name="companyCode" />
                             </li>
                             <li>
                                 <label>公司四字缩写 (对应docNo前四位)：</label>
-                                <input type="text" name="companyAbbr"/>
+                                <input type="text" name="companyAbbr" />
                             </li>
                             <li>
                                 <label>密码 (建议加密存储)：</label>
-                                <input type="text" name="password"/>
+                                <input type="text" name="password" />
                             </li>
                             <li>
                                 <label>属于该公司的业务数据条数：</label>
-                                <input type="text" name="dataCount"/>
+                                <input type="text" name="dataCount" />
                             </li>
                             <li>
-                                <a class="btn btn-primary btn-rounded btn-sm" onclick="$.table.search()"><i class="fa fa-search"></i>&nbsp;搜索</a>
-                                <a class="btn btn-warning btn-rounded btn-sm" onclick="$.form.reset()"><i class="fa fa-refresh"></i>&nbsp;重置</a>
+                                <a class="btn btn-primary btn-rounded btn-sm" onclick="$.table.search()"><i
+                                        class="fa fa-search"></i>&nbsp;搜索</a>
+                                <a class="btn btn-warning btn-rounded btn-sm" onclick="$.form.reset()"><i
+                                        class="fa fa-refresh"></i>&nbsp;重置</a>
                             </li>
                         </ul>
                     </div>
@@ -43,10 +47,12 @@
                 <a class="btn btn-success" onclick="$.operate.add()" shiro:hasPermission="system:user:add">
                     <i class="fa fa-plus"></i> 添加
                 </a>
-                <a class="btn btn-primary single disabled" onclick="$.operate.edit()" shiro:hasPermission="system:user:edit">
+                <a class="btn btn-primary single disabled" onclick="$.operate.edit()"
+                    shiro:hasPermission="system:user:edit">
                     <i class="fa fa-edit"></i> 修改
                 </a>
-                <a class="btn btn-danger multiple disabled" onclick="$.operate.removeAll()" shiro:hasPermission="system:user:remove">
+                <a class="btn btn-danger multiple disabled" onclick="$.operate.removeAll()"
+                    shiro:hasPermission="system:user:remove">
                     <i class="fa fa-remove"></i> 删除
                 </a>
                 <a class="btn btn-warning" onclick="$.table.exportExcel()" shiro:hasPermission="system:user:export">
@@ -60,11 +66,11 @@
     </div>
     <th:block th:include="include :: footer" />
     <script th:inline="javascript">
-        var editFlag = [[${@permission.hasPermi('system:user:edit')}]];
-        var removeFlag = [[${@permission.hasPermi('system:user:remove')}]];
+        var editFlag = [[${@permission.hasPermi('system:user:edit') }]];
+        var removeFlag = [[${@permission.hasPermi('system:user:remove') }]];
         var prefix = ctx + "system/user";
 
-        $(function() {
+        $(function () {
             var options = {
                 url: prefix + "/list",
                 createUrl: prefix + "/add",
@@ -102,12 +108,24 @@
                 },
                 {
                     field: 'status',
-                    title: '帐号状态'
+                    title: '帐号状态',
+                    align: 'center',
+                    formatter: function (value, row, index) {
+                        return statusTools(row);
+                    }
+                },
+                {
+                    field: 'vipStatus',
+                    title: '会员状态',
+                    align: 'center',
+                    formatter: function (value, row, index) {
+                        return vipStatusTools(row);
+                    }
                 },
                 {
                     title: '操作',
                     align: 'center',
-                    formatter: function(value, row, index) {
+                    formatter: function (value, row, index) {
                         var actions = [];
                         actions.push('<a class="btn btn-success btn-xs ' + editFlag + '" href="javascript:void(0)" onclick="$.operate.edit(\'' + row.userId + '\')"><i class="fa fa-edit"></i>编辑</a> ');
                         actions.push('<a class="btn btn-danger btn-xs ' + removeFlag + '" href="javascript:void(0)" onclick="$.operate.remove(\'' + row.userId + '\')"><i class="fa fa-remove"></i>删除</a>');
@@ -117,6 +135,53 @@
             };
             $.table.init(options);
         });
+
+        /* 帐号状态显示 */
+        function statusTools(row) {
+            if (row.status == 0) {
+                return '<i class=\"fa fa-toggle-on text-info fa-2x\" onclick=\"disable(\'' + row.userId + '\')\"></i> ';
+            } else {
+                return '<i class=\"fa fa-toggle-off text-info fa-2x\" onclick=\"enable(\'' + row.userId + '\')\"></i> ';
+            }
+        }
+
+        /* 帐号停用 */
+        function disable(userId) {
+            $.modal.confirm("确认要停用账号吗？", function () {
+                $.operate.post(prefix + "/changeStatus", { "userId": userId, "status": 1 });
+            })
+        }
+
+        /* 帐号启用 */
+        function enable(userId) {
+            $.modal.confirm("确认要启用账号吗？", function () {
+                $.operate.post(prefix + "/changeStatus", { "userId": userId, "status": 0 });
+            })
+        }
+
+        /* 会员状态显示 */
+        function vipStatusTools(row) {
+            if (row.vipStatus == 1) {
+                return '<i class=\"fa fa-toggle-on text-warning fa-2x\" onclick=\"cancelVip(\'' + row.userId + '\')\"></i> ';
+            } else {
+                return '<i class=\"fa fa-toggle-off text-warning fa-2x\" onclick=\"setVip(\'' + row.userId + '\')\"></i> ';
+            }
+        }
+
+        /* 取消会员 */
+        function cancelVip(userId) {
+            $.modal.confirm("确认要取消该用户的会员资格吗？", function () {
+                $.operate.post(prefix + "/changeVipStatus", { "userId": userId, "vipStatus": 0 });
+            })
+        }
+
+        /* 设置会员 */
+        function setVip(userId) {
+            $.modal.confirm("确认要将该用户设置为会员吗？", function () {
+                $.operate.post(prefix + "/changeVipStatus", { "userId": userId, "vipStatus": 1 });
+            })
+        }
     </script>
 </body>
+
 </html>
