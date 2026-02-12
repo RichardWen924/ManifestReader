@@ -488,10 +488,11 @@ const fetchTemplateOptions = async () => {
   try {
     const res = await listTemplate({})
     if (res.code === 200 || res.code === 0) {
-      if (!isVip.value && res.data && res.data.length > 2) {
-        templateOptions.value = res.data.slice(0, 2)
+      let rows = res.rows || res.data || []
+      if (!isVip.value && rows.length > 2) {
+        templateOptions.value = rows.slice(0, 2)
       } else {
-        templateOptions.value = res.data
+        templateOptions.value = rows
       }
     }
   } catch (err) {
@@ -599,6 +600,11 @@ const handleDrop = (e) => {
   const droppedFiles = Array.from(e.dataTransfer.files)
   addFiles(droppedFiles)
 }
+
+onMounted(async () => {
+  await fetchUserData()
+  await fetchTemplateOptions()
+})
 
 const checkQuota = () => {
   if (isVip.value) return true
