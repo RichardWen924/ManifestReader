@@ -29,11 +29,18 @@
         </li>
       </ul>
       <div class="sidebar-footer">
+        <div class="upgrade-link" @click="router.push('/upgrade')" title="Account Upgrade">
+          <i class="fas fa-shopping-cart"></i>
+          <span>Account Upgrade</span>
+        </div>
         <div class="user-profile" @click="openProfileModal">
           <div class="user-avatar">{{ userAbbr }}</div>
           <div class="user-info">
-            <span class="name">{{ currentUser }}</span>
-            <span class="role">Shipper</span>
+            <div class="name-row">
+              <span class="name">{{ currentUserDisplay }}</span>
+              <span v-if="isVip" class="vip-badge">VIP</span>
+            </div>
+            <span class="role">{{ isVip ? 'Premium Member' : 'Shipper' }}</span>
           </div>
         </div>
         <button @click="handleLogout" class="logout-btn">
@@ -228,7 +235,9 @@ export default defineComponent({
     const previewLoading = ref(false)
     const analyzeLoading = ref(false)
     const currentUser = ref('')
+    const currentUserDisplay = ref(localStorage.getItem('client_user') || 'Guest')
     const userAbbr = ref('Loading...')
+    const isVip = ref(false)
     const textModalOpen = ref(false)
     const textModalItem = ref({})
 
@@ -249,6 +258,7 @@ export default defineComponent({
         const res = await api.get('/client-api/current-user')
         if (res.code === 200 || res.code === 0) {
           userAbbr.value = res.data.companyAbbr
+          isVip.value = res.data.vipStatus === '1'
           currentUser.value = res.data.companyCode
           profileForm.value.companyName = res.data.companyName
           profileForm.value.companyAbbr = res.data.companyAbbr
@@ -380,6 +390,20 @@ export default defineComponent({
         return
       }
 
+      // 会员检查：非会员限额2个模版
+      if (!isVip.value) {
+        try {
+          const checkRes = await api.get('/client-api/templates/list', { params: { pageSize: 10 } })
+          if (checkRes.rows && checkRes.rows.length >= 2) {
+            alert('非会员模版数量已达上限（限2个），请升级账户以解锁无限模版！')
+            router.push('/upgrade')
+            return
+          }
+        } catch (err) {
+          console.error('Check template limit failed:', err)
+        }
+      }
+
       const name = prompt('请输入模版名称:', '新模版')
       if (!name) return
       
@@ -436,7 +460,7 @@ export default defineComponent({
     }
 
     return {
-      file, mappings, previewLoading, analyzeLoading, currentUser, userAbbr,
+      file, mappings, previewLoading, analyzeLoading, currentUser, currentUserDisplay, userAbbr, isVip,
       isProfileModalOpen, profileLoading, profileError, profileSuccess, profileForm,
       textModalOpen, textModalItem,
       handleFileChange, syncPreview, handleSave, removeMapping, handleMouseEnter, handleMouseLeave,
@@ -550,6 +574,52 @@ export default defineComponent({
   margin-top: auto;
   padding: 24px 16px;
   border-top: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.upgrade-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(37, 99, 235, 0.05));
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  color: #fbbf24;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.upgrade-link:hover {
+  background: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.upgrade-link i {
+  font-size: 16px;
+  color: #f59e0b;
+}
+
+.name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vip-badge {
+  padding: 2px 6px;
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  border-radius: 4px;
+  color: white;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
 }
 
 .user-profile {

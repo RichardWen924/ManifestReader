@@ -25,10 +25,19 @@
         </li>
       </ul>
       <div class="sidebar-footer">
-        <div class="user-info" @click="openProfileModal" title="Click to edit profile">
-          <i class="fas fa-user-circle"></i>
-          <span class="user-abbr">{{ userAbbr }}</span>
-          <span class="user-code">{{ currentUser }}</span>
+        <div class="upgrade-link" @click="router.push('/upgrade')" title="Account Upgrade">
+          <i class="fas fa-shopping-cart"></i>
+          <span>Account Upgrade</span>
+        </div>
+        <div class="user-profile" @click="openProfileModal">
+          <div class="user-avatar">{{ userAbbr }}</div>
+          <div class="user-info">
+            <div class="name-row">
+              <span class="name">{{ currentUserDisplay }}</span>
+              <span v-if="isVip" class="vip-badge">VIP</span>
+            </div>
+            <span class="role">{{ isVip ? 'Premium Member' : 'Shipper' }}</span>
+          </div>
         </div>
         <button @click="handleLogout" class="logout-btn">
           <i class="fas fa-sign-out-alt"></i> Logout
@@ -205,8 +214,9 @@ import api from '../api/request'
 
 const route = useRoute()
 const router = useRouter()
-const currentUser = ref(localStorage.getItem('client_user') || 'Guest')
+const currentUserDisplay = ref(localStorage.getItem('client_user') || 'Guest')
 const userAbbr = ref('Loading...')
+const isVip = ref(false)
 const loading = ref(true)
 const saving = ref(false)
 const form = ref({})
@@ -228,6 +238,7 @@ const fetchUserData = async () => {
     const res = await api.get('/client-api/current-user')
     if (res.code === 200 || res.code === 0) {
       userAbbr.value = res.data.companyAbbr
+      isVip.value = res.data.vipStatus === '1'
       profileForm.value.companyName = res.data.companyName
       profileForm.value.companyAbbr = res.data.companyAbbr
     }
@@ -443,39 +454,87 @@ onMounted(async () => {
 
 .sidebar-footer {
   margin-top: auto;
-  padding: 20px;
+  padding: 24px 16px;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.user-info {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 16px;
+}
+
+.upgrade-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(37, 99, 235, 0.1));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: #fbbf24;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.upgrade-link:hover {
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-2px);
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   padding: 12px;
   background: rgba(255, 255, 255, 0.05);
   border-radius: 12px;
-  margin-bottom: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
   border: 1px solid transparent;
 }
 
-.user-info:hover {
+.user-profile:hover {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(99, 102, 241, 0.3);
 }
 
-.user-abbr {
-  font-size: 16px;
-  font-weight: 700;
-  color: #10b981;
-  letter-spacing: 1px;
+.name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.user-code {
-  font-size: 12px;
+.vip-badge {
+  padding: 2px 6px;
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  border-radius: 4px;
+  color: white;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.user-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: var(--primary-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: bold;
+}
+
+.user-info .name {
+  font-size: 13px;
+  font-weight: 600;
+  color: white;
+}
+
+.user-info .role {
+  font-size: 11px;
   color: #64748b;
-  font-family: monospace;
 }
 
 .logout-btn {

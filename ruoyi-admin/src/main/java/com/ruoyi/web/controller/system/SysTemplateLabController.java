@@ -29,6 +29,9 @@ public class SysTemplateLabController extends BaseController {
     @Autowired
     private ISysPdfTemplateService pdfTemplateService;
 
+    @Autowired
+    private com.ruoyi.system.service.ISysCompanyUserService sysCompanyUserService;
+
     /**
      * 第一步：上传并解析文档
      */
@@ -87,13 +90,28 @@ public class SysTemplateLabController extends BaseController {
         if (mappings == null) {
             mappings = new ArrayList<>();
         }
-        String path = templateLabService.saveTemplate(file, mappings, templateName);
-
-        // 获取当前登录用户 (兼容 Shiro 和 客户端 Session)
         String loginName = getCurrentLoginName();
         if (loginName == null) {
             return AjaxResult.error("未获取到用户信息，请重新登录");
         }
+
+        // 会员限额检查：非会员限额2个模版
+        com.ruoyi.system.domain.SysCompanyUser userQuery = new com.ruoyi.system.domain.SysCompanyUser();
+        userQuery.setCompanyCode(loginName);
+        List<com.ruoyi.system.domain.SysCompanyUser> users = sysCompanyUserService.selectSysCompanyUserList(userQuery);
+        if (!users.isEmpty()) {
+            com.ruoyi.system.domain.SysCompanyUser user = users.get(0);
+            if (!"1".equals(user.getVipStatus())) {
+                SysPdfTemplate countQuery = new SysPdfTemplate();
+                countQuery.setCreateBy(loginName);
+                List<SysPdfTemplate> existing = pdfTemplateService.selectSysPdfTemplateList(countQuery);
+                if (existing.size() >= 2) {
+                    return AjaxResult.error("非会员模版数量已达上限（限2个），请升级账户以解锁无限模版！");
+                }
+            }
+        }
+
+        String path = templateLabService.saveTemplate(file, mappings, templateName);
 
         // 同时保存到 sys_pdf_template 表中，供管理页面使用
         SysPdfTemplate template = new SysPdfTemplate();

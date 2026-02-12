@@ -204,7 +204,35 @@ public class ClientApiController extends BaseController {
         if (list.isEmpty()) {
             return AjaxResult.error("用户不存在");
         }
-        return AjaxResult.success(list.get(0));
+        SysCompanyUser user = list.get(0);
+        // 如果是管理员，模拟一个VIP状态
+        if ("admin".equals(companyCode)) {
+            user.setVipStatus("1");
+        }
+        return AjaxResult.success(user);
+    }
+
+    /**
+     * 账户升级（模拟）
+     */
+    @PostMapping("/upgrade")
+    public AjaxResult upgrade(HttpSession session) {
+        String companyCode = (String) session.getAttribute(CLIENT_SESSION_KEY);
+        if (StringUtils.isEmpty(companyCode) || "admin".equals(companyCode)) {
+            return AjaxResult.error("无效操作");
+        }
+
+        SysCompanyUser query = new SysCompanyUser();
+        query.setCompanyCode(companyCode);
+        List<SysCompanyUser> list = sysCompanyUserService.selectSysCompanyUserList(query);
+        if (list.isEmpty()) {
+            return AjaxResult.error("用户不存在");
+        }
+
+        SysCompanyUser user = list.get(0);
+        user.setVipStatus("1"); // 升级为VIP
+        sysCompanyUserService.updateSysCompanyUser(user);
+        return AjaxResult.success("升级成功！您现在可以使用全部模版并拥有无限生成额度。");
     }
 
     /**
@@ -313,9 +341,27 @@ public class ClientApiController extends BaseController {
      */
     @PostMapping("/analyze")
     public AjaxResult analyze(@RequestParam("filePath") String filePath, HttpSession session) {
-        if (session.getAttribute(CLIENT_SESSION_KEY) == null) {
+        String clientId = (String) session.getAttribute(CLIENT_SESSION_KEY);
+        if (clientId == null) {
             return AjaxResult.error("未登录或登录超时");
         }
+
+        // 会员功能：非会员限额4个文件
+        SysCompanyUser query = new SysCompanyUser();
+        query.setCompanyCode(clientId);
+        List<SysCompanyUser> users = sysCompanyUserService.selectSysCompanyUserList(query);
+        if (!users.isEmpty()) {
+            SysCompanyUser user = users.get(0);
+            if (!"1".equals(user.getVipStatus())) {
+                BookingConsolidated countQuery = new BookingConsolidated();
+                countQuery.setCreateBy(clientId);
+                List<BookingConsolidated> list = bookingConsolidatedService.selectBookingConsolidatedList(countQuery);
+                if (list.size() >= 4) {
+                    return AjaxResult.error("非会员额度已用完（限4个文件），请升级账户以解锁无限额度。");
+                }
+            }
+        }
+
         return AjaxResult.success(bookingConsolidatedService.analyzeFile(filePath));
     }
 

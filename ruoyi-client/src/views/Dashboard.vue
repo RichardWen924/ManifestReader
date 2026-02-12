@@ -28,11 +28,18 @@
         </li>
       </ul>
       <div class="sidebar-footer">
+        <div class="upgrade-link" @click="router.push('/upgrade')" title="Account Upgrade">
+          <i class="fas fa-shopping-cart"></i>
+          <span>Account Upgrade</span>
+        </div>
         <div class="user-profile" @click="openProfileModal">
           <div class="user-avatar">{{ userAbbr }}</div>
           <div class="user-info">
-            <span class="name">{{ currentUser }}</span>
-            <span class="role">Shipper</span>
+            <div class="name-row">
+              <span class="name">{{ currentUser }}</span>
+              <span v-if="isVip" class="vip-badge">VIP</span>
+            </div>
+            <span class="role">{{ isVip ? 'Premium Member' : 'Shipper' }}</span>
           </div>
         </div>
         <button @click="handleLogout" class="logout-btn">
@@ -429,6 +436,7 @@ import { listTemplate, exportWithTemplate } from '../api/template'
 const router = useRouter()
 const currentUser = ref(localStorage.getItem('client_user') || 'Guest')
 const userAbbr = ref('Loading...')
+const isVip = ref(false)
 const isDragging = ref(false)
 const fileInput = ref(null)
 const files = ref([])
@@ -453,6 +461,7 @@ const fetchUserData = async () => {
     const res = await api.get('/client-api/current-user')
     if (res.code === 200 || res.code === 0) {
       userAbbr.value = res.data.companyAbbr
+      isVip.value = res.data.vipStatus === '1'
       profileForm.value.companyName = res.data.companyName
       profileForm.value.companyAbbr = res.data.companyAbbr
     }
@@ -532,7 +541,11 @@ const fetchTemplateOptions = async () => {
   try {
     const res = await listTemplate({})
     if (res.code === 200 || res.code === 0) {
-      templateOptions.value = res.data
+      if (!isVip.value && res.data && res.data.length > 2) {
+        templateOptions.value = res.data.slice(0, 2)
+      } else {
+        templateOptions.value = res.data
+      }
     }
   } catch (err) {
     console.error('Failed to fetch templates:', err)
@@ -729,6 +742,64 @@ onMounted(async () => {
 }
 
 /* Results */
+.sidebar-footer {
+  padding: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.upgrade-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(245, 158, 11, 0.1));
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  border-radius: 12px;
+  color: #fbbf24;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.upgrade-link:hover {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(245, 158, 11, 0.2));
+  transform: translateY(-2px);
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 12px;
+  transition: background 0.2s;
+}
+
+.user-profile:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vip-badge {
+  padding: 2px 6px;
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  border-radius: 4px;
+  color: white;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
 .results-section {
   margin-top: 40px;
 }

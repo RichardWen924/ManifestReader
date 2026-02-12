@@ -8,6 +8,7 @@ import Edit from '../views/Edit.vue'
 import FreightTemplateLab from '../views/FreightTemplateLab.vue'
 import TemplateManagement from '../views/TemplateManagement.vue'
 import Guide from '../views/Guide.vue'
+import Upgrade from '../views/Upgrade.vue'
 
 const routes = [
     { path: '/login', component: Login },
@@ -17,7 +18,8 @@ const routes = [
     { path: '/edit/:blNo', component: Edit, meta: { requiresAuth: true } },
     { path: '/lab', component: FreightTemplateLab, meta: { requiresAuth: true } },
     { path: '/templates', component: TemplateManagement, meta: { requiresAuth: true } },
-    { path: '/guide', component: Guide, meta: { requiresAuth: true } }
+    { path: '/guide', component: Guide, meta: { requiresAuth: true } },
+    { path: '/upgrade', component: Upgrade, meta: { requiresAuth: true } }
 ]
 
 const router = createRouter({

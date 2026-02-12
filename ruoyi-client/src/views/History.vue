@@ -28,11 +28,18 @@
         </li>
       </ul>
       <div class="sidebar-footer">
+        <div class="upgrade-link" @click="router.push('/upgrade')" title="Account Upgrade">
+          <i class="fas fa-shopping-cart"></i>
+          <span>Account Upgrade</span>
+        </div>
         <div class="user-profile" @click="openProfileModal">
           <div class="user-avatar">{{ userAbbr }}</div>
           <div class="user-info">
-            <span class="name">{{ currentUser }}</span>
-            <span class="role">Shipper</span>
+            <div class="name-row">
+              <span class="name">{{ currentUser }}</span>
+              <span v-if="isVip" class="vip-badge">VIP</span>
+            </div>
+            <span class="role">{{ isVip ? 'Premium Member' : 'Shipper' }}</span>
           </div>
         </div>
         <button @click="handleLogout" class="logout-btn">
@@ -165,6 +172,7 @@ import api from '../api/request'
 const router = useRouter()
 const currentUser = ref(localStorage.getItem('client_user') || 'Guest')
 const userAbbr = ref('Loading...')
+const isVip = ref(false)
 const records = ref([])
 const searchQuery = ref('')
 
@@ -185,6 +193,7 @@ const fetchUserData = async () => {
     const res = await api.get('/client-api/current-user')
     if (res.code === 200 || res.code === 0) {
       userAbbr.value = res.data.companyAbbr
+      isVip.value = res.data.vipStatus === '1'
       profileForm.value.companyName = res.data.companyName
       profileForm.value.companyAbbr = res.data.companyAbbr
     }
@@ -418,6 +427,52 @@ onMounted(async () => {
   margin-top: auto;
   padding: 24px 16px;
   border-top: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.upgrade-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(37, 99, 235, 0.05));
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  color: #fbbf24;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.upgrade-link:hover {
+  background: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.upgrade-link i {
+  font-size: 16px;
+  color: #f59e0b;
+}
+
+.name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vip-badge {
+  padding: 2px 6px;
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  border-radius: 4px;
+  color: white;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
 }
 
 .user-profile {
