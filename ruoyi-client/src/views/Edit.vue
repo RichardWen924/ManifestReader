@@ -232,6 +232,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '../api/request'
+import Swal from 'sweetalert2'
 
 const route = useRoute()
 const router = useRouter()
@@ -340,7 +341,14 @@ const fetchRecord = async () => {
       // Try to generate initial preview
       setTimeout(() => handlePreview(), 500)
     } else {
-      alert('Record not found')
+      await Swal.fire({
+        title: 'Error',
+        text: 'Record not found',
+        icon: 'error',
+        background: '#1e293b',
+        color: '#ffffff',
+        confirmButtonColor: '#3b82f6'
+      })
       router.push('/history')
     }
   } catch (err) {
@@ -354,10 +362,24 @@ const handleSave = async () => {
   saving.value = true
   try {
     await api.post('/client-api/update', form.value)
-    alert('Record updated successfully')
+    Swal.fire({
+      title: 'Success',
+      text: 'Record updated successfully',
+      icon: 'success',
+      background: '#1e293b',
+      color: '#ffffff',
+      confirmButtonColor: '#3b82f6'
+    })
     router.push('/history')
   } catch (err) {
-    alert('Update failed: ' + err.message)
+    Swal.fire({
+      title: 'Error',
+      text: 'Update failed: ' + err.message,
+      icon: 'error',
+      background: '#1e293b',
+      color: '#ffffff',
+      confirmButtonColor: '#3b82f6'
+    })
   } finally {
     saving.value = false
   }
@@ -381,8 +403,27 @@ const handleExport = async () => {
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
+
+    // Success Notification
+    Swal.fire({
+      title: 'Export Successful',
+      text: 'Your document is downloading...',
+      icon: 'success',
+      background: '#1e293b',
+      color: '#ffffff',
+      confirmButtonColor: '#3b82f6',
+      timer: 3000,
+      timerProgressBar: true
+    })
   } catch (err) {
-    alert('Export failed: ' + err.message)
+    Swal.fire({
+      title: 'Export Failed',
+      text: err.message || 'Unknown error',
+      icon: 'error',
+      background: '#1e293b',
+      color: '#ffffff',
+      confirmButtonColor: '#3b82f6'
+    })
   }
 }
 

@@ -135,6 +135,7 @@ import { useRouter } from 'vue-router'
 import api from '../api/request'
 import LanguageSwitcher from '../components/LanguageSwitcher.vue'
 import Pagination from '../components/Pagination.vue'
+import Swal from 'sweetalert2'
 
 const router = useRouter()
 const currentUser = ref(localStorage.getItem('client_user') || 'Guest')
@@ -215,22 +216,65 @@ const exportPdf = async (record) => {
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
+
+    // Success Notification
+    Swal.fire({
+      title: 'Export Successful',
+      text: 'Your document is downloading...',
+      icon: 'success',
+      background: '#1e293b',
+      color: '#ffffff',
+      confirmButtonColor: '#3b82f6',
+      timer: 3000,
+      timerProgressBar: true
+    })
   } catch (err) {
-    alert('Export failed: ' + err.message)
+    Swal.fire({
+      title: 'Export Failed',
+      text: err.message || 'Unknown error',
+      icon: 'error',
+      background: '#1e293b',
+      color: '#ffffff',
+      confirmButtonColor: '#3b82f6'
+    })
   }
 }
 
 const handleDelete = async (record) => {
-  if (!confirm(`Are you sure you want to delete record ${record.bookingNo}?`)) {
-    return
-  }
+  const result = await Swal.fire({
+    title: 'Are you sure?',
+    text: `Do you want to delete record ${record.bookingNo}?`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#64748b',
+    confirmButtonText: 'Yes, delete it!',
+    background: '#1e293b',
+    color: '#ffffff'
+  })
+
+  if (!result.isConfirmed) return
   
   try {
     await api.post(`/client-api/remove/${record.id}`)
-    alert('Record deleted successfully')
+    Swal.fire({
+      title: 'Deleted!',
+      text: 'Record deleted successfully',
+      icon: 'success',
+      background: '#1e293b',
+      color: '#ffffff',
+      confirmButtonColor: '#3b82f6'
+    })
     fetchRecords()
   } catch (err) {
-    alert('Delete failed: ' + err.message)
+    Swal.fire({
+      title: 'Error',
+      text: 'Delete failed: ' + err.message,
+      icon: 'error',
+      background: '#1e293b',
+      color: '#ffffff',
+      confirmButtonColor: '#3b82f6'
+    })
   }
 }
 

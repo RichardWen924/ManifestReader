@@ -447,6 +447,7 @@ import { useRouter } from 'vue-router'
 import api from '../api/request'
 import { listTemplate, exportWithTemplate } from '../api/template'
 import LanguageSwitcher from '../components/LanguageSwitcher.vue'
+import Swal from 'sweetalert2'
 
 const router = useRouter()
 const currentUser = ref(localStorage.getItem('client_user') || 'Guest')
@@ -529,9 +530,24 @@ const saveFromModal = async () => {
     results.value.splice(editingIndex.value, 1)
     closeModal()
     fetchUserData() // 更新额度
-    alert('Record saved successfully!')
+    fetchUserData() // 更新额度
+    Swal.fire({
+      title: 'Success',
+      text: 'Record saved successfully!',
+      icon: 'success',
+      background: '#1e293b',
+      color: '#ffffff',
+      confirmButtonColor: '#3b82f6'
+    })
   } catch (err) {
-    alert('Save failed: ' + err.message)
+    Swal.fire({
+      title: 'Error',
+      text: 'Save failed: ' + err.message,
+      icon: 'error',
+      background: '#1e293b',
+      color: '#ffffff',
+      confirmButtonColor: '#3b82f6'
+    })
   }
 }
 
@@ -550,8 +566,27 @@ const handleExportWithTemplate = async () => {
     link.click()
     link.remove()
     window.URL.revokeObjectURL(url)
+    
+    // Success Notification
+    Swal.fire({
+      title: 'Export Successful',
+      text: 'Your document is downloading...',
+      icon: 'success',
+      background: '#1e293b',
+      color: '#ffffff',
+      confirmButtonColor: '#3b82f6',
+      timer: 3000,
+      timerProgressBar: true
+    })
   } catch (err) {
-    alert('Export failed: ' + (err.message || 'Unknown error'))
+    Swal.fire({
+      title: 'Export Failed',
+      text: err.message || 'Unknown error',
+      icon: 'error',
+      background: '#1e293b',
+      color: '#ffffff',
+      confirmButtonColor: '#3b82f6'
+    })
   } finally {
     exporting.value = false
   }
@@ -672,7 +707,14 @@ const startAnalysis = async () => {
     } catch (err) {
       console.error(err)
       fileObj.status = 'error'
-      alert(`Analysis failed for ${fileObj.name}: ${err.message}`)
+      Swal.fire({
+        title: 'Analysis Failed',
+        text: `Analysis failed for ${fileObj.name}: ${err.message}`,
+        icon: 'error',
+        background: '#1e293b',
+        color: '#ffffff',
+        confirmButtonColor: '#3b82f6'
+      })
     }
   }
   
@@ -688,10 +730,25 @@ const saveSingle = async (result, index) => {
     })
     results.value.splice(index, 1)
     fetchUserData() // 更新额度
-    alert('Record saved successfully!')
+    fetchUserData() // 更新额度
+    Swal.fire({
+      title: 'Success',
+      text: 'Record saved successfully!',
+      icon: 'success',
+      background: '#1e293b',
+      color: '#ffffff',
+      confirmButtonColor: '#3b82f6'
+    })
     // 如果文件列表里也有这个文件，标记为已保存或删除
   } catch (err) {
-    alert('Save failed: ' + err.message)
+    Swal.fire({
+      title: 'Error',
+      text: 'Save failed: ' + err.message,
+      icon: 'error',
+      background: '#1e293b',
+      color: '#ffffff',
+      confirmButtonColor: '#3b82f6'
+    })
   }
 }
 
@@ -706,9 +763,24 @@ const saveAll = async () => {
     await Promise.all(promises)
     results.value = []
     fetchUserData() // 更新额度
-    alert('All records saved successfully!')
+    fetchUserData() // 更新额度
+    Swal.fire({
+      title: 'Success',
+      text: 'All records saved successfully!',
+      icon: 'success',
+      background: '#1e293b',
+      color: '#ffffff',
+      confirmButtonColor: '#3b82f6'
+    })
   } catch (err) {
-    alert('Some records failed to save')
+    Swal.fire({
+      title: 'Error',
+      text: 'Some records failed to save',
+      icon: 'error',
+      background: '#1e293b',
+      color: '#ffffff',
+      confirmButtonColor: '#3b82f6'
+    })
   }
 }
 
