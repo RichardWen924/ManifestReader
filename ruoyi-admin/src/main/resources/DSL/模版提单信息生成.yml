@@ -1,0 +1,390 @@
+app:
+  description: ''
+  icon: 🤖
+  icon_background: '#FFEAD5'
+  mode: workflow
+  name: 模版提单信息生成
+  use_icon_as_answer_icon: false
+dependencies:
+- current_identifier: null
+  type: marketplace
+  value:
+    marketplace_plugin_unique_identifier: langgenius/ollama:0.1.2@fcf107badccaf57948634ad2c557d393c3894138d83f4eb3f959e9a1d3a86512
+    version: null
+kind: app
+version: 0.6.0
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      allowed_file_extensions:
+      - .JPG
+      - .JPEG
+      - .PNG
+      - .GIF
+      - .WEBP
+      - .SVG
+      allowed_file_types:
+      - image
+      allowed_file_upload_methods:
+      - local_file
+      - remote_url
+      enabled: false
+      fileUploadConfig:
+        attachment_image_file_size_limit: 2
+        audio_file_size_limit: 50
+        batch_count_limit: 5
+        file_size_limit: 15
+        file_upload_limit: 20
+        image_file_batch_limit: 10
+        image_file_size_limit: 10
+        single_chunk_attachment_limit: 10
+        video_file_size_limit: 100
+        workflow_file_upload_limit: 10
+      image:
+        enabled: false
+        number_limits: 3
+        transfer_methods:
+        - local_file
+        - remote_url
+      number_limits: 3
+    opening_statement: ''
+    retriever_resource:
+      enabled: true
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: start
+        targetType: document-extractor
+      id: 1770886657874-source-1770886661078-target
+      source: '1770886657874'
+      sourceHandle: source
+      target: '1770886661078'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: end
+      id: 1770886682972-source-1770886701946-target
+      source: '1770886682972'
+      sourceHandle: source
+      target: '1770886701946'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: document-extractor
+        targetType: code
+      id: 1770886661078-source-1770954236007-target
+      source: '1770886661078'
+      sourceHandle: source
+      target: '1770954236007'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: code
+        targetType: llm
+      id: 1770954236007-source-1770886682972-target
+      source: '1770954236007'
+      sourceHandle: source
+      target: '1770886682972'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    nodes:
+    - data:
+        selected: false
+        title: 用户输入
+        type: start
+        variables:
+        - allowed_file_extensions: []
+          allowed_file_types:
+          - document
+          allowed_file_upload_methods:
+          - local_file
+          - remote_url
+          default: ''
+          hint: ''
+          label: file
+          max_length: 5
+          options: []
+          placeholder: ''
+          required: true
+          type: file
+          variable: file
+      height: 109
+      id: '1770886657874'
+      position:
+        x: 80
+        y: 282
+      positionAbsolute:
+        x: 80
+        y: 282
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        is_array_file: false
+        selected: false
+        title: 文档提取器
+        type: document-extractor
+        variable_selector:
+        - '1770886657874'
+        - file
+      height: 104
+      id: '1770886661078'
+      position:
+        x: 382
+        y: 282
+      positionAbsolute:
+        x: 382
+        y: 282
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        context:
+          enabled: true
+          variable_selector:
+          - '1770886661078'
+          - text
+        model:
+          completion_params:
+            top_p: 0.6
+          mode: chat
+          name: qwen2.5:7b
+          provider: langgenius/ollama/ollama
+        prompt_template:
+        - id: 7e8dc806-60cc-46a7-8b98-d20b869ef395
+          role: system
+          text: "# Role\n你是一个极高精度的航运单证数据提取专家。你的任务是将提单文本精准转换为包含 35 个字段的 JSON 格式。\n\n\
+            # Constraints\n1. **输出控制**：输出变量名为 result，类型为 string。必须返回完整的 impl 代码。\n\
+            2. **核心识别增强**：\n   - **doc_no**：必须提取以 \"DOC. NO.\" [cite_start]引导的编号，通常以\
+            \ \"ZIM\" 开头（如 ZIMUSHH32021612） 。\n   - [cite_start]**Notify Party**：必须完整采集名称、多行地址及末尾的\
+            \ Email（如 SEA-US.OP@YPLOGISTICS.COM） [cite: 16-20]。\n   - [cite_start]**Delivery\
+            \ Agent**：提取 \"PLEASE APPLY TO:\" 之后的所有文本，包括电话和多行邮箱 [cite: 2-7]。\n   -\
+            \ [cite_start]**Carrier Agent**：重点识别 \"on behalf of\" 之后的实体全称 [cite: 10,\
+            \ 11]。\n\"package_quantity\"为纯数字，不得带单位\n“marks”识别N/M\n\n3. **数据逻辑**：\n\
+            \   - [cite_start]{{booking_no}} 必须同步 {{bl_no}} 。\n   - [cite_start]若运费条款为\
+            \ \"COLLECT\"，则 将AS ARRANGED改为{{collect_amount}},如果是PREPAID将AS ARRANGED改为{{prepaid_amount}}\
+            \ [cite: 34]。\n4. **格式约束**：严禁输出任何解释性文字，严格遵守 JSON Mapping 结构。\n\n# JSON\
+            \ Mapping Template (全 35 字段)\n{\n  \"mappings\": [\n    { \"original_text\"\
+            : \"{{doc_no}}\", \"placeholder_key\": \"doc_no\", \"data_type\": \"string\"\
+            , \"description\": \"文档编号（DOC. NO.后）\" },\n    { \"original_text\": \"\
+            {{bl_no}}\", \"placeholder_key\": \"bl_no\", \"data_type\": \"string\"\
+            , \"description\": \"提单号（EVHL开头）\" },\n    { \"original_text\": \"{{booking_no}}\"\
+            , \"placeholder_key\": \"booking_no\", \"data_type\": \"string\", \"description\"\
+            : \"预订号\" },\n    { \"original_text\": \"{{shipper}}\", \"placeholder_key\"\
+            : \"shipper\", \"data_type\": \"string\", \"description\": \"托运人\" },\n\
+            \    { \"original_text\": \"{{consignee}}\", \"placeholder_key\": \"consignee\"\
+            , \"data_type\": \"string\", \"description\": \"收货人\" },\n    { \"original_text\"\
+            : \"{{notify_party}}\", \"placeholder_key\": \"notify_party\", \"data_type\"\
+            : \"string\", \"description\": \"通知方名称地址及邮箱\" },\n    { \"original_text\"\
+            : \"{{delivery_agent}}\", \"placeholder_key\": \"delivery_agent\", \"\
+            data_type\": \"string\", \"description\": \"交付代理完整联系方式\" },\n    { \"\
+            original_text\": \"{{carrier_agent}}\", \"placeholder_key\": \"carrier_agent\"\
+            , \"data_type\": \"string\", \"description\": \"承运人代理/签章方\" },\n    {\
+            \ \"original_text\": \"{{vessel_voyage}}\", \"placeholder_key\": \"vessel_voyage\"\
+            , \"data_type\": \"string\", \"description\": \"船名航次\" }, \n { \"original_text\"\
+            : \"{{pre_carriage_by}}\", \"placeholder_key\": \"pre_carriage_by\", \"\
+            data_type\": \"string\", \"description\": \"前段运输\" },\n{ \"original_text\"\
+            : \"{{place_of_receipt}}\", \"placeholder_key\": \"place_of_receipt\"\
+            , \"data_type\": \"string\", \"description\": \"收货地\" },\n    { \"original_text\"\
+            : \"{{port_of_loading}}\", \"placeholder_key\": \"port_of_loading\", \"\
+            data_type\": \"string\", \"description\": \"起运港\" },\n    { \"original_text\"\
+            : \"{{port_of_discharge}}\", \"placeholder_key\": \"port_of_discharge\"\
+            , \"data_type\": \"string\", \"description\": \"卸货港\" },\n    { \"original_text\"\
+            : \"{{place_of_delivery}}\", \"placeholder_key\": \"place_of_delivery\"\
+            , \"data_type\": \"string\", \"description\": \"交付地\" },\n    { \"original_text\"\
+            : \"{{container_number1}}\", \"placeholder_key\": \"container_no\", \"\
+            data_type\": \"string\", \"description\": \"集装箱号\" },\n    { \"original_text\"\
+            : \"{{seal_number1}}\", \"placeholder_key\": \"seal_no\", \"data_type\"\
+            : \"string\", \"description\": \"封条号\" },\n    { \"original_text\": \"\
+            {{marks}}\", \"placeholder_key\": \"marks\", \"data_type\": \"string\"\
+            , \"description\": \"唛头标记\" },\n    { \"original_text\": \"{{goods_description}}\"\
+            , \"placeholder_key\": \"goods_description\", \"data_type\": \"string\"\
+            , \"description\": \"货物描述\" },\n    { \"original_text\": \"{{package_quantity}}\"\
+            , \"placeholder_key\": \"package_quantity\", \"data_type\": \"string\"\
+            , \"description\": \"包装件数\" },\n    { \"original_text\": \"{{package_unit}}\"\
+            , \"placeholder_key\": \"package_unit\", \"data_type\": \"string\", \"\
+            description\": \"包装单位\" },\n    { \"original_text\": \"{{gross_weight_kgs}}\"\
+            , \"placeholder_key\": \"gross_weight_kgs\", \"data_type\": \"string\"\
+            , \"description\": \"毛重\" },\n    { \"original_text\": \"{{measurement_cbm}}\"\
+            , \"placeholder_key\": \"measurement_cbm\", \"data_type\": \"string\"\
+            , \"description\": \"体积\" },\n    { \"original_text\": \"{{container_weight1}}\"\
+            , \"placeholder_key\": \"container_weight\", \"data_type\": \"string\"\
+            , \"description\": \"箱重\" },\n    { \"original_text\": \"{{VGM}}\", \"\
+            placeholder_key\": \"vgm_weight\", \"data_type\": \"string\", \"description\"\
+            : \"VGM重量\" },\n    { \"original_text\": \"{{serial_no}}\", \"placeholder_key\"\
+            : \"serial_no\", \"data_type\": \"string\", \"description\": \"序列号\" },\n\
+            \    { \"original_text\": \"{{service_type}}\", \"placeholder_key\": \"\
+            service_type\", \"data_type\": \"string\", \"description\": \"服务类型\" },\n\
+            \    { \"original_text\": \"{{service_mode}}\", \"placeholder_key\": \"\
+            service_mode\", \"data_type\": \"string\", \"description\": \"服务模式\" },\n\
+            \    { \"original_text\": \"{{freight_term}}\", \"placeholder_key\": \"\
+            freight_term\", \"data_type\": \"string\", \"description\": \"运费条款\" },\n\
+            \    { \"original_text\": \"{{collect_amount}}\", \"placeholder_key\"\
+            : \"collect_amount\", \"data_type\": \"string\", \"description\": \"到付金额\"\
+            \ },\n    { \"original_text\": \"{{prepaid_amount}}\", \"placeholder_key\"\
+            : \"prepaid_amount\", \"data_type\": \"string\", \"description\": \"预付金额\"\
+            \ },\n    { \"original_text\": \"{{revenue_tons}}\", \"placeholder_key\"\
+            : \"revenue_tons\", \"data_type\": \"string\", \"description\": \"计费吨\"\
+            \ },\n    { \"original_text\": \"{{payable_at}}\", \"placeholder_key\"\
+            : \"payable_at\", \"data_type\": \"string\", \"description\": \"付费地\"\
+            \ },\n    { \"original_text\": \"{{original_bl_count}}\", \"placeholder_key\"\
+            : \"original_bl_count\", \"data_type\": \"string\", \"description\": \"\
+            正本提单份数\" },\n    { \"original_text\": \"{{issue_place}}\", \"placeholder_key\"\
+            : \"issue_place\", \"data_type\": \"string\", \"description\": \"签发地\"\
+            \ },\n    { \"original_text\": \"{{laden_on_board}}\", \"placeholder_key\"\
+            : \"laden_on_board\", \"data_type\": \"string\", \"description\": \"装船日期\"\
+            \ }\n  ]\n}"
+        - id: 757a2af6-2933-4eee-8e64-deeb6463b003
+          role: user
+          text: '# Task
+
+            深度分析以下提单内容，将所有提取到的业务数据填入 JSON 模版的 {{}} 位置。
+
+
+            # Input Content
+
+            {{#1770954236007.result#}}
+
+
+            # High-Precision Extraction Instructions
+
+            1. **数值原子化**：严禁将重量和体积放在同一个字段。`gross_weight_kgs` 只能是重量数值（如 8492），`measurement_cbm`
+            只能是体积数值（如 68）。
+
+            2. **文档号修正**：识别 "DOC. NO." 后面的字符串作为 doc_no。
+
+            3. **联系方式贪婪提取**：针对 Notify Party 和 Delivery Agent，必须提取到最后一行出现的 Email 地址。
+
+            4. **Agent 锁定**：精准抓取 "on behalf of" 之后的公司全称作为 carrier_agent。
+
+            5、包装件数package_quantity为仅数字，如果有carton就将单位删除
+
+            6、读取时将freight_term前面的freight也读取进入字段
+
+
+            请直接返回填充后的 JSON result。'
+        reasoning_format: separated
+        selected: true
+        structured_output_enabled: true
+        title: LLM
+        type: llm
+        vision:
+          enabled: false
+      height: 88
+      id: '1770886682972'
+      position:
+        x: 684
+        y: 282
+      positionAbsolute:
+        x: 684
+        y: 282
+      selected: true
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        outputs:
+        - value_selector:
+          - '1770886682972'
+          - text
+          value_type: string
+          variable: text
+        selected: false
+        title: 输出
+        type: end
+      height: 88
+      id: '1770886701946'
+      position:
+        x: 986
+        y: 282
+      positionAbsolute:
+        x: 986
+        y: 282
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        code: "import re\n\ndef main(arg1: str) -> dict:\n    # 1. 安全初始化，确保输入不为空\n\
+          \    text = arg1 if arg1 else \"\"\n    \n    # -------------------------------------------------------\n\
+          \    # 【彻底修复报错】移除反斜杠的正确姿势\n    # -------------------------------------------------------\n\
+          \    text = text.replace(\"\\\\\", \"\")\n\n    # -------------------------------------------------------\n\
+          \    # 【结构清洗】处理 HTML 标签和表格噪音\n    # -------------------------------------------------------\n\
+          \    # 将 <br> 标签转换为换行符，确保联系方式不粘连\n    text = text.replace(\"<br>\", \"\\\
+          n\")\n    # 将表格分隔符 | 转换为换行，强制模型“顺序读取”\n    text = text.replace(\"|\", \"\
+          \\n\")\n    # 移除表格装饰线 (如 ---)\n    text = re.sub(r'[-: ]{3,}', '', text)\n\
+          \n    # -------------------------------------------------------\n    # 【字段规范化】建立单号锚点\n\
+          \    # -------------------------------------------------------\n    # 修复\
+          \ B/L NO.\n    text = re.sub(r'(B/L\\s*NO\\.)\\s*', r'\\nB/L NO: ', text,\
+          \ flags=re.IGNORECASE)\n    # 修复 DOC. NO.\n    text = re.sub(r'(DOC\\.?\\\
+          s*NO\\.)\\s*', r'\\nDOC NO: ', text, flags=re.IGNORECASE)\n    # 修复 BOOKING\
+          \ NO.\n    text = re.sub(r'(BOOKING\\.?\\s*NO\\.)\\s*', r'\\nBOOKING NO:\
+          \ ', text, flags=re.IGNORECASE)\n\n    # -------------------------------------------------------\n\
+          \    # 【除去干扰】清理多余空白\n    # -------------------------------------------------------\n\
+          \    # 移除连续 3 个及以上的换行，保持紧凑\n    text = re.sub(r'\\n{3,}', '\\n\\n', text)\n\
+          \    \n    # 最终清理每一行的首尾空格，并过滤掉空行\n    lines = [line.strip() for line in\
+          \ text.split('\\n') if line.strip()]\n    cleaned_text = '\\n'.join(lines)\n\
+          \n    return {\n        \"result\": cleaned_text\n    }"
+        code_language: python3
+        outputs:
+          result:
+            children: null
+            type: string
+        selected: false
+        title: 代码执行
+        type: code
+        variables:
+        - value_selector:
+          - '1770886661078'
+          - text
+          value_type: string
+          variable: arg1
+      height: 52
+      id: '1770954236007'
+      position:
+        x: 684
+        y: 409
+      positionAbsolute:
+        x: 684
+        y: 409
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    viewport:
+      x: -256.9458819716672
+      y: 151.09588299660027
+      zoom: 0.7343684570656434
+  rag_pipeline_variables: []
