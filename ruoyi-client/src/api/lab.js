@@ -33,3 +33,24 @@ export function saveTemplate(data) {
         headers: { 'Content-Type': 'multipart/form-data' }
     })
 }
+
+// 获取HTML内容
+export function getHtml(data) {
+    return request({
+        url: `${baseUrl}/get-html`,
+        method: 'post',
+        data: data,
+        headers: { 'Content-Type': 'multipart/form-data' }
+    })
+}
+
+// 转换HTML为Docx
+export function convertToDocx(data) {
+    return request({
+        url: `${baseUrl}/convert-to-docx`,
+        method: 'post',
+        data: data,
+        responseType: 'blob', // Important for file download
+        headers: { 'Content-Type': 'application/json' }
+    })
+}

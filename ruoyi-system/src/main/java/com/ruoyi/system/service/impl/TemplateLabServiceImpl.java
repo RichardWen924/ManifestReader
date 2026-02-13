@@ -463,4 +463,128 @@ public class TemplateLabServiceImpl implements ITemplateLabService {
         }
     }
 
+    /**
+     * 获取模版文件的HTML内容（用于在线编辑）
+     */
+    @Override
+    public String getTemplateHtml(MultipartFile file) {
+        File tempFile = null;
+        try {
+            // 1. 保存上传的文件到临时目录
+            String originalFilename = file.getOriginalFilename();
+            String extension = "docx";
+            if (originalFilename != null && originalFilename.contains(".")) {
+                extension = originalFilename.substring(originalFilename.lastIndexOf(".") + 1);
+            }
+            tempFile = File.createTempFile("upload_tpl_", "." + extension);
+            file.transferTo(tempFile);
+
+            // 2. 调用 Python 脚本转换为 HTML
+            String scriptPath = RuoYiConfig.getProfile() + "/../scripts/docx_to_html.py";
+            // For dev environment, script might be in project root
+            File scriptFile = new File(scriptPath);
+            if (!scriptFile.exists()) {
+                // 回退尝试：通常在项目根目录的 scripts 下
+                scriptPath = System.getProperty("user.dir") + "/scripts/docx_to_html.py";
+            }
+
+            ProcessBuilder pb = new ProcessBuilder("python3", scriptPath, tempFile.getAbsolutePath());
+            Process process = pb.start();
+
+            // 读取输出
+            java.io.BufferedReader reader = new java.io.BufferedReader(
+                    new java.io.InputStreamReader(process.getInputStream()));
+            StringBuilder output = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                output.append(line);
+            }
+            process.waitFor();
+
+            // 3. 解析结果
+            String jsonStr = output.toString();
+            if (StringUtils.isEmpty(jsonStr)) {
+                // 尝试读取错误流
+                java.io.BufferedReader errReader = new java.io.BufferedReader(
+                        new java.io.InputStreamReader(process.getErrorStream()));
+                StringBuilder errOutput = new StringBuilder();
+                while ((line = errReader.readLine()) != null) {
+                    errOutput.append(line);
+                }
+                throw new RuntimeException("转换脚本无输出: " + errOutput.toString());
+            }
+
+            JSONObject result = JSON.parseObject(jsonStr);
+            if ("success".equals(result.getString("status"))) {
+                return result.getString("html");
+            } else {
+                throw new RuntimeException("转换失败: " + result.getString("message"));
+            }
+
+        } catch (Exception e) {
+            log.error("获取模版HTML失败", e);
+            throw new RuntimeException("获取模版HTML失败: " + e.getMessage());
+        } finally {
+            if (tempFile != null && tempFile.exists()) {
+                tempFile.delete();
+            }
+        }
+    }
+
+    /**
+     * 将HTML内容转换为Docx文件
+     */
+    @Override
+    public File convertHtmlToDocx(String htmlContent) {
+        File tempHtmlFile = null;
+        File tempDocxFile = null;
+        try {
+            // 1. 保存 HTML 到临时文件
+            tempHtmlFile = File.createTempFile("edit_tpl_", ".html");
+            try (java.io.FileOutputStream fos = new java.io.FileOutputStream(tempHtmlFile)) {
+                fos.write(htmlContent.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            }
+
+            // 2. 准备输出文件路径
+            tempDocxFile = File.createTempFile("edit_output_", ".docx");
+
+            // 3. 调用 Python 脚本转换为 Docx
+            String scriptPath = RuoYiConfig.getProfile() + "/../scripts/html_to_docx.py";
+            File scriptFile = new File(scriptPath);
+            if (!scriptFile.exists()) {
+                scriptPath = System.getProperty("user.dir") + "/scripts/html_to_docx.py";
+            }
+
+            ProcessBuilder pb = new ProcessBuilder("python3", scriptPath,
+                    tempHtmlFile.getAbsolutePath(), tempDocxFile.getAbsolutePath());
+            Process process = pb.start();
+            process.waitFor();
+
+            // 检查输出文件是否生成
+            if (tempDocxFile.exists() && tempDocxFile.length() > 0) {
+                return tempDocxFile;
+            } else {
+                // 读取错误流
+                java.io.BufferedReader errReader = new java.io.BufferedReader(
+                        new java.io.InputStreamReader(process.getErrorStream()));
+                StringBuilder errOutput = new StringBuilder();
+                String line;
+                while ((line = errReader.readLine()) != null) {
+                    errOutput.append(line);
+                }
+                throw new RuntimeException("生成Docx失败: " + errOutput.toString());
+            }
+
+        } catch (Exception e) {
+            log.error("转换HTML为Docx失败", e);
+            if (tempDocxFile != null && tempDocxFile.exists()) {
+                tempDocxFile.delete();
+            }
+            throw new RuntimeException("转换HTML为Docx失败: " + e.getMessage());
+        } finally {
+            if (tempHtmlFile != null && tempHtmlFile.exists()) {
+                tempHtmlFile.delete();
+            }
+        }
+    }
 }

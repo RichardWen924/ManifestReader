@@ -207,4 +207,53 @@ public class SysTemplateLabController extends BaseController {
         Object clientUserId = getSession().getAttribute("CLIENT_USER_ID");
         return clientUserId != null ? clientUserId.toString() : null;
     }
+
+    /**
+     * 获取 HTML 内容 (用于在线编辑)
+     */
+    @PostMapping("/get-html")
+    public AjaxResult getHtml(@RequestParam("file") MultipartFile file) {
+        if (file.isEmpty()) {
+            return AjaxResult.error("文件不能为空");
+        }
+        try {
+            String html = templateLabService.getTemplateHtml(file);
+            return AjaxResult.success("获取成功", html);
+        } catch (Exception e) {
+            return AjaxResult.error("获取HTML失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 将编辑后的 HTML 转换为 Docx 并下载
+     */
+    @PostMapping("/convert-to-docx")
+    public void convertToDocx(@RequestBody java.util.Map<String, String> params, HttpServletResponse response)
+            throws IOException {
+        String html = params.get("html");
+        if (StringUtils.isEmpty(html)) {
+            response.sendError(500, "HTML内容不能为空");
+            return;
+        }
+
+        java.io.File docxFile = templateLabService.convertHtmlToDocx(html);
+
+        response.reset();
+        response.addHeader("Access-Control-Allow-Origin", "*");
+        response.addHeader("Access-Control-Expose-Headers", "Content-Disposition");
+        response.setHeader("Content-Disposition", "attachment; filename=\"edited_template.docx\"");
+        response.addHeader("Content-Length", "" + docxFile.length());
+        response.setContentType("application/octet-stream; charset=UTF-8");
+
+        try (java.io.FileInputStream fis = new java.io.FileInputStream(docxFile);
+                java.io.OutputStream os = response.getOutputStream()) {
+            byte[] buffer = new byte[1024];
+            int len;
+            while ((len = fis.read(buffer)) != -1) {
+                os.write(buffer, 0, len);
+            }
+        } finally {
+            docxFile.delete(); // 发送完成后删除临时文件
+        }
+    }
 }

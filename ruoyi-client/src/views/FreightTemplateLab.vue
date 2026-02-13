@@ -67,6 +67,9 @@
             <button class="btn-success" @click="syncPreview" :disabled="!file || previewLoading">
               <i class="fas fa-sync" :class="{ 'fa-spin': previewLoading }"></i> {{ $t('lab.analyze') }}
             </button>
+            <button class="btn-primary-outline" @click="handleEditContent" :disabled="!file || analyzeLoading">
+              <i class="fas fa-edit"></i> 编辑内容
+            </button>
             <button class="btn-warning" @click="handleSave" :disabled="!file || analyzeLoading || mappings.length === 0">
               <i class="fas fa-save"></i> {{ $t('lab.save') }}
             </button>
@@ -207,6 +210,55 @@
         </footer>
       </div>
     </div>
+
+    <!-- Template Editor Modal -->
+    <div v-if="isEditorOpen" class="modal-overlay">
+      <div class="modal-content editor-modal glass-card">
+        <div class="editor-header">
+           <div class="header-left">
+             <h3><i class="fas fa-edit"></i> 在线编辑模版</h3>
+             <span class="tip-text">点击右侧字段可插入占位符</span>
+           </div>
+           <button class="modal-close" @click="isEditorOpen = false"><i class="fas fa-times"></i></button>
+        </div>
+        
+        <div class="editor-body">
+           <!-- Left: Quill Editor -->
+           <div class="editor-main">
+             <div v-if="editorLoading" class="loader-overlay">
+               <div class="spinner"></div>
+               <p>处理中...</p>
+             </div>
+             <QuillEditor 
+                v-model:content="editorContent" 
+                contentType="html" 
+                theme="snow" 
+                toolbar="full"
+                @ready="onEditorReady"
+                style="height: 500px"
+             />
+           </div>
+           
+           <!-- Right: Field Picker -->
+           <div class="editor-sidebar">
+             <h4>可用字段 ({{ mappings.length }})</h4>
+             <div class="field-list">
+               <div v-for="(m, idx) in mappings" :key="idx" class="field-chip" @click="insertPlaceholder(m.placeholder_key || 'key')">
+                 <i class="fas fa-plus-circle"></i> {{ m.placeholder_key || '未命名变量' }}
+               </div>
+               <div v-if="mappings.length === 0" class="empty-fields">暂无识别到的字段</div>
+             </div>
+           </div>
+        </div>
+        
+        <div class="editor-footer">
+          <button class="btn-secondary" @click="isEditorOpen = false">取消</button>
+          <button class="btn-primary" @click="applyEditorChanges" :disabled="editorLoading">
+             <i class="fas fa-check"></i> 保存并应用
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -215,14 +267,16 @@
 import { defineComponent, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { renderAsync } from 'docx-preview'
-import { analyzeTemplate, previewTemplate, saveTemplate } from '../api/lab'
+import { QuillEditor } from '@vueup/vue-quill'
+import '@vueup/vue-quill/dist/vue-quill.snow.css'
+import { analyzeTemplate, previewTemplate, saveTemplate, getHtml, convertToDocx } from '../api/lab'
 import { listTemplate } from '../api/template'
 import api from '../api/request'
 import LanguageSwitcher from '../components/LanguageSwitcher.vue'
 
 export default defineComponent({
   name: 'FreightTemplateLab',
-  components: { LanguageSwitcher },
+  components: { LanguageSwitcher, QuillEditor },
   setup() {
     const router = useRouter()
     const file = ref(null)
@@ -238,6 +292,12 @@ export default defineComponent({
     const templateCount = ref(0)
     const TEMPLATE_LIMIT = 2
     const isUpgradeModalOpen = ref(false)
+
+    // Editor State
+    const isEditorOpen = ref(false)
+    const editorContent = ref('')
+    const editorLoading = ref(false)
+    const quillInstance = ref(null)
 
     const fetchUserData = async () => {
       try {
@@ -409,18 +469,205 @@ export default defineComponent({
       textModalOpen.value = true
     }
 
+    const handleEditContent = async () => {
+      if (!file.value) return
+      editorLoading.value = true
+      isEditorOpen.value = true
+      constformData = new FormData()
+      const formData = new FormData()
+      formData.append('file', file.value)
+      
+      try {
+        const res = await getHtml(formData)
+        if (res.code === 200 || res.code === 0) {
+          editorContent.value = res.data
+        } else {
+          alert('获取文档内容失败: ' + res.msg)
+          isEditorOpen.value = false
+        }
+      } catch (err) {
+        console.error('Failed to get html:', err)
+        alert('获取文档内容失败')
+        isEditorOpen.value = false
+      } finally {
+        editorLoading.value = false
+      }
+    }
+
+    const onEditorReady = (quill) => {
+      quillInstance.value = quill
+    }
+
+    const insertPlaceholder = (key) => {
+      if (quillInstance.value) {
+        const selection = quillInstance.value.getSelection()
+        const index = selection ? selection.index : quillInstance.value.getLength()
+        quillInstance.value.insertText(index, `{{${key}}}`)
+      }
+    }
+
+    const applyEditorChanges = async () => {
+      if (!editorContent.value) return
+      editorLoading.value = true
+      
+      try {
+        const res = await convertToDocx({ html: editorContent.value })
+        // res is a Blob
+        const newFile = new File([res], file.value.name, { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' })
+        file.value = newFile
+        
+        // Refresh preview
+        isEditorOpen.value = false
+        syncPreview()
+        
+        // Optionally re-analyze? 
+        // prompt user? "Content changed, re-analyze fields?"
+        if (confirm('文档内容已更新，是否重新分析字段？')) {
+          analyzeDocument()
+        }
+      } catch (err) {
+        console.error('Conversion failed:', err)
+        alert('保存文档失败')
+      } finally {
+        editorLoading.value = false
+      }
+    }
+
     return {
       file, mappings, previewLoading, analyzeLoading, currentUser, currentUserDisplay, userAbbr, isVip,
       textModalOpen, textModalItem,
       isUpgradeModalOpen,
       handleFileChange, syncPreview, handleSave, removeMapping, handleMouseEnter, handleMouseLeave,
-      handleLogout, showOriginalText
+      handleLogout, showOriginalText,
+      // Editor
+      isEditorOpen, editorContent, editorLoading, handleEditContent, onEditorReady, insertPlaceholder, applyEditorChanges
     }
   }
 })
 </script>
 
 <style scoped>
+/* Editor Modal - Wider */
+.editor-modal {
+  width: 90vw;
+  max-width: 1200px;
+  height: 85vh;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+
+.editor-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-left h3 { margin: 0; font-size: 18px; color: var(--text-main); }
+.tip-text { font-size: 12px; color: var(--text-dim); margin-left: 12px; }
+
+.editor-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.editor-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  position: relative;
+  overflow-y: auto;
+}
+
+.editor-sidebar {
+  width: 250px;
+  border-left: 1px solid var(--border-color);
+  background: #f8fafc;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.editor-sidebar h4 {
+  font-size: 14px;
+  color: var(--text-dim);
+  margin-bottom: 16px;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.field-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.field-chip {
+  background: white;
+  border: 1px solid #e2e8f0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.field-chip:hover {
+  border-color: var(--primary-color);
+  background: #eff6ff;
+  color: var(--primary-color);
+  transform: translateX(4px);
+}
+
+.field-chip i { color: var(--primary-color); opacity: 0.6; }
+
+.editor-footer {
+  padding: 20px 24px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  background: white;
+}
+
+.loader-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(255,255,255,0.8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.btn-primary-outline {
+  background: transparent;
+  border: 1px solid var(--primary-color);
+  color: var(--primary-color);
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.btn-primary-outline:hover {
+  background: #eff6ff;
+}
+
+/* Base Styles */
 .dashboard-page {
   display: flex;
   min-height: 100vh;
