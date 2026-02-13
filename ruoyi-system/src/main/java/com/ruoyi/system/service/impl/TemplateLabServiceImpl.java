@@ -18,6 +18,8 @@ import com.ruoyi.common.utils.file.FileUploadUtils;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -40,7 +42,7 @@ public class TemplateLabServiceImpl implements ITemplateLabService {
     @Autowired
     private ISysPdfTemplateService pdfTemplateService;
 
-    private static final String DIFY_API_KEY_ANALYZE = "app-J8tEYmWBzqHsDqXlvDfNHn0r";
+    private static final String DIFY_API_KEY_ANALYZE = "app-1EVrJL9CVPCYVkS2TOs9XC3A";
     private static final String DIFY_BASE_URL = "http://localhost/v1";
 
     @Autowired
@@ -107,7 +109,17 @@ public class TemplateLabServiceImpl implements ITemplateLabService {
                 list.addAll(basicAnalyze(file));
             } finally {
                 if (StringUtils.isNotEmpty(tempPath)) {
-                    // file cleanup if needed
+                    try {
+                        String fullPath = RuoYiConfig.getProfile()
+                                + tempPath.replaceFirst(Constants.RESOURCE_PREFIX, "");
+                        File fileToDelete = new File(fullPath);
+                        if (fileToDelete.exists()) {
+                            boolean deleted = fileToDelete.delete();
+                            log.info("智能分析完成，立即清理临时文件: {}, 结果: {}", fullPath, deleted);
+                        }
+                    } catch (Exception e) {
+                        log.warn("清理临时文件失败: {}", tempPath);
+                    }
                 }
             }
         }
@@ -230,7 +242,16 @@ public class TemplateLabServiceImpl implements ITemplateLabService {
         Process process = pb.start();
 
         // 读取输出
-        String output = new String(process.getInputStream().readAllBytes(), "UTF-8");
+        // 读取输出 (Java 8 兼容写法)
+        java.io.InputStream is = process.getInputStream();
+        java.io.ByteArrayOutputStream buffer = new java.io.ByteArrayOutputStream();
+        int nRead;
+        byte[] data = new byte[1024];
+        while ((nRead = is.read(data, 0, data.length)) != -1) {
+            buffer.write(data, 0, nRead);
+        }
+        buffer.flush();
+        String output = buffer.toString("UTF-8");
         int exitCode = process.waitFor();
 
         // 清理 mappings 临时文件
@@ -256,7 +277,25 @@ public class TemplateLabServiceImpl implements ITemplateLabService {
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
             headers.set("Authorization", "Bearer " + apiKey);
 
-            FileSystemResource fileResource = new FileSystemResource(localPath);
+            File file = new File(localPath);
+            if (!file.exists()) {
+                log.error("文件不存在: {}", localPath);
+                return null;
+            }
+
+            // 使用 ByteArrayResource 并强制指定文件名，避免路径问题和中文文件名问题
+            byte[] fileContent = java.nio.file.Files.readAllBytes(file.toPath());
+            String originalFilename = file.getName();
+            String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+            String safeFilename = java.util.UUID.randomUUID().toString() + extension;
+
+            ByteArrayResource fileResource = new ByteArrayResource(fileContent) {
+                @Override
+                public String getFilename() {
+                    return safeFilename;
+                }
+            };
+
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
             body.add("file", fileResource);
             body.add("user", "lab-user");
@@ -305,6 +344,8 @@ public class TemplateLabServiceImpl implements ITemplateLabService {
             if (start >= 0 && end > start) {
                 return JSON.parseObject(rawText.substring(start, end + 1));
             }
+        } catch (HttpStatusCodeException e) {
+            log.error("Dify 调用异常 (HTTP {}): {}", e.getStatusCode(), e.getResponseBodyAsString(), e);
         } catch (Exception e) {
             log.error("Dify 调用异常", e);
         }

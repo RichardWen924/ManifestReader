@@ -35,6 +35,9 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.core.io.ByteArrayResource;
+import java.io.File;
 
 /**
  * 订舱与集装箱合并信息Service业务层处理
@@ -46,7 +49,7 @@ import org.springframework.web.client.RestTemplate;
 public class BookingConsolidatedServiceImpl implements IBookingConsolidatedService {
     private static final Logger log = LoggerFactory.getLogger(BookingConsolidatedServiceImpl.class);
 
-    private static final String DIFY_API_KEY_ANALYZE = "app-qFk49MpWcQKiqY41Q7IdDwIj";
+    private static final String DIFY_API_KEY_ANALYZE = "app-X43NmigYjalp8zaatv1O20Nf";
     private static final String DIFY_BASE_URL = "http://localhost/v1";
     private static final String REDIS_PREFIX = "pdf_edit:";
     private static final String DEFAULT_TEMPLATE_CODE = "booking_standard";
@@ -170,8 +173,12 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
 
         // 新增功能结束自动将上传的文件进行删除 (V5)
         if (StringUtils.isNotEmpty(filePath)) {
-            boolean deleted = com.ruoyi.common.utils.file.FileUtils.deleteFile(filePath);
-            log.info("上传文件处理完毕，清理原始文件: {}, 结果: {}", filePath, deleted);
+            String deletePath = filePath;
+            if (filePath.startsWith(Constants.RESOURCE_PREFIX)) {
+                deletePath = filePath.replaceFirst(Constants.RESOURCE_PREFIX, RuoYiConfig.getProfile());
+            }
+            boolean deleted = com.ruoyi.common.utils.file.FileUtils.deleteFile(deletePath);
+            log.info("上传文件处理完毕，清理原始文件: {} (原路径: {}), 结果: {}", deletePath, filePath, deleted);
         }
 
         // 返回结果（为了兼容性）
@@ -318,8 +325,12 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
         // 新增功能结束自动将上传的文件进行删除 (V5)
         String originalFilePath = (String) cachedData.get("originalFilePath");
         if (StringUtils.isNotEmpty(originalFilePath)) {
-            boolean deleted = com.ruoyi.common.utils.file.FileUtils.deleteFile(originalFilePath);
-            log.info("上传文件处理完毕，清理原始文件: {}, 结果: {}", originalFilePath, deleted);
+            String deletePath = originalFilePath;
+            if (originalFilePath.startsWith(Constants.RESOURCE_PREFIX)) {
+                deletePath = originalFilePath.replaceFirst(Constants.RESOURCE_PREFIX, RuoYiConfig.getProfile());
+            }
+            boolean deleted = com.ruoyi.common.utils.file.FileUtils.deleteFile(deletePath);
+            log.info("上传文件处理完毕，清理原始文件: {} (原路径: {}), 结果: {}", deletePath, originalFilePath, deleted);
         }
 
         // 为了兼容性，也返回BookingConsolidated对象（后续可以统一为BillOfLading）
@@ -511,7 +522,25 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
             headers.set("Authorization", "Bearer " + apiKey);
 
-            FileSystemResource fileResource = new FileSystemResource(localPath);
+            File file = new File(localPath);
+            if (!file.exists()) {
+                log.error("文件不存在: {}", localPath);
+                return null;
+            }
+
+            // 使用 ByteArrayResource 并强制指定文件名，避免路径问题和中文文件名问题
+            byte[] fileContent = java.nio.file.Files.readAllBytes(file.toPath());
+            String originalFilename = file.getName();
+            String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+            String safeFilename = UUID.randomUUID().toString() + extension;
+
+            ByteArrayResource fileResource = new ByteArrayResource(fileContent) {
+                @Override
+                public String getFilename() {
+                    return safeFilename;
+                }
+            };
+
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
             body.add("file", fileResource);
             body.add("user", "user-system");
@@ -581,6 +610,8 @@ public class BookingConsolidatedServiceImpl implements IBookingConsolidatedServi
                     return JSON.parseObject(rawText);
                 }
             }
+        } catch (HttpStatusCodeException e) {
+            log.error("Dify 调用异常 (HTTP {}): {}", e.getStatusCode(), e.getResponseBodyAsString(), e);
         } catch (Exception e) {
             log.error("Dify 调用异常", e);
         }
