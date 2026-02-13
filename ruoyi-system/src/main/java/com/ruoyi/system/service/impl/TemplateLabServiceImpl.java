@@ -587,4 +587,100 @@ public class TemplateLabServiceImpl implements ITemplateLabService {
             }
         }
     }
+
+    /**
+     * 获取已有模版的HTML内容
+     */
+    @Override
+    public String getTemplateHtmlById(Long templateId) {
+        SysPdfTemplate template = pdfTemplateService.selectSysPdfTemplateById(templateId);
+        if (template == null) {
+            throw new RuntimeException("模版不存在");
+        }
+
+        String templateFilePath = template.getTemplateFilePath();
+        if (StringUtils.isEmpty(templateFilePath)) {
+            throw new RuntimeException("模版文件路径为空");
+        }
+
+        // 拼接完整路径
+        String fullPath = RuoYiConfig.getProfile() + templateFilePath.replaceFirst(Constants.RESOURCE_PREFIX, "");
+        File file = new File(fullPath);
+        if (!file.exists()) {
+            throw new RuntimeException("模版文件不存在: " + fullPath);
+        }
+
+        // 调用 Python 脚本转换为 HTML
+        String scriptPath = RuoYiConfig.getProfile() + "/../scripts/docx_to_html.py";
+        File scriptFile = new File(scriptPath);
+        if (!scriptFile.exists()) {
+            scriptPath = System.getProperty("user.dir") + "/scripts/docx_to_html.py";
+        }
+
+        try {
+            ProcessBuilder pb = new ProcessBuilder("python3", scriptPath, file.getAbsolutePath());
+            Process process = pb.start();
+
+            // 读取脚本输出
+            java.io.BufferedReader reader = new java.io.BufferedReader(
+                    new java.io.InputStreamReader(process.getInputStream()));
+            StringBuilder output = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                output.append(line);
+            }
+            process.waitFor();
+
+            String jsonStr = output.toString();
+            if (StringUtils.isEmpty(jsonStr)) {
+                throw new RuntimeException("转换脚本无输出");
+            }
+
+            JSONObject result = JSON.parseObject(jsonStr);
+            if ("success".equals(result.getString("status"))) {
+                return result.getString("html");
+            } else {
+                throw new RuntimeException("转换失败: " + result.getString("message"));
+            }
+        } catch (Exception e) {
+            log.error("获取模版HTML失败", e);
+            throw new RuntimeException("获取模版HTML失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 保存编辑后的模版HTML内容
+     */
+    @Override
+    public void saveTemplateHtmlById(Long templateId, String htmlContent) {
+        SysPdfTemplate template = pdfTemplateService.selectSysPdfTemplateById(templateId);
+        if (template == null) {
+            throw new RuntimeException("模版不存在");
+        }
+
+        String templateFilePath = template.getTemplateFilePath();
+        if (StringUtils.isEmpty(templateFilePath)) {
+            throw new RuntimeException("模版文件路径为空");
+        }
+
+        // 拼接完整路径
+        String fullPath = RuoYiConfig.getProfile() + templateFilePath.replaceFirst(Constants.RESOURCE_PREFIX, "");
+        File targetDocxFile = new File(fullPath);
+
+        // 1. 将 HTML 内容转换为 Docx
+        File editedDocx = convertHtmlToDocx(htmlContent);
+
+        try {
+            // 2. 覆盖原有模版文件
+            org.apache.commons.io.FileUtils.copyFile(editedDocx, targetDocxFile);
+            log.info("模版文件已更新: {}", fullPath);
+        } catch (IOException e) {
+            log.error("覆盖模版文件失败", e);
+            throw new RuntimeException("保存模版文件失败: " + e.getMessage());
+        } finally {
+            if (editedDocx != null && editedDocx.exists()) {
+                editedDocx.delete();
+            }
+        }
+    }
 }

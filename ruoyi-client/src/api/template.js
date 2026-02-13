@@ -46,3 +46,20 @@ export function exportWithTemplate(templateId, businessData) {
         responseType: 'blob'
     })
 }
+
+// 获取模版HTML内容 (用于在线编辑)
+export function getTemplateHtml(templateId) {
+    return request({
+        url: `${baseUrl}/get-template-html/${templateId}`,
+        method: 'get'
+    })
+}
+
+// 保存模版HTML内容
+export function saveTemplateHtml(templateId, html) {
+    return request({
+        url: `${baseUrl}/save-template-html`,
+        method: 'post',
+        data: { templateId, html }
+    })
+}

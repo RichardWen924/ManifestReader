@@ -111,7 +111,10 @@
               <td class="col-time">{{ formatTime(item.createTime) }}</td>
               <td class="actions-cell">
                 <div class="row-actions">
-                  <button class="icon-btn" @click="handleUpdate(item)" title="Edit">
+                  <button class="icon-btn" @click="handleEditOnline(item)" title="Edit Online">
+                    <i class="fas fa-file-code"></i>
+                  </button>
+                  <button class="icon-btn" @click="handleUpdate(item)" title="Edit Info">
                     <i class="fas fa-pen"></i>
                   </button>
                   <button class="icon-btn delete-btn" @click="handleDelete(item)" title="Delete">
@@ -180,6 +183,55 @@
         </footer>
       </div>
     </div>
+
+    <!-- Template Editor Modal -->
+    <div v-if="isEditorOpen" class="modal-overlay">
+      <div class="modal-content editor-modal glass-card">
+        <div class="editor-header">
+           <div class="header-left">
+             <h3><i class="fas fa-edit"></i> 在线编辑模版内容</h3>
+             <span class="tip-text">您可以直接修改文字或点击右侧字段插入占位符</span>
+           </div>
+           <button class="modal-close" @click="isEditorOpen = false"><i class="fas fa-times"></i></button>
+        </div>
+        
+        <div class="editor-body">
+           <!-- Left: Quill Editor -->
+           <div class="editor-main">
+             <div v-if="editorLoading" class="loader-overlay">
+               <div class="spinner"></div>
+               <p>加载中...</p>
+             </div>
+             <QuillEditor 
+                v-model:content="editorContent" 
+                contentType="html" 
+                theme="snow" 
+                toolbar="full"
+                @ready="onEditorReady"
+                style="height: 500px"
+             />
+           </div>
+           
+           <!-- Right: Field Picker -->
+           <div class="editor-sidebar">
+             <h4>可用映射字段 ({{ currentMappings.length }})</h4>
+             <div class="field-list">
+               <div v-for="(m, idx) in currentMappings" :key="idx" class="field-chip" @click="insertPlaceholder(m.placeholder_key || 'key')">
+                 <i class="fas fa-plus-circle"></i> {{ m.placeholder_key || '未命名' }}
+               </div>
+               <div v-if="currentMappings.length === 0" class="empty-fields">暂无字段</div>
+             </div>
+           </div>
+        </div>
+        
+        <div class="editor-footer">
+          <button class="outline-btn" @click="isEditorOpen = false">取消</button>
+          <button class="primary-btn" @click="submitEditorContent" :disabled="editorLoading">
+             <i class="fas fa-check"></i> 保存修改
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -187,10 +239,12 @@
 // @author Richard
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { listTemplate, getTemplate, delTemplate, updateTemplate } from '../api/template'
+import { listTemplate, getTemplate, delTemplate, updateTemplate, getTemplateHtml, saveTemplateHtml } from '../api/template'
 import api from '../api/request'
 import LanguageSwitcher from '../components/LanguageSwitcher.vue'
 import Pagination from '../components/Pagination.vue'
+import { QuillEditor } from '@vueup/vue-quill'
+import '@vueup/vue-quill/dist/vue-quill.snow.css'
 
 const router = useRouter()
 const loading = ref(true)
@@ -208,6 +262,14 @@ const queryParams = ref({
   pageSize: 10,
   templateName: ''
 })
+
+// Editor State
+const isEditorOpen = ref(false)
+const editorContent = ref('')
+const editorLoading = ref(false)
+const editingTemplateId = ref(null)
+const currentMappings = ref([])
+const quillInstance = ref(null)
 
 const allSelected = computed(() => {
   return templateList.value.length > 0 && selectedIds.value.length === templateList.value.length
@@ -322,6 +384,68 @@ const submitForm = async () => {
     }
   } catch (err) {
     alert('Update failed')
+  }
+}
+
+const handleEditOnline = async (row) => {
+  editingTemplateId.value = row.templateId
+  editorLoading.value = true
+  isEditorOpen.value = true
+  
+  // Parse existing mappings for the picker
+  try {
+    if (row.fieldConfig) {
+      currentMappings.value = JSON.parse(row.fieldConfig)
+    } else {
+      currentMappings.value = []
+    }
+  } catch (e) {
+    currentMappings.value = []
+  }
+
+  try {
+    const res = await getTemplateHtml(row.templateId)
+    if (res.code === 200 || res.code === 0) {
+      editorContent.value = res.data
+    } else {
+      alert('Failed to load content: ' + res.msg)
+      isEditorOpen.value = false
+    }
+  } catch (err) {
+    alert('Error loading template content')
+    isEditorOpen.value = false
+  } finally {
+    editorLoading.value = false
+  }
+}
+
+const onEditorReady = (quill) => {
+  quillInstance.value = quill
+}
+
+const insertPlaceholder = (key) => {
+  if (quillInstance.value) {
+    const selection = quillInstance.value.getSelection()
+    const index = selection ? selection.index : quillInstance.value.getLength()
+    quillInstance.value.insertText(index, `{{${key}}}`)
+  }
+}
+
+const submitEditorContent = async () => {
+  if (!editorContent.value) return
+  editorLoading.value = true
+  try {
+    const res = await saveTemplateHtml(editingTemplateId.value, editorContent.value)
+    if (res.code === 200 || res.code === 0) {
+      alert('Template content updated successfully')
+      isEditorOpen.value = false
+    } else {
+      alert('Save failed: ' + res.msg)
+    }
+  } catch (err) {
+    alert('Error saving template')
+  } finally {
+    editorLoading.value = false
   }
 }
 
@@ -897,5 +1021,140 @@ tr:hover .row-actions {
   border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
+}
+/* Editor Modal Styles */
+.editor-modal {
+  width: 90vw;
+  max-width: 1200px;
+  height: 85vh;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+
+.editor-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-left h3 { margin: 0; font-size: 18px; color: var(--text-main); }
+.tip-text { font-size: 12px; color: var(--text-dim); margin-left: 12px; }
+
+.editor-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.editor-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  position: relative;
+  overflow-y: auto;
+}
+
+.editor-sidebar {
+  width: 250px;
+  border-left: 1px solid var(--border-color);
+  background: #f8fafc;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.editor-sidebar h4 {
+  font-size: 14px;
+  color: var(--text-dim);
+  margin-bottom: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.field-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.field-chip {
+  padding: 8px 12px;
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.field-chip:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  transform: translateX(4px);
+}
+
+.empty-fields {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 13px;
+  margin-top: 20px;
+}
+
+.editor-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  background: white;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px;
+  transition: color 0.2s;
+}
+
+.modal-close:hover { color: var(--text-main); }
+
+.loader-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 </style>

@@ -28,15 +28,22 @@ public interface ITemplateLabService {
     /**
      * 使用模版导出docx：将业务数据填充到模版的占位符中
      */
-    /**
-     * 使用模版导出docx：将业务数据填充到模版的占位符中
-     */
     public byte[] exportWithTemplate(Long templateId, java.util.Map<String, Object> businessData);
 
     /**
      * 获取模版文件的HTML内容（用于在线编辑）
      */
     public String getTemplateHtml(MultipartFile file);
+
+    /**
+     * 获取已有模版的HTML内容（用于在线编辑）
+     */
+    public String getTemplateHtmlById(Long templateId);
+
+    /**
+     * 保存编辑后的模版HTML内容
+     */
+    public void saveTemplateHtmlById(Long templateId, String htmlContent);
 
     /**
      * 将HTML内容转换为Docx文件

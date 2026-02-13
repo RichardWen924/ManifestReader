@@ -256,4 +256,32 @@ public class SysTemplateLabController extends BaseController {
             docxFile.delete(); // 发送完成后删除临时文件
         }
     }
+
+    /**
+     * 获取已有模版的 HTML 内容 (用于在线编辑)
+     */
+    @GetMapping("/get-template-html/{templateId}")
+    public AjaxResult getTemplateHtmlById(@PathVariable("templateId") Long templateId) {
+        try {
+            String html = templateLabService.getTemplateHtmlById(templateId);
+            return AjaxResult.success("获取成功", html);
+        } catch (Exception e) {
+            return AjaxResult.error("获取HTML失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 保存编辑后的模版 HTML 内容
+     */
+    @PostMapping("/save-template-html")
+    public AjaxResult saveTemplateHtmlById(@RequestBody java.util.Map<String, Object> params) {
+        try {
+            Long templateId = Long.valueOf(params.get("templateId").toString());
+            String html = params.get("html").toString();
+            templateLabService.saveTemplateHtmlById(templateId, html);
+            return AjaxResult.success("保存成功");
+        } catch (Exception e) {
+            return AjaxResult.error("保存失败: " + e.getMessage());
+        }
+    }
 }
