@@ -3,7 +3,7 @@
 [![Java Version](https://img.shields.io/badge/Java-8-blue.svg?style=flat-square&logo=java)](https://www.oracle.com/java/)
 [![Spring Boot](https://img.shields.io/badge/Spring_Boot-2.5.15-brightgreen.svg?style=flat-square&logo=springboot)](https://spring.io/projects/spring-boot)
 [![Vue Version](https://img.shields.io/badge/Vue-3.0-4FC08D.svg?style=flat-square&logo=vuedotjs)](https://vuejs.org/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](backend/LICENSE)
 
 **Shipping DocFlow** 是一款专为航运物流行业设计的智能化单据处理平台。基于 **RuoYi-Vue** 核心架构，深度集成 **Dify AI** 工作流，解决传统提单处理过程中“格式杂、录入慢、校对难”的痛点。
 
@@ -51,15 +51,16 @@
 -   **Node.js**: 18.x / 20.x
 
 ### 2. 后端配置与启动
-修改 `ruoyi-admin/src/main/resources/application-druid.yml` 中的数据库配置，以及 `application.yml` 中的文件上传路径 `profile`。
+修改 `backend/ruoyi-admin/src/main/resources/application-druid.yml` 中的数据库配置，以及 `application.yml` 中的文件上传路径 `profile`。
 ```bash
+cd backend
 mvn clean install
 # 运行 RuoYiApplication.java
 ```
 
 ### 3. 前端配置与启动
 ```bash
-cd ruoyi-client
+cd frontend
 npm install
 npm run dev
 ```
@@ -69,12 +70,15 @@ npm run dev
 ## 📂 项目结构
 
 ```text
-├── bin/                    # 可执行脚本
-├── ruoyi-admin/            # 后端核心入口与 API 控制器
-├── ruoyi-client/           # Vue 3 智能化客户端前端
-├── ruoyi-common/           # 公共工具类与核心包
-├── ruoyi-system/           # 系统业务逻辑层
-├── sql/                    # 数据库初始化脚本
+├── backend/                # 后端项目根目录 (Maven Multi-Module)
+│   ├── bin/                # 可执行脚本
+│   ├── ruoyi-admin/        # 后端核心入口与 API 控制器
+│   ├── ruoyi-common/       # 公共工具类与核心包
+│   ├── ruoyi-system/       # 系统业务逻辑层
+│   └── sql/                # 数据库初始化脚本
+├── frontend/               # 前端项目根目录 (Vue 3 + Vite)
+├── dev-snippets/           # 开发过程中的临时修复脚本与代码片段
+├── archive/                # 存档/备份文件夹
 └── README.md               # 本文档
 ```
 

@@ -1,46 +1,21 @@
-######################################################################
-# Build Tools
-
-.gradle
-/build/
-!gradle/wrapper/gradle-wrapper.jar
-
-target/
-!.mvn/wrapper/maven-wrapper.jar
-
-######################################################################
-# IDE
-
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-
-### IntelliJ IDEA ###
-.idea
+# IDE Settings
+.idea/
+.vscode/
 *.iws
 *.iml
 *.ipr
 
-### JRebel ###
-rebel.xml
-### NetBeans ###
-nbproject/private/
-build/*
-nbbuild/
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Project-wide Ignores
+logs/
+temp/
+archive/
+
+# Node modules (just in case they appear in root)
+node_modules/
 dist/
-nbdist/
-.nb-gradle/
 
-######################################################################
-# Others
-*.log
-*.xml.versionsBackup
-*.swp
-
-!*/build/*.java
-!*/build/*.html
-!*/build/*.xml
+# End of .gitignore
