@@ -21,7 +21,6 @@ import com.ruoyi.common.core.page.TableSupport;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.PageUtils;
 import com.ruoyi.common.utils.ServletUtils;
-import com.ruoyi.common.utils.ShiroUtils;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.utils.sql.SqlUtil;
 
@@ -196,11 +195,11 @@ public class BaseController
     }
 
     /**
-     * 获取用户缓存信息
+     * 获取用户缓存信息 (微服务下应从Header或Token中获取，此处仅作桩代码)
      */
     public SysUser getSysUser()
     {
-        return ShiroUtils.getSysUser();
+        return new SysUser(); // TODO: 从请求头中解析出 SysUser
     }
 
     /**
@@ -208,7 +207,7 @@ public class BaseController
      */
     public void setSysUser(SysUser user)
     {
-        ShiroUtils.setSysUser(user);
+        // 微服务通常无需在 Controller 设置 Session User
     }
 
     /**
@@ -216,7 +215,12 @@ public class BaseController
      */
     public Long getUserId()
     {
-        return getSysUser().getUserId();
+        try {
+            String userId = ServletUtils.getRequest().getHeader("X-User-Id");
+            return StringUtils.isNotEmpty(userId) ? Long.valueOf(userId) : 1L; // 默认返回1以防报错
+        } catch (Exception e) {
+            return 1L;
+        }
     }
 
     /**
@@ -224,6 +228,11 @@ public class BaseController
      */
     public String getLoginName()
     {
-        return getSysUser().getLoginName();
+        try {
+            String userName = ServletUtils.getRequest().getHeader("X-User-Name");
+            return StringUtils.isNotEmpty(userName) ? userName : "admin";
+        } catch (Exception e) {
+            return "admin";
+        }
     }
 }

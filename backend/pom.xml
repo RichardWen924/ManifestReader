@@ -17,7 +17,9 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>1.8</java.version>
         <maven-jar-plugin.version>3.1.1</maven-jar-plugin.version>
-        <spring-boot.version>2.5.15</spring-boot.version>
+        <spring-boot.version>2.7.18</spring-boot.version>
+        <spring-cloud.version>2021.0.8</spring-cloud.version>
+        <spring-cloud-alibaba.version>2021.0.5.0</spring-cloud-alibaba.version>
         <shiro.version>1.13.0</shiro.version>
         <thymeleaf.extras.shiro.version>2.1.0</thymeleaf.extras.shiro.version>
         <druid.version>1.2.27</druid.version>
@@ -34,11 +36,30 @@
         <tomcat.version>9.0.112</tomcat.version>
         <logback.version>1.2.13</logback.version>
         <spring-framework.version>5.3.39</spring-framework.version>
+        <mybatis-plus.version>3.5.3.1</mybatis-plus.version>
     </properties>
 
     <!-- 依赖声明 -->
     <dependencyManagement>
         <dependencies>
+
+            <!-- SpringCloud 微服务 -->
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- SpringCloud Alibaba 微服务 -->
+            <dependency>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-cloud-alibaba-dependencies</artifactId>
+                <version>${spring-cloud-alibaba.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
 
             <!-- 覆盖SpringFramework的依赖配置-->
             <dependency>
@@ -104,39 +125,26 @@
                 <version>${kaptcha.version}</version>
             </dependency>
 
-            <!-- Shiro核心框架 -->
-            <dependency>
-                <groupId>org.apache.shiro</groupId>
-                <artifactId>shiro-core</artifactId>
-                <version>${shiro.version}</version>
-            </dependency>
 
-            <!-- Shiro使用Spring框架 -->
-            <dependency>
-                <groupId>org.apache.shiro</groupId>
-                <artifactId>shiro-spring</artifactId>
-                <version>${shiro.version}</version>
-            </dependency>
-
-            <!-- Shiro使用EhCache缓存框架 -->
-            <dependency>
-                <groupId>org.apache.shiro</groupId>
-                <artifactId>shiro-ehcache</artifactId>
-                <version>${shiro.version}</version>
-            </dependency>
-
-            <!-- thymeleaf模板引擎和shiro框架的整合 -->
-            <dependency>
-                <groupId>com.github.theborakompanioni</groupId>
-                <artifactId>thymeleaf-extras-shiro</artifactId>
-                <version>${thymeleaf.extras.shiro.version}</version>
-            </dependency>
 
             <!-- 解析客户端操作系统、浏览器等 -->
             <dependency>
                 <groupId>nl.basjes.parse.useragent</groupId>
                 <artifactId>yauaa</artifactId>
                 <version>${yauaa.version}</version>
+            </dependency>
+
+            <!-- mybatis-plus 分页插件 -->
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-boot-starter</artifactId>
+                <version>${mybatis-plus.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-annotation</artifactId>
+                <version>${mybatis-plus.version}</version>
             </dependency>
 
             <!-- pagehelper 分页插件 -->
@@ -233,12 +241,11 @@
     </dependencyManagement>
 
     <modules>
-        <module>ruoyi-admin</module>
-        <module>ruoyi-framework</module>
-        <module>ruoyi-system</module>
-        <module>ruoyi-quartz</module>
-        <module>ruoyi-generator</module>
         <module>ruoyi-common</module>
+        <module>ruoyi-api</module>
+        <module>ruoyi-auth</module>
+        <module>ruoyi-gateway</module>
+        <module>ruoyi-modules</module>
     </modules>
     <packaging>pom</packaging>
 

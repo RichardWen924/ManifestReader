@@ -1,7 +1,7 @@
 -- 更新PDF模板坐标配置
--- 假设sys_pdf_template表已存在，更新field_config字段
+-- 假设bl_pdf_template表已存在，更新field_config字段
 
-UPDATE sys_pdf_template 
+UPDATE bl_pdf_template 
 SET field_config = '{
   "shipper": {"page": 1, "x": 45, "y": 780, "w": 300, "h": 80, "source_id": 34},
   "consignee": {"page": 1, "x": 45, "y": 680, "w": 300, "h": 80, "source_id": 36},

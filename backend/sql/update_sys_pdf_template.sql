@@ -1,4 +1,4 @@
--- 修改现有的 sys_pdf_template 表结构
+-- 修改现有的 bl_pdf_template 表结构
 -- 此脚本会安全地添加缺失的列，不会删除现有数据
 
 -- 1. 检查并添加 template_file_path 列（如果不存在）
@@ -6,11 +6,11 @@ SET @col_exists = 0;
 SELECT COUNT(*) INTO @col_exists 
 FROM information_schema.COLUMNS 
 WHERE TABLE_SCHEMA = DATABASE() 
-  AND TABLE_NAME = 'sys_pdf_template' 
+  AND TABLE_NAME = 'bl_pdf_template' 
   AND COLUMN_NAME = 'template_file_path';
 
 SET @sql = IF(@col_exists = 0,
-    'ALTER TABLE sys_pdf_template ADD COLUMN template_file_path varchar(500) NOT NULL COMMENT ''PDF模版文件路径'' AFTER template_name',
+    'ALTER TABLE bl_pdf_template ADD COLUMN template_file_path varchar(500) NOT NULL COMMENT ''PDF模版文件路径'' AFTER template_name',
     'SELECT ''Column template_file_path already exists'' AS Info');
 PREPARE stmt FROM @sql;
 EXECUTE stmt;
@@ -21,11 +21,11 @@ SET @col_exists = 0;
 SELECT COUNT(*) INTO @col_exists 
 FROM information_schema.COLUMNS 
 WHERE TABLE_SCHEMA = DATABASE() 
-  AND TABLE_NAME = 'sys_pdf_template' 
+  AND TABLE_NAME = 'bl_pdf_template' 
   AND COLUMN_NAME = 'field_config';
 
 SET @sql = IF(@col_exists = 0,
-    'ALTER TABLE sys_pdf_template ADD COLUMN field_config text COMMENT ''字段配置(JSON格式)'' AFTER template_file_path',
+    'ALTER TABLE bl_pdf_template ADD COLUMN field_config text COMMENT ''字段配置(JSON格式)'' AFTER template_file_path',
     'SELECT ''Column field_config already exists'' AS Info');
 PREPARE stmt FROM @sql;
 EXECUTE stmt;
@@ -36,11 +36,11 @@ SET @col_exists = 0;
 SELECT COUNT(*) INTO @col_exists 
 FROM information_schema.COLUMNS 
 WHERE TABLE_SCHEMA = DATABASE() 
-  AND TABLE_NAME = 'sys_pdf_template' 
+  AND TABLE_NAME = 'bl_pdf_template' 
   AND COLUMN_NAME = 'create_by';
 
 SET @sql = IF(@col_exists = 0,
-    'ALTER TABLE sys_pdf_template ADD COLUMN create_by varchar(64) DEFAULT '''' COMMENT ''创建者'' AFTER create_time',
+    'ALTER TABLE bl_pdf_template ADD COLUMN create_by varchar(64) DEFAULT '''' COMMENT ''创建者'' AFTER create_time',
     'SELECT ''Column create_by already exists'' AS Info');
 PREPARE stmt FROM @sql;
 EXECUTE stmt;
@@ -51,18 +51,18 @@ SET @index_exists = 0;
 SELECT COUNT(*) INTO @index_exists 
 FROM information_schema.STATISTICS 
 WHERE TABLE_SCHEMA = DATABASE() 
-  AND TABLE_NAME = 'sys_pdf_template' 
+  AND TABLE_NAME = 'bl_pdf_template' 
   AND INDEX_NAME = 'uk_template_code';
 
 SET @sql = IF(@index_exists = 0,
-    'ALTER TABLE sys_pdf_template ADD UNIQUE KEY uk_template_code (template_code)',
+    'ALTER TABLE bl_pdf_template ADD UNIQUE KEY uk_template_code (template_code)',
     'SELECT ''Index uk_template_code already exists'' AS Info');
 PREPARE stmt FROM @sql;
 EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 
 -- 4. 插入或更新示例数据
-INSERT INTO sys_pdf_template (template_code, template_name, template_file_path, field_config, create_time, remark)
+INSERT INTO bl_pdf_template (template_code, template_name, template_file_path, field_config, create_time, remark)
 VALUES (
     'booking_standard',
     '提单标准模版',
@@ -105,5 +105,5 @@ SELECT
     END AS field_config_preview,
     create_time,
     update_time
-FROM sys_pdf_template
+FROM bl_pdf_template
 WHERE template_code = 'booking_standard';

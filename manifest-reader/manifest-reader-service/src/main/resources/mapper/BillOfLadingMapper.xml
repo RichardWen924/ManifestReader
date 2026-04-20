@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.manifest.service.mapper.BillOfLadingMapper">
+
+    <!-- 完整级联 ResultMap -->
+    <resultMap id="BillOfLadingFullMap" type="com.manifest.model.entity.BillOfLading">
+        <id     property="id"              column="id"/>
+        <result property="blNo"            column="bl_no"/>
+        <result property="bookingNo"       column="booking_no"/>
+        <result property="docNo"           column="doc_no"/>
+        <result property="serialNo"        column="serial_no"/>
+        <result property="vesselVoyage"    column="vessel_voyage"/>
+        <result property="preCarriageBy"   column="pre_carriage_by"/>
+        <result property="placeOfReceipt"  column="place_of_receipt"/>
+        <result property="portOfLoading"   column="port_of_loading"/>
+        <result property="portOfDischarge" column="port_of_discharge"/>
+        <result property="placeOfDelivery" column="place_of_delivery"/>
+        <result property="filePath"        column="file_path"/>
+        <result property="createBy"        column="create_by"/>
+        <result property="createTime"      column="create_time"/>
+        <result property="updateBy"        column="update_by"/>
+        <result property="updateTime"      column="update_time"/>
+        <!-- 参与方 -->
+        <association property="parties" javaType="com.manifest.model.entity.BlParties">
+            <result property="blId"          column="bl_id"/>
+            <result property="shipper"       column="shipper"/>
+            <result property="consignee"     column="consignee"/>
+            <result property="notifyParty"   column="notify_party"/>
+            <result property="carrierAgent"  column="carrier_agent"/>
+            <result property="deliveryAgent" column="delivery_agent"/>
+        </association>
+        <!-- 货物 -->
+        <association property="cargo" javaType="com.manifest.model.entity.BlCargo">
+            <result property="blId"              column="bl_id"/>
+            <result property="containerNo"       column="container_no"/>
+            <result property="sealNo"            column="seal_no"/>
+            <result property="containerWeight"   column="container_weight"/>
+            <result property="vgmWeight"         column="vgm_weight"/>
+            <result property="packageQuantity"   column="package_quantity"/>
+            <result property="packageUnit"       column="package_unit"/>
+            <result property="goodsDescription"  column="goods_description"/>
+            <result property="grossWeightKgs"    column="gross_weight_kgs"/>
+            <result property="measurementCbm"    column="measurement_cbm"/>
+            <result property="marks"             column="marks"/>
+        </association>
+        <!-- 费用 -->
+        <association property="freight" javaType="com.manifest.model.entity.BlFreight">
+            <result property="blId"            column="bl_id"/>
+            <result property="freightTerm"     column="freight_term"/>
+            <result property="freightRate"     column="freight_rate"/>
+            <result property="prepaidAmount"   column="prepaid_amount"/>
+            <result property="collectAmount"   column="collect_amount"/>
+            <result property="serviceType"     column="service_type"/>
+            <result property="serviceMode"     column="service_mode"/>
+            <result property="payableAt"       column="payable_at"/>
+            <result property="originalBlCount" column="original_bl_count"/>
+            <result property="issuePlace"      column="issue_place"/>
+            <result property="ladenOnBoard"    column="laden_on_board"/>
+        </association>
+    </resultMap>
+
+    <sql id="joinSql">
+        SELECT m.*, p.shipper, p.consignee, p.notify_party, p.carrier_agent, p.delivery_agent,
+               c.container_no, c.seal_no, c.container_weight, c.vgm_weight, c.package_quantity,
+               c.package_unit, c.goods_description, c.gross_weight_kgs, c.measurement_cbm, c.marks,
+               f.freight_term, f.freight_rate, f.prepaid_amount, f.collect_amount, f.service_type,
+               f.service_mode, f.payable_at, f.original_bl_count, f.issue_place, f.laden_on_board
+        FROM bl_main m
+        LEFT JOIN bl_parties p ON p.bl_id = m.id
+        LEFT JOIN bl_cargo   c ON c.bl_id = m.id
+        LEFT JOIN bl_freight f ON f.bl_id = m.id
+    </sql>
+
+    <!-- 根据 ID 级联查询 -->
+    <select id="selectWithDetailsById" parameterType="Long" resultMap="BillOfLadingFullMap">
+        <include refid="joinSql"/>
+        WHERE m.id = #{id}
+    </select>
+
+    <!-- 根据公司编号查询列表 -->
+    <select id="selectListByCompany" parameterType="String" resultMap="BillOfLadingFullMap">
+        <include refid="joinSql"/>
+        WHERE m.create_by = #{companyCode}
+        ORDER BY m.create_time DESC
+    </select>
+
+</mapper>

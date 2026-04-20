@@ -1,0 +1,36 @@
+server:
+  port: 9000
+
+spring:
+  application:
+    name: manifest-reader-gateway
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+    gateway:
+      discovery:
+        locator:
+          enabled: true          # 开启自动路由（根据服务名）
+          lower-case-service-id: true
+      routes:
+        - id: manifest-reader-auth
+          uri: lb://manifest-reader-auth
+          predicates:
+            - Path=/auth/**
+
+        - id: manifest-reader-service
+          uri: lb://manifest-reader-service
+          predicates:
+            - Path=/api/**
+          filters:
+            - StripPrefix=1        # 去掉 /api 前缀后转发
+
+      # 全局跨域配置
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOriginPatterns: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+            allowCredentials: true

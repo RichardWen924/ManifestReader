@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: manifest-reader-service
+  profiles:
+    active: dev
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+      config:
+        server-addr: localhost:8848
+        file-extension: yml
+        shared-configs:
+          - data-id: common-datasource.yml
+            refresh: true
+          - data-id: common-redis.yml
+            refresh: true
